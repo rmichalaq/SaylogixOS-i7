@@ -48,8 +48,8 @@ interface PackageDetails {
 
 export default function Packing() {
   const [activeTab, setActiveTab] = useState("tasks");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [packerFilter, setPackerFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [packerFilter, setPackerFilter] = useState("all");
   const [selectedTask, setSelectedTask] = useState<PackingTask | null>(null);
   const [packageDetails, setPackageDetails] = useState<PackageDetails>({
     packageType: "",
@@ -219,7 +219,7 @@ export default function Packing() {
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Statuses</SelectItem>
+                    <SelectItem value="all">All Statuses</SelectItem>
                     <SelectItem value="pending">Pending</SelectItem>
                     <SelectItem value="assigned">Assigned</SelectItem>
                     <SelectItem value="in_progress">In Progress</SelectItem>
@@ -233,7 +233,7 @@ export default function Packing() {
                     <SelectValue placeholder="Filter by packer" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Packers</SelectItem>
+                    <SelectItem value="all">All Packers</SelectItem>
                     {packers.map((packer: any) => (
                       <SelectItem key={packer.id} value={packer.id}>
                         {packer.name}

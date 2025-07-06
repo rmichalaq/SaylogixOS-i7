@@ -37,7 +37,7 @@ interface InboundItem {
 
 export default function Inbound() {
   const [activeTab, setActiveTab] = useState("shipments");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [selectedShipment, setSelectedShipment] = useState<InboundShipment | null>(null);
 
   const { data: inboundShipments = [], isLoading } = useQuery({
@@ -158,7 +158,7 @@ export default function Inbound() {
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Statuses</SelectItem>
+                    <SelectItem value="all">All Statuses</SelectItem>
                     <SelectItem value="announced">Announced</SelectItem>
                     <SelectItem value="arrived">Arrived</SelectItem>
                     <SelectItem value="unloading">Unloading</SelectItem>

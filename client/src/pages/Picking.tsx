@@ -41,8 +41,8 @@ interface PickingBatch {
 
 export default function Picking() {
   const [activeTab, setActiveTab] = useState("tasks");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [pickerFilter, setPickerFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [pickerFilter, setPickerFilter] = useState("all");
   const [selectedTask, setSelectedTask] = useState<PickingTask | null>(null);
 
   const { data: pickingTasks = [], isLoading } = useQuery({
@@ -180,7 +180,7 @@ export default function Picking() {
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Statuses</SelectItem>
+                    <SelectItem value="all">All Statuses</SelectItem>
                     <SelectItem value="pending">Pending</SelectItem>
                     <SelectItem value="assigned">Assigned</SelectItem>
                     <SelectItem value="in_progress">In Progress</SelectItem>
@@ -194,7 +194,7 @@ export default function Picking() {
                     <SelectValue placeholder="Filter by picker" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Pickers</SelectItem>
+                    <SelectItem value="all">All Pickers</SelectItem>
                     {pickers.map((picker: any) => (
                       <SelectItem key={picker.id} value={picker.id}>
                         {picker.name}

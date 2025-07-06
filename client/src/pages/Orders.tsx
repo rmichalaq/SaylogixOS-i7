@@ -32,7 +32,7 @@ interface Order {
 }
 
 export default function Orders() {
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
 
@@ -145,7 +145,7 @@ export default function Orders() {
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Statuses</SelectItem>
+                <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="received">Received</SelectItem>
                 <SelectItem value="validated">Validated</SelectItem>
                 <SelectItem value="picking">Picking</SelectItem>
