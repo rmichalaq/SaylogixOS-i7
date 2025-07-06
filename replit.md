@@ -1,0 +1,123 @@
+# Saylogix OS - Logistics Management System
+
+## Overview
+
+Saylogix OS is a comprehensive fullstack logistics management system built as a monorepo. It provides an integrated solution for order management, warehouse operations, dispatch, and last-mile delivery tracking. The system is designed to handle the complete order fulfillment lifecycle from ingestion to delivery with real-time tracking and analytics.
+
+## System Architecture
+
+### Frontend Architecture
+- **React 18** with TypeScript for the user interface
+- **Wouter** for client-side routing instead of React Router
+- **TailwindCSS** for styling with custom design system
+- **shadcn/ui** components with Radix UI primitives
+- **Tanstack React Query** for API state management and caching
+- **WebSocket** integration for real-time updates
+
+### Backend Architecture
+- **Node.js** with **Express.js** server
+- **TypeScript** throughout the application
+- **Event-driven architecture** using Emittery for internal communication
+- **RESTful APIs** with comprehensive error handling
+- **WebSocket server** for real-time client updates
+- **Modular service architecture** with dedicated modules for each business domain
+
+### Database & ORM
+- **PostgreSQL** with Neon serverless database
+- **Drizzle ORM** for database operations and schema management
+- **Zod** for schema validation integration
+- Shared schema definitions between frontend and backend
+
+## Key Components
+
+### Business Modules
+1. **OMS (Order Management System)** - Order ingestion, validation, prioritization
+2. **NAS (Address Verification)** - Saudi NAS code verification with WhatsApp fallback
+3. **WMS (Warehouse Management)** - Inbound, inventory, picking, packing operations
+4. **DMS (Dispatch Management)** - Grouping, manifests, courier handover
+5. **LMS (Last Mile)** - Route assignment, driver coordination, GPS tracking
+6. **Tracking System** - Real-time order status and customer notifications
+7. **Reports & Analytics** - Operational dashboards and KPI monitoring
+
+### Core Services
+- **Event Bus** - Central event coordination with 100+ defined event types
+- **Shopify Service** - Live integration with Shopify Admin API
+- **Courier Services** - Integration with Aramex, SMSA, Naqel APIs
+- **WhatsApp Service** - Customer communication for address verification
+- **Webhook Service** - Reliable webhook processing with retry logic
+- **Storage Service** - Abstracted database operations
+
+### UI Components
+- **Modular Layout System** - Sidebar navigation, top bar, alerts banner
+- **Scanner Integration** - Context-aware barcode/QR scanning overlay
+- **Real-time Dashboard** - Live KPIs and activity feed
+- **Task Management** - Floating task panel for user actions
+
+## Data Flow
+
+### Order Processing Flow
+1. **Order Ingestion** - Fetch from Shopify via webhook or polling
+2. **Address Verification** - NAS code lookup with WhatsApp fallback
+3. **Order Validation** - Inventory allocation and courier assignment
+4. **Warehouse Operations** - Picking, packing, and staging
+5. **Dispatch** - Manifest creation and courier handover
+6. **Last Mile** - Route optimization and delivery tracking
+7. **Completion** - Delivery confirmation and customer notification
+
+### Event-Driven Communication
+- **100+ Event Types** mapped to business processes (EV001-EV099)
+- **Persistent Event Log** for audit trails and debugging
+- **Real-time WebSocket** updates to frontend clients
+- **Cross-module communication** through event bus
+
+### API Architecture
+- **RESTful endpoints** for CRUD operations
+- **Real-time WebSocket** for live updates
+- **Webhook handlers** for external system integration
+- **Standardized error responses** and logging
+
+## External Dependencies
+
+### Required Integrations
+- **Shopify Admin API** - Live order and inventory sync
+- **Saudi NAS API** - Address verification service
+- **Courier APIs** - Aramex, SMSA, Naqel for shipping
+- **WhatsApp Business API** - Customer communication
+- **Neon PostgreSQL** - Serverless database hosting
+
+### Development Tools
+- **Vite** - Frontend build tool with HMR
+- **Drizzle Kit** - Database migrations and introspection
+- **ESBuild** - Backend bundling for production
+- **TypeScript** - Type safety across the stack
+
+## Deployment Strategy
+
+### Development Environment
+- **Replit integration** with runtime error overlay
+- **Hot module replacement** for frontend development
+- **Automatic server restart** on backend changes
+- **Environment variable management** for API credentials
+
+### Production Build
+- **Frontend bundling** with Vite to `dist/public`
+- **Backend bundling** with ESBuild to `dist/`
+- **Static file serving** from Express server
+- **Database migrations** via Drizzle Kit
+
+### Configuration
+- **Environment variables** for all external API credentials
+- **Shared TypeScript configuration** across client/server
+- **Path aliases** for clean imports (`@/`, `@shared/`)
+- **TailwindCSS configuration** with custom design tokens
+
+## Changelog
+```
+Changelog:
+- July 06, 2025. Initial setup
+```
+
+## User Preferences
+```
+Preferred communication style: Simple, everyday language.
+```
