@@ -150,7 +150,7 @@ class WebhookService {
           ...webhookLog.headers
         },
         body: JSON.stringify(webhookLog.payload),
-        timeout: 30000 // 30 second timeout
+        signal: AbortSignal.timeout(30000) // 30 second timeout
       });
 
       const responseBody = await response.text();

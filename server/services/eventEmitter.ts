@@ -9,7 +9,7 @@ class SaylogixEventEmitter extends Emittery {
       eventId,
       eventType,
       entityType,
-      entityId,
+      entityId: Number(entityId),
       description: this.getEventDescription(eventId, eventType, data),
       status: 'success',
       triggeredBy: data.triggeredBy || 'system',

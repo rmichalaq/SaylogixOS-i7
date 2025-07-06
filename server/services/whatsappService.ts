@@ -68,7 +68,8 @@ class WhatsAppService {
       const payload = {
         messaging_product: "whatsapp",
         to: formattedPhone,
-        ...message
+        type: message.type,
+        text: message.text
       };
 
       const response = await fetch(`${this.apiEndpoint}/${this.phoneNumberId}/messages`, {

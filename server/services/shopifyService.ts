@@ -185,7 +185,7 @@ class ShopifyService {
         customerEmail: shopifyOrder.email,
         shippingAddress: shopifyOrder.shipping_address,
         billingAddress: shopifyOrder.billing_address,
-        orderValue: parseFloat(shopifyOrder.total_price),
+        orderValue: shopifyOrder.total_price,
         currency: shopifyOrder.currency,
         orderFetched: new Date()
       });
@@ -197,9 +197,9 @@ class ShopifyService {
           sku: lineItem.sku,
           productName: lineItem.title,
           quantity: lineItem.quantity,
-          unitPrice: parseFloat(lineItem.price),
-          totalPrice: parseFloat(lineItem.price) * lineItem.quantity,
-          weight: lineItem.grams / 1000 // Convert grams to kg
+          unitPrice: String(lineItem.price),
+          totalPrice: String(Number(lineItem.price) * lineItem.quantity),
+          weight: String((lineItem.grams || 0) / 1000) // Convert grams to kg
         });
       }
 

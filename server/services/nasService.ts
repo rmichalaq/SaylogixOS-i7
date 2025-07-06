@@ -36,7 +36,7 @@ class NasService {
       if (cachedLookup) {
         return {
           found: true,
-          verified: cachedLookup.verified,
+          verified: cachedLookup.verified ?? false,
           address: {
             address: cachedLookup.address,
             city: cachedLookup.city,
@@ -90,7 +90,7 @@ class NasService {
         eventType: 'nas.lookup.cached',
         entityType: 'nas',
         entityId: 0,
-        payload: { nasCode, data },
+        eventData: { nasCode, data },
         source: 'nas'
       });
     } catch (error) {
@@ -207,13 +207,13 @@ class NasService {
       await eventBus.emitEvent('EV007', {
         entityType: 'order',
         entityId: orderId,
-        payload: { verificationId },
+        eventData: { verificationId },
         source: 'nas'
       });
 
       // Send WhatsApp message
       const messageId = await whatsappService.sendAddressVerificationMessage(
-        order.customerPhone,
+        order.customerPhone || '',
         order.saylogixNumber,
         order.shippingAddress as any
       );
