@@ -1,0 +1,163 @@
+sequenceDiagram
+    autonumber
+    participant Channel as Sales Channel (Shopify/Zid/etc)
+    participant MW as Saylogix Middleware
+    participant NAS as Verify NAS
+    participant OMS as Order Management System
+    participant WMS as Warehouse Management System
+    participant DMS as Dispatch Management System
+    participant LMS as Last Mile System
+    participant Courier as Courier Partner
+    participant Buyer as Buyer
+    participant Webhook as Webhook Engine
+
+    %% ==== Order Ingestion & NAS Verification ====
+    Channel->>MW: EV001 order.fetched
+    MW->>NAS: EV002 verify.start
+    NAS->>NAS: EV003 verify.check.nas.code
+    NAS->>NAS: EV004 verify.lookup.database
+    NAS->>NAS: EV005 verify.match.address
+
+    alt EV006 NAS Not Found
+        NAS->>Buyer: EV007 verify.prompt.whatsapp
+        Buyer-->>NAS: EV008 address.confirmed
+    end
+    NAS-->>MW: EV009 verify.resolved
+
+    %% ==== OMS Order Processing ====
+    MW->>OMS: EV010 oms.order.received
+    OMS->>OMS: EV011 validate.order
+    OMS->>OMS: EV012 prioritize.order
+    OMS->>OMS: EV013 assign.courier
+    OMS->>WMS: EV014 allocate.inventory
+
+    alt EV015 Validation Failure
+        OMS-->>MW: EV016 exception.[address|stock|courier]
+        MW->>Webhook: EV201 source.sync.exception
+        Webhook->>Channel: push.webhook
+        Webhook-->>Webhook: Fail201 → Retry
+    else OMS Valid
+        OMS-->>MW: EV017 order.ready
+        MW->>Webhook: EV202 source.sync.ready_for_fulfillment
+        Webhook->>Channel: push.webhook
+    end
+
+    %% ==== WMS Inbound Receiving ====
+    MW->>WMS: EV020 inbound.announced
+    WMS->>WMS: EV021 gate.logged
+    WMS->>WMS: EV022 dock.assigned
+    WMS->>WMS: EV023 unload.started
+    WMS->>WMS: EV024 visual.qc
+    WMS->>WMS: EV025 grn.created
+
+    alt EV026 Inbound Exception
+        WMS->>WMS: EV027 exception.logged
+        opt Retry
+            WMS->>WMS: EV028 retry.unload or escalate.procurement
+        end
+    end
+    WMS->>WMS: EV029 grn.to.staging
+
+    %% ==== WMS Putaway ====
+    WMS->>WMS: EV030 putaway.task.generated
+    WMS->>WMS: EV031 bin.suggested
+    WMS->>WMS: EV032 cart.scanned
+    WMS->>WMS: EV033 destination.scanned
+    alt EV034 Putaway Exception
+        WMS->>WMS: EV035 putaway.exception.logged
+    end
+    WMS->>WMS: EV036 putaway.completed
+
+    %% ==== Inventory Management ====
+    WMS->>WMS: EV040 status.tagged
+    WMS->>WMS: EV041 replenishment.triggered
+    WMS->>WMS: EV042 adjustment.logged
+    WMS->>WMS: EV043 cycle.count.scheduled
+    alt EV044 Discrepancy
+        WMS->>WMS: EV045 auto.lock
+        opt Manual Approval
+            WMS->>WMS: EV046 count.verified
+        end
+    end
+
+    %% ==== Picking ====
+    MW->>WMS: EV050 wms.order.received
+    WMS->>WMS: EV051 pick.task.generated
+    WMS->>WMS: EV052 pick.path.optimized
+    WMS->>WMS: EV053 pick.started
+    WMS->>WMS: EV054 pick.scanned
+    alt EV055 Picking Exception
+        WMS->>WMS: EV056 pick.exception
+        opt Retry
+            WMS->>WMS: EV057 pick.retry or escalate
+        end
+    end
+    WMS->>WMS: EV058 pick.completed
+
+    %% ==== Packing ====
+    WMS->>WMS: EV060 pack.cart.received
+    WMS->>WMS: EV061 verify.items
+    WMS->>WMS: EV062 box.selected
+    WMS->>WMS: EV063 weight.captured
+    WMS->>OMS: EV064 label.generated
+
+    alt EV065 Label or Weight Issue
+        WMS->>WMS: EV066 label.failed or weight.missing
+        opt Retry Label
+            WMS->>OMS: EV067 retry.label.print
+        end
+    end
+    WMS->>WMS: EV068 pack.completed
+
+    %% ==== Dispatch ====
+    WMS->>DMS: EV070 cart.scanned
+    DMS->>DMS: EV071 package.staged
+    DMS->>Courier: EV072 manifest.prepared
+    Courier-->>DMS: EV073 courier.arrived
+    Courier->>DMS: EV074 package.scanned
+    DMS->>Courier: EV075 manifest.confirmed
+
+    alt EV076 Dispatch Exception
+        DMS->>WMS: EV077 exception.[scan|label]
+        opt Override
+            Supervisor-->>DMS: EV078 override.confirmed
+        end
+    end
+
+    DMS->>OMS: EV079 order.dispatched
+    OMS->>Buyer: EV080 tracking.link.sent
+    OMS->>Webhook: EV203 source.sync.dispatched
+    Webhook->>Channel: push.webhook
+    Webhook-->>Webhook: Fail203 → Retry
+
+    %% ==== LMS Delivery ====
+    DMS->>LMS: EV090 manifest.received
+    LMS->>LMS: EV091 route.assigned
+    LMS->>LMS: EV092 driver.assigned
+    LMS->>Courier: EV093 driver.scanned
+    Courier->>LMS: EV094 on.route
+    Courier->>Buyer: EV095 out.for.delivery
+    Courier->>LMS: EV096 delivered
+
+    LMS->>OMS: EV097 status.updated
+    OMS->>Buyer: EV098 delivery.confirmed
+    OMS->>Webhook: EV204 source.sync.delivered
+    Webhook->>Channel: push.webhook
+    Webhook-->>Webhook: Fail204 → Retry
+
+    %% ==== Feedback & RTO ====
+    LMS->>NAS: EV099 gps.backfill.verify.nas
+    Buyer-->>OMS: EV110 feedback.received
+    Buyer-->>OMS: EV111 delivery.disputed
+    OMS->>OMS: EV112 manual.confirmation.triggered
+
+    %% ==== Returns ====
+    Buyer-->>MW: EV100 return.requested
+    MW->>WMS: EV101 return.created
+    WMS->>WMS: EV102 return.received
+    WMS->>WMS: EV103 qc.inspected
+    WMS->>WMS: EV104 return.status.resolved
+    WMS->>OMS: EV105 return.lifecycle.closed
+    OMS->>Webhook: EV205 source.sync.returned
+    Webhook->>Channel: push.webhook
+    Webhook-->>Webhook: Fail205 → Retry

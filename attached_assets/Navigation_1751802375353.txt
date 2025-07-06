@@ -1,0 +1,81 @@
+# Saylogix Replit Scaffolding Prompt
+
+## Goal
+Scaffold a modular layout system in React for Saylogix, covering routing, sidebar menu, global components, scan logic, and reporting.
+
+---
+
+## 1. Screens Array Definition
+Each item in `screens` should include:
+
+```js
+{
+  path: '/orders',
+  component: Orders,
+  label: 'Orders',
+  menuGroup: 'Fulfillment',
+  scan: { enabled: false }
+}
+```
+
+### Nested Routes Example (for Inventory):
+```js
+{
+  path: '/inventory',
+  label: 'Inventory',
+  menuGroup: 'Warehouse',
+  children: [
+    { path: 'view', component: InventoryView, label: 'View', scan: { enabled: true, context: 'sku' } },
+    { path: 'adjust', component: InventoryAdjust, label: 'Adjust', scan: { enabled: true, context: 'sku' } },
+    { path: 'cycle-count', component: CycleCount, label: 'Cycle Count', scan: { enabled: true, context: 'bin' } },
+    { path: 'expiry-report', component: ExpiryReport, label: 'Expiry Report', scan: { enabled: false } },
+  ]
+}
+```
+
+---
+
+## 2. Layout Components
+- `SidebarMenu`: auto-generated from `screens` grouped by `menuGroup`
+- `TopNavBar`: includes GlobalSearch, ScanButton, UserMenu
+- `AlertsBanner`: persistent below TopNavBar
+- `MyTasks`: floating bottom-left
+- `ScanOverlay`: shown only when scan.enabled = true, context passed as prop
+
+---
+
+## 3. Route Management
+- Use React Router `Routes` to dynamically load each screen
+- Use `useLocation()` to get the current path
+- Dynamically find `scan` setting from `screens` to control `ScanOverlay`
+
+---
+
+## 4. Scan Contexts
+Supported contexts:
+- `bin` → e.g. for putaway, cycle count
+- `sku` → for picking, inventory adjustments
+- `tote` → for packing
+- `AWB` → for dispatch
+
+If `scan.enabled = false`, do not show scanner.
+
+---
+
+## 5. Reports Module
+Treat `/reports` as a full-featured tabbed screen:
+- `/reports/operations`
+- `/reports/courier-performance`
+- `/reports/returns`
+- `/reports/address-quality`
+- `/reports/exceptions`
+
+All should be scan-free, UI-driven, and include filters, charts, exports.
+
+---
+
+## 6. Bonus
+- No hardcoded paths in menu
+- Menu should be dynamic, sorted alphabetically within each group
+- Use `children` arrays to support nested routing for modules like `inventory` and `reports`
+- Fallback route should redirect to `/dashboard`
