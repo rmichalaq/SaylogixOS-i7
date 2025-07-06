@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart3, Download, Calendar, TrendingUp, Package, Truck, Users, AlertTriangle } from "lucide-react";
+import { BarChart3, Download, Calendar, TrendingUp, Package, Truck, Users, AlertTriangle, Clock } from "lucide-react";
 
 export default function ReportsPage() {
   const [timeRange, setTimeRange] = useState("7days");

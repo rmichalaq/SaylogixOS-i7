@@ -265,6 +265,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Inbound Shipments API
+  app.get("/api/inbound/shipments", async (req, res) => {
+    try {
+      // For now, return empty array since we don't have inbound shipments table yet
+      // This will be properly implemented when the inbound module is expanded
+      res.json([]);
+    } catch (error) {
+      console.error("Failed to get inbound shipments:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/inbound/items", async (req, res) => {
+    try {
+      // For now, return empty array since we don't have inbound items table yet
+      // This will be properly implemented when the inbound module is expanded
+      res.json([]);
+    } catch (error) {
+      console.error("Failed to get inbound items:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // WebSocket setup for real-time updates

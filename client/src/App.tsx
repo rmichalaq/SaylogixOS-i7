@@ -6,6 +6,7 @@ import Dashboard from "@/components/dashboard/Dashboard";
 import OrdersPage from "@/pages/orders/OrdersPage";
 import VerifyPage from "@/pages/verify/VerifyPage";
 import InventoryPage from "@/pages/inventory/InventoryPage";
+import InboundPage from "@/pages/Inbound";
 import PickingPage from "@/pages/picking/PickingPage";
 import PackingPage from "@/pages/packing/PackingPage";
 import DispatchPage from "@/pages/dispatch/DispatchPage";
@@ -24,7 +25,7 @@ function App() {
           <Route path="/orders" component={OrdersPage} />
           <Route path="/verify" component={VerifyPage} />
           <Route path="/inventory" component={InventoryPage} />
-          <Route path="/inbound" component={() => <div>Inbound Module Coming Soon</div>} />
+          <Route path="/inbound" component={InboundPage} />
           <Route path="/picking" component={PickingPage} />
           <Route path="/packing" component={PackingPage} />
           <Route path="/dispatch" component={DispatchPage} />
