@@ -46,58 +46,101 @@ export default function TopNavBar() {
   };
 
   return (
-    <header className="h-16 bg-white shadow-sm border-b border-gray-200 flex items-center justify-between px-6">
-      {/* Left side - Title and breadcrumb */}
+    <header className="h-16 bg-white shadow-sm border-b border-gray-200 flex items-center justify-between px-4 lg:px-6">
+      {/* Left side - Mobile menu button + Title and breadcrumb */}
       <div className="flex items-center space-x-4">
-        <h1 className="text-xl font-semibold text-secondary-700">
-          {getPageTitle()}
-        </h1>
-        <nav className="text-sm text-secondary-500">
-          {getBreadcrumb()}
-        </nav>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="lg:hidden"
+          onClick={() => {
+            // This would typically toggle the mobile sidebar
+            console.log("Toggle mobile menu");
+          }}
+        >
+          <i className="fas fa-bars"></i>
+        </Button>
+        
+        <div className="flex flex-col">
+          <h1 className="text-lg lg:text-xl font-semibold text-secondary-700">
+            {getPageTitle()}
+          </h1>
+          <nav className="text-xs lg:text-sm text-secondary-500 hidden sm:block">
+            {getBreadcrumb()}
+          </nav>
+        </div>
       </div>
 
       {/* Right side - Actions */}
-      <div className="flex items-center space-x-4">
-        {/* Global Search */}
-        <form onSubmit={handleSearch} className="relative">
+      <div className="flex items-center space-x-2 lg:space-x-4">
+        {/* Global Search - Hide on mobile */}
+        <form onSubmit={handleSearch} className="relative hidden md:block">
           <Input
             type="text"
             placeholder="Search orders, SKUs, AWBs..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-80 pl-10 pr-4"
+            className="w-48 lg:w-80 pl-10 pr-4"
           />
           <i className="fas fa-search absolute left-3 top-3 text-secondary-400"></i>
         </form>
+
+        {/* Search icon for mobile */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="md:hidden"
+          onClick={() => {
+            // Toggle mobile search
+            console.log("Toggle mobile search");
+          }}
+        >
+          <i className="fas fa-search"></i>
+        </Button>
 
         {/* Scan Button */}
         {currentScreen?.scan.enabled && (
           <Button
             onClick={() => openScanner(currentScreen.scan.context || "general")}
-            className="flex items-center px-4 py-2 bg-primary-500 text-white hover:bg-primary-600"
+            className="flex items-center px-2 lg:px-4 py-2 bg-primary-500 text-white hover:bg-primary-600"
           >
-            <i className="fas fa-qrcode mr-2"></i>
-            Scan
+            <i className="fas fa-qrcode lg:mr-2"></i>
+            <span className="hidden lg:inline">Scan</span>
           </Button>
         )}
 
         {/* Notifications */}
-        <button className="relative p-2 text-secondary-500 hover:text-secondary-700">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="relative"
+          onClick={() => {
+            // Toggle notifications panel
+            console.log("Toggle notifications");
+          }}
+        >
           <i className="fas fa-bell"></i>
           <span className="absolute -top-1 -right-1 h-4 w-4 bg-error-500 text-white text-xs rounded-full flex items-center justify-center">
             3
           </span>
-        </button>
+        </Button>
 
         {/* User Menu */}
         <div className="relative">
-          <button className="flex items-center space-x-2 p-2 text-secondary-600 hover:text-secondary-700">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex items-center space-x-2"
+            onClick={() => {
+              // Toggle user menu
+              console.log("Toggle user menu");
+            }}
+          >
             <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center">
               <span className="text-white text-sm font-medium">SA</span>
             </div>
-            <i className="fas fa-chevron-down text-xs"></i>
-          </button>
+            <i className="fas fa-chevron-down text-xs hidden lg:inline"></i>
+          </Button>
         </div>
       </div>
     </header>

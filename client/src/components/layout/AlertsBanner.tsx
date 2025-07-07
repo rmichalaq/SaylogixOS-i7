@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Link } from "wouter";
 
 interface SystemAlert {
   id: string;
@@ -9,6 +10,7 @@ interface SystemAlert {
   message: string;
   count?: number;
   action?: string;
+  actionLink?: string;
 }
 
 export default function AlertsBanner() {
@@ -58,23 +60,48 @@ export default function AlertsBanner() {
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 px-4 lg:px-6">
       {activeAlerts.map((alert: SystemAlert) => (
         <Alert
           key={alert.id}
           className={`border-l-4 ${getAlertColor(alert.type)}`}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <i className={`${getAlertIcon(alert.type)} mr-3`}></i>
-              <AlertDescription>
-                <strong>System Alert:</strong> {alert.message}
-                {alert.count && ` (${alert.count})`}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="flex items-start sm:items-center">
+              <i className={`${getAlertIcon(alert.type)} mr-3 mt-0.5 sm:mt-0 flex-shrink-0`}></i>
+              <AlertDescription className="flex-1">
+                {alert.actionLink ? (
+                  <Link href={alert.actionLink}>
+                    <a className="hover:underline cursor-pointer">
+                      <strong>System Alert:</strong> {alert.message}
+                      {alert.count && ` (${alert.count})`}
+                    </a>
+                  </Link>
+                ) : (
+                  <>
+                    <strong>System Alert:</strong> {alert.message}
+                    {alert.count && ` (${alert.count})`}
+                  </>
+                )}
               </AlertDescription>
             </div>
-            <div className="flex items-center space-x-2">
-              {alert.action && (
-                <Button variant="outline" size="sm">
+            <div className="flex items-center space-x-2 self-end sm:self-auto">
+              {alert.action && alert.actionLink && (
+                <Link href={alert.actionLink}>
+                  <Button variant="outline" size="sm">
+                    {alert.action}
+                  </Button>
+                </Link>
+              )}
+              {alert.action && !alert.actionLink && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    // Handle action without link
+                    console.log(`Action: ${alert.action}`);
+                  }}
+                >
                   {alert.action}
                 </Button>
               )}

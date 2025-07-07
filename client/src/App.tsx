@@ -25,6 +25,7 @@ function App() {
           <Route path="/orders" component={OrdersPage} />
           <Route path="/verify" component={VerifyPage} />
           <Route path="/inventory" component={InventoryPage} />
+          <Route path="/inventory/:action" component={InventoryPage} />
           <Route path="/inbound" component={InboundPage} />
           <Route path="/picking" component={PickingPage} />
           <Route path="/packing" component={PackingPage} />
@@ -32,6 +33,7 @@ function App() {
           <Route path="/lastmile" component={LastMilePage} />
           <Route path="/tracking" component={TrackingPage} />
           <Route path="/reports" component={ReportsPage} />
+          <Route path="/reports/:reportType" component={ReportsPage} />
           <Route component={NotFoundPage} />
         </AppLayout>
         <Toaster />

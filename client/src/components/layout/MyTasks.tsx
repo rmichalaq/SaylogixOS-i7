@@ -56,20 +56,25 @@ export default function MyTasks() {
 
   if (isMinimized) {
     return (
-      <div className="fixed bottom-6 left-6 z-40">
+      <div className="fixed bottom-4 left-4 lg:bottom-6 lg:left-6 z-40">
         <Button
           onClick={() => setIsMinimized(false)}
-          className="bg-primary-500 hover:bg-primary-600 text-white rounded-full w-12 h-12"
+          className="bg-primary-500 hover:bg-primary-600 text-white rounded-full w-12 h-12 shadow-lg"
         >
           <i className="fas fa-tasks"></i>
+          {tasks.length > 0 && (
+            <span className="absolute -top-1 -right-1 h-5 w-5 bg-error-500 text-white text-xs rounded-full flex items-center justify-center">
+              {tasks.length}
+            </span>
+          )}
         </Button>
       </div>
     );
   }
 
   return (
-    <div className="fixed bottom-6 left-6 z-40">
-      <Card className="w-80 shadow-lg">
+    <div className="fixed bottom-4 left-4 lg:bottom-6 lg:left-6 z-40">
+      <Card className="w-72 lg:w-80 shadow-lg max-h-96">
         <CardHeader className="p-4 border-b border-gray-200 flex flex-row items-center justify-between space-y-0">
           <CardTitle className="text-base font-semibold text-secondary-900 flex items-center">
             <i className="fas fa-tasks mr-2 text-primary-500"></i>
@@ -98,18 +103,29 @@ export default function MyTasks() {
           ) : (
             <div className="space-y-3">
               {tasks.map((task: Task) => (
-                <div key={task.id} className="flex items-start space-x-3">
+                <div 
+                  key={task.id} 
+                  className="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                  onClick={() => {
+                    // Navigate to task details or relevant page
+                    if (task.orderId) {
+                      console.log(`Navigate to order ${task.orderId}`);
+                    } else {
+                      console.log(`Handle task: ${task.type}`);
+                    }
+                  }}
+                >
                   <div 
-                    className={`w-2 h-2 rounded-full mt-2 ${getPriorityColor(task.priority)}`}
+                    className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${getPriorityColor(task.priority)}`}
                   ></div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2">
-                      <i className={`${getPriorityIcon(task.type)} text-sm text-secondary-600`}></i>
-                      <p className="text-sm text-secondary-900 font-medium">
+                      <i className={`${getPriorityIcon(task.type)} text-sm text-secondary-600 flex-shrink-0`}></i>
+                      <p className="text-sm text-secondary-900 font-medium truncate">
                         {task.title}
                       </p>
                     </div>
-                    <p className="text-xs text-secondary-500 mt-1">
+                    <p className="text-xs text-secondary-500 mt-1 line-clamp-2">
                       {task.description}
                     </p>
                     <div className="flex items-center justify-between mt-2">

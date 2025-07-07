@@ -22,6 +22,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/dashboard/alerts", async (req, res) => {
+    try {
+      // Sample alerts data - in production this would come from system monitoring
+      const alerts = [
+        {
+          id: "alert-001",
+          type: "warning",
+          message: "3 orders require address verification",
+          count: 3,
+          action: "Review",
+          actionLink: "/verify"
+        },
+        {
+          id: "alert-002", 
+          type: "info",
+          message: "2 courier assignments pending",
+          count: 2,
+          action: "Assign",
+          actionLink: "/dispatch"
+        }
+      ];
+      res.json(alerts);
+    } catch (error) {
+      console.error("Failed to get alerts:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/dashboard/tasks", async (req, res) => {
+    try {
+      // Sample tasks data - in production this would come from task management system
+      const tasks = [
+        {
+          id: "task-001",
+          type: "address_verification",
+          title: "Verify Customer Address",
+          description: "Customer reported incomplete address for order SLX-2024-001247",
+          priority: "high",
+          orderId: 1247,
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: "task-002",
+          type: "picking_exception", 
+          title: "SKU Not Found",
+          description: "SKU ABC-123 not found in bin location A-12-03",
+          priority: "urgent",
+          orderId: 1248,
+          createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString()
+        },
+        {
+          id: "task-003",
+          type: "courier_assignment",
+          title: "Assign Courier Partner",
+          description: "Order ready for dispatch but no courier assigned",
+          priority: "normal",
+          orderId: 1249,
+          createdAt: new Date(Date.now() - 60 * 60 * 1000).toISOString()
+        }
+      ];
+      res.json(tasks);
+    } catch (error) {
+      console.error("Failed to get tasks:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/dashboard/activity", async (req, res) => {
+    try {
+      // Sample activity data for real-time updates
+      const activity = [
+        {
+          id: "activity-001",
+          type: "order_received",
+          message: "New order received from Shopify",
+          timestamp: new Date().toISOString(),
+          orderId: 1250
+        },
+        {
+          id: "activity-002",
+          type: "picking_completed",
+          message: "Order SLX-001247 picking completed",
+          timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+          orderId: 1247
+        }
+      ];
+      res.json(activity);
+    } catch (error) {
+      console.error("Failed to get activity:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Orders API
   app.get("/api/orders", async (req, res) => {
     try {

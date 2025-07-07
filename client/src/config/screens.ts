@@ -1,14 +1,14 @@
 import Dashboard from "@/pages/Dashboard";
-import Orders from "@/pages/Orders";
-import AddressVerify from "@/pages/AddressVerify";
-import Tracking from "@/pages/Tracking";
-import Inventory from "@/pages/Inventory";
-import Inbound from "@/pages/Inbound";
-import Picking from "@/pages/Picking";
-import Packing from "@/pages/Packing";
-import Dispatch from "@/pages/Dispatch";
-import LastMile from "@/pages/LastMile";
-import Reports from "@/pages/Reports";
+import OrdersPage from "@/pages/orders/OrdersPage";
+import VerifyPage from "@/pages/AddressVerify";
+import TrackingPage from "@/pages/tracking/TrackingPage";
+import InventoryPage from "@/pages/inventory/InventoryPage";
+import InboundPage from "@/pages/Inbound";
+import PickingPage from "@/pages/picking/PickingPage";
+import PackingPage from "@/pages/packing/PackingPage";
+import DispatchPage from "@/pages/dispatch/DispatchPage";
+import LastMilePage from "@/pages/lastmile/LastMilePage";
+import ReportsPage from "@/pages/reports/ReportsPage";
 
 export interface ScreenConfig {
   path: string;
@@ -31,7 +31,7 @@ export const screens: ScreenConfig[] = [
   },
   {
     path: "/orders",
-    component: Orders,
+    component: OrdersPage,
     label: "Orders (OMS)",
     menuGroup: "Fulfillment",
     scan: { enabled: false },
@@ -39,7 +39,7 @@ export const screens: ScreenConfig[] = [
   },
   {
     path: "/verify",
-    component: AddressVerify,
+    component: VerifyPage,
     label: "Address Verify (NAS)",
     menuGroup: "Fulfillment",
     scan: { enabled: false },
@@ -47,7 +47,7 @@ export const screens: ScreenConfig[] = [
   },
   {
     path: "/tracking",
-    component: Tracking,
+    component: TrackingPage,
     label: "Tracking",
     menuGroup: "Fulfillment",
     scan: { enabled: true, context: "AWB" },
@@ -55,7 +55,7 @@ export const screens: ScreenConfig[] = [
   },
   {
     path: "/inventory",
-    component: Inventory,
+    component: InventoryPage,
     label: "Inventory (WMS)",
     menuGroup: "Warehouse",
     scan: { enabled: true, context: "sku" },
@@ -63,7 +63,7 @@ export const screens: ScreenConfig[] = [
     children: [
       {
         path: "/inventory/view",
-        component: Inventory,
+        component: InventoryPage,
         label: "View",
         menuGroup: "Warehouse",
         scan: { enabled: true, context: "sku" },
@@ -71,7 +71,7 @@ export const screens: ScreenConfig[] = [
       },
       {
         path: "/inventory/adjust",
-        component: Inventory,
+        component: InventoryPage,
         label: "Adjust",
         menuGroup: "Warehouse",
         scan: { enabled: true, context: "sku" },
@@ -79,7 +79,7 @@ export const screens: ScreenConfig[] = [
       },
       {
         path: "/inventory/cycle-count",
-        component: Inventory,
+        component: InventoryPage,
         label: "Cycle Count",
         menuGroup: "Warehouse",
         scan: { enabled: true, context: "bin" },
@@ -87,7 +87,7 @@ export const screens: ScreenConfig[] = [
       },
       {
         path: "/inventory/expiry-report",
-        component: Inventory,
+        component: InventoryPage,
         label: "Expiry Report",
         menuGroup: "Warehouse",
         scan: { enabled: false },
@@ -97,7 +97,7 @@ export const screens: ScreenConfig[] = [
   },
   {
     path: "/inbound",
-    component: Inbound,
+    component: InboundPage,
     label: "Inbound",
     menuGroup: "Warehouse",
     scan: { enabled: true, context: "bin" },
@@ -105,7 +105,7 @@ export const screens: ScreenConfig[] = [
   },
   {
     path: "/picking",
-    component: Picking,
+    component: PickingPage,
     label: "Picking",
     menuGroup: "Warehouse",
     scan: { enabled: true, context: "sku" },
@@ -113,7 +113,7 @@ export const screens: ScreenConfig[] = [
   },
   {
     path: "/packing",
-    component: Packing,
+    component: PackingPage,
     label: "Packing",
     menuGroup: "Warehouse",
     scan: { enabled: true, context: "tote" },
@@ -121,7 +121,7 @@ export const screens: ScreenConfig[] = [
   },
   {
     path: "/dispatch",
-    component: Dispatch,
+    component: DispatchPage,
     label: "Dispatch (DMS)",
     menuGroup: "Dispatch",
     scan: { enabled: true, context: "AWB" },
@@ -129,7 +129,7 @@ export const screens: ScreenConfig[] = [
   },
   {
     path: "/lastmile",
-    component: LastMile,
+    component: LastMilePage,
     label: "Last Mile (LMS)",
     menuGroup: "Dispatch",
     scan: { enabled: true, context: "AWB" },
@@ -137,7 +137,7 @@ export const screens: ScreenConfig[] = [
   },
   {
     path: "/reports",
-    component: Reports,
+    component: ReportsPage,
     label: "Reports",
     menuGroup: "Analytics",
     scan: { enabled: false },
@@ -145,7 +145,7 @@ export const screens: ScreenConfig[] = [
     children: [
       {
         path: "/reports/operations",
-        component: Reports,
+        component: ReportsPage,
         label: "Operations",
         menuGroup: "Analytics",
         scan: { enabled: false },
@@ -153,7 +153,7 @@ export const screens: ScreenConfig[] = [
       },
       {
         path: "/reports/courier-performance",
-        component: Reports,
+        component: ReportsPage,
         label: "Courier Performance",
         menuGroup: "Analytics",
         scan: { enabled: false },
@@ -161,7 +161,7 @@ export const screens: ScreenConfig[] = [
       },
       {
         path: "/reports/returns",
-        component: Reports,
+        component: ReportsPage,
         label: "Returns",
         menuGroup: "Analytics",
         scan: { enabled: false },
@@ -169,7 +169,7 @@ export const screens: ScreenConfig[] = [
       },
       {
         path: "/reports/address-quality",
-        component: Reports,
+        component: ReportsPage,
         label: "Address Quality",
         menuGroup: "Analytics",
         scan: { enabled: false },
@@ -177,7 +177,7 @@ export const screens: ScreenConfig[] = [
       },
       {
         path: "/reports/exceptions",
-        component: Reports,
+        component: ReportsPage,
         label: "Exceptions",
         menuGroup: "Analytics",
         scan: { enabled: false },
