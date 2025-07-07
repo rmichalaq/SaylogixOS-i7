@@ -11,6 +11,9 @@ export default function SidebarMenu() {
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const { isCollapsed, isMobile, toggleSidebar, setIsCollapsed, setIsMobile } = useSidebar();
 
+  // Debug log
+  console.log('Sidebar state:', { isCollapsed, isMobile });
+
   // Handle responsive behavior
   useEffect(() => {
     const handleResize = () => {
@@ -79,19 +82,18 @@ export default function SidebarMenu() {
               </span>
             )}
           </div>
-          {!isMobile && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleCollapse}
-              className="p-1 h-8 w-8 flex-shrink-0"
-            >
-              <i className={cn(
-                "fas transition-transform",
-                isCollapsed ? "fa-chevron-right" : "fa-chevron-left"
-              )}></i>
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleCollapse}
+            className="p-1 h-8 w-8 flex-shrink-0"
+            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <i className={cn(
+              "fas transition-transform",
+              isCollapsed ? "fa-chevron-right" : "fa-chevron-left"
+            )}></i>
+          </Button>
         </div>
 
         {/* Navigation Menu */}

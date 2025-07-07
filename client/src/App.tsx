@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SidebarProvider } from "@/context/SidebarContext";
+import TestDashboard from "@/pages/TestDashboard";
 import Dashboard from "@/pages/Dashboard";
 import OrdersPage from "@/pages/orders/OrdersPage";
 import VerifyPage from "@/pages/AddressVerify";
@@ -22,8 +23,8 @@ function App() {
       <SidebarProvider>
         <Router>
           <AppLayout>
-            <Route path="/" component={Dashboard} />
-            <Route path="/dashboard" component={Dashboard} />
+            <Route path="/" component={TestDashboard} />
+            <Route path="/dashboard" component={TestDashboard} />
             <Route path="/orders" component={OrdersPage} />
             <Route path="/verify" component={VerifyPage} />
             <Route path="/inventory" component={InventoryPage} />
