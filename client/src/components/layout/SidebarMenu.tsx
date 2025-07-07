@@ -100,9 +100,9 @@ export default function SidebarMenu() {
                 {screens.map((screen) => (
                   <div key={screen.path}>
                     <Link href={screen.path}>
-                      <a
+                      <span
                         className={cn(
-                          "flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors group relative",
+                          "flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors group relative cursor-pointer",
                           isActiveScreen(screen)
                             ? "text-primary-600 bg-primary-50"
                             : "text-secondary-600 hover:bg-gray-100"
