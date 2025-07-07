@@ -11,15 +11,15 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="layout-container bg-gray-50">
       <SidebarMenu />
       
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+      <div className="main-content">
         <TopNavBar />
         <AlertsBanner />
         
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-          <div className="max-w-full mx-auto">
+        <main className="content-area">
+          <div className="w-full">
             {children}
           </div>
         </main>

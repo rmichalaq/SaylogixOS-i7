@@ -16,11 +16,11 @@ export default function SidebarMenu() {
     const handleResize = () => {
       const width = window.innerWidth;
       setIsMobile(width < 1024);
-      // Don't auto-collapse on desktop
+      // Auto-collapse on smaller screens but keep visible as icons
       if (width < 768) {
         setIsCollapsed(true);
       } else if (width >= 1024) {
-        setIsCollapsed(false); // Always show on desktop
+        // Don't auto-expand on desktop - let user control it
       }
     };
 
@@ -53,7 +53,7 @@ export default function SidebarMenu() {
       {/* Mobile Overlay */}
       {isMobile && !isCollapsed && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          className="sidebar-mobile-overlay lg:hidden"
           onClick={() => setIsCollapsed(true)}
         />
       )}
@@ -62,13 +62,14 @@ export default function SidebarMenu() {
       <aside className={cn(
         "bg-white shadow-lg flex flex-col transition-all duration-300 z-50 border-r border-gray-200",
         isMobile ? "fixed" : "relative",
-        "h-full",
-        isCollapsed ? "w-16" : "w-64",
-        isMobile && isCollapsed ? "-translate-x-full" : "translate-x-0"
+        "h-full flex-shrink-0",
+        isCollapsed ? "sidebar-collapsed" : "sidebar-expanded",
+        // On mobile, hide completely when collapsed, on desktop always show as icons
+        isMobile && isCollapsed ? "sidebar-mobile-hidden" : "translate-x-0"
       )}>
         {/* Logo Section */}
         <div className="h-16 flex items-center px-4 border-b border-gray-200">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 flex-1 min-w-0">
             <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center flex-shrink-0">
               <i className="fas fa-cube text-white text-sm"></i>
             </div>
@@ -78,17 +79,19 @@ export default function SidebarMenu() {
               </span>
             )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleCollapse}
-            className="ml-auto p-1 h-8 w-8"
-          >
-            <i className={cn(
-              "fas transition-transform",
-              isCollapsed ? "fa-chevron-right" : "fa-chevron-left"
-            )}></i>
-          </Button>
+          {!isMobile && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleCollapse}
+              className="p-1 h-8 w-8 flex-shrink-0"
+            >
+              <i className={cn(
+                "fas transition-transform",
+                isCollapsed ? "fa-chevron-right" : "fa-chevron-left"
+              )}></i>
+            </Button>
+          )}
         </div>
 
         {/* Navigation Menu */}
