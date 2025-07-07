@@ -3,28 +3,31 @@ import { getMenuGroups, type ScreenConfig } from "@/config/screens";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useSidebar } from "@/context/SidebarContext";
 
 export default function SidebarMenu() {
   const [location] = useLocation();
   const menuGroups = getMenuGroups();
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const { isCollapsed, isMobile, toggleSidebar, setIsCollapsed, setIsMobile } = useSidebar();
 
   // Handle responsive behavior
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
       setIsMobile(width < 1024);
+      // Don't auto-collapse on desktop
       if (width < 768) {
         setIsCollapsed(true);
+      } else if (width >= 1024) {
+        setIsCollapsed(false); // Always show on desktop
       }
     };
 
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [setIsCollapsed, setIsMobile]);
 
   const toggleGroup = (groupName: string) => {
     setExpandedGroups(prev => ({
@@ -34,7 +37,7 @@ export default function SidebarMenu() {
   };
 
   const toggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
+    toggleSidebar();
   };
 
   const isActiveScreen = (screen: ScreenConfig): boolean => {
@@ -60,7 +63,9 @@ export default function SidebarMenu() {
         "bg-white shadow-lg flex flex-col transition-all duration-300 z-50",
         "fixed lg:relative h-full",
         isCollapsed ? "w-16" : "w-64",
-        isMobile && isCollapsed ? "-translate-x-full" : "translate-x-0"
+        isMobile && isCollapsed ? "-translate-x-full" : "translate-x-0",
+        // Ensure sidebar is visible on desktop
+        !isMobile ? "relative" : "fixed"
       )}>
         {/* Logo Section */}
         <div className="h-16 flex items-center px-4 border-b border-gray-200">
@@ -99,8 +104,8 @@ export default function SidebarMenu() {
               <div className="space-y-1">
                 {screens.map((screen) => (
                   <div key={screen.path}>
-                    <Link href={screen.path}>
-                      <a
+                    {screen.children ? (
+                      <div 
                         className={cn(
                           "flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors group relative cursor-pointer",
                           isActiveScreen(screen)
@@ -108,24 +113,18 @@ export default function SidebarMenu() {
                             : "text-secondary-600 hover:bg-gray-100"
                         )}
                         title={isCollapsed ? screen.label : undefined}
+                        onClick={() => toggleGroup(screen.path)}
                       >
                         <i className={cn(screen.icon, "w-5 h-5 flex-shrink-0", isCollapsed ? "mx-auto" : "mr-3")}></i>
                         {!isCollapsed && (
                           <>
                             <span className="truncate">{screen.label}</span>
-                            {screen.children && (
-                              <i 
-                                className={cn(
-                                  "fas fa-chevron-right w-3 h-3 ml-auto transition-transform flex-shrink-0",
-                                  expandedGroups[screen.path] ? "rotate-90" : ""
-                                )}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  toggleGroup(screen.path);
-                                }}
-                              ></i>
-                            )}
+                            <i 
+                              className={cn(
+                                "fas fa-chevron-right w-3 h-3 ml-auto transition-transform flex-shrink-0",
+                                expandedGroups[screen.path] ? "rotate-90" : ""
+                              )}
+                            ></i>
                           </>
                         )}
                         
@@ -135,17 +134,41 @@ export default function SidebarMenu() {
                             {screen.label}
                           </div>
                         )}
-                      </a>
-                    </Link>
+                      </div>
+                    ) : (
+                      <Link href={screen.path}>
+                        <div 
+                          className={cn(
+                            "flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors group relative cursor-pointer",
+                            isActiveScreen(screen)
+                              ? "text-primary-600 bg-primary-50"
+                              : "text-secondary-600 hover:bg-gray-100"
+                          )}
+                          title={isCollapsed ? screen.label : undefined}
+                        >
+                          <i className={cn(screen.icon, "w-5 h-5 flex-shrink-0", isCollapsed ? "mx-auto" : "mr-3")}></i>
+                          {!isCollapsed && (
+                            <span className="truncate">{screen.label}</span>
+                          )}
+                          
+                          {/* Tooltip for collapsed state */}
+                          {isCollapsed && (
+                            <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity z-50 whitespace-nowrap">
+                              {screen.label}
+                            </div>
+                          )}
+                        </div>
+                      </Link>
+                    )}
                     
                     {/* Child Routes */}
                     {!isCollapsed && screen.children && expandedGroups[screen.path] && (
                       <div className="ml-6 mt-1 space-y-1">
                         {screen.children.map((child) => (
                           <Link key={child.path} href={child.path}>
-                            <a
+                            <div
                               className={cn(
-                                "flex items-center px-3 py-2 text-sm rounded-lg transition-colors",
+                                "flex items-center px-3 py-2 text-sm rounded-lg transition-colors cursor-pointer",
                                 location === child.path
                                   ? "text-primary-600 bg-primary-50"
                                   : "text-secondary-500 hover:bg-gray-50"
@@ -153,7 +176,7 @@ export default function SidebarMenu() {
                             >
                               <i className={cn(child.icon, "w-4 h-4 mr-3 flex-shrink-0")}></i>
                               <span className="truncate">{child.label}</span>
-                            </a>
+                            </div>
                           </Link>
                         ))}
                       </div>

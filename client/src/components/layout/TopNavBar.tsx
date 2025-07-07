@@ -3,11 +3,13 @@ import { getScreenByPath } from "@/config/screens";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useSidebar } from "@/context/SidebarContext";
 
 export default function TopNavBar() {
   const [location] = useLocation();
   const currentScreen = getScreenByPath(location);
   const [searchQuery, setSearchQuery] = useState("");
+  const { toggleSidebar } = useSidebar();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,10 +53,7 @@ export default function TopNavBar() {
           variant="ghost"
           size="sm"
           className="lg:hidden"
-          onClick={() => {
-            // This would typically toggle the mobile sidebar
-            console.log("Toggle mobile menu");
-          }}
+          onClick={toggleSidebar}
         >
           <i className="fas fa-bars"></i>
         </Button>

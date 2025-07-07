@@ -14,7 +14,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     <div className="flex h-screen overflow-hidden bg-gray-50">
       <SidebarMenu />
       
-      <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
+      <div className="flex-1 flex flex-col overflow-hidden">
         <TopNavBar />
         <AlertsBanner />
         
