@@ -60,12 +60,11 @@ export default function SidebarMenu() {
 
       {/* Sidebar */}
       <aside className={cn(
-        "bg-white shadow-lg flex flex-col transition-all duration-300 z-50",
-        "fixed lg:relative h-full",
+        "bg-white shadow-lg flex flex-col transition-all duration-300 z-50 border-r border-gray-200",
+        isMobile ? "fixed" : "relative",
+        "h-full",
         isCollapsed ? "w-16" : "w-64",
-        isMobile && isCollapsed ? "-translate-x-full" : "translate-x-0",
-        // Ensure sidebar is visible on desktop
-        !isMobile ? "relative" : "fixed"
+        isMobile && isCollapsed ? "-translate-x-full" : "translate-x-0"
       )}>
         {/* Logo Section */}
         <div className="h-16 flex items-center px-4 border-b border-gray-200">

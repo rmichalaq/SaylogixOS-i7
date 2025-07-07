@@ -72,10 +72,10 @@ export default function AlertsBanner() {
               <AlertDescription className="flex-1">
                 {alert.actionLink ? (
                   <Link href={alert.actionLink}>
-                    <a className="hover:underline cursor-pointer">
+                    <span className="hover:underline cursor-pointer">
                       <strong>System Alert:</strong> {alert.message}
                       {alert.count && ` (${alert.count})`}
-                    </a>
+                    </span>
                   </Link>
                 ) : (
                   <>
