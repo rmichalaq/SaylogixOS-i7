@@ -1,6 +1,5 @@
 import { useLocation } from "wouter";
 import { getScreenByPath } from "@/config/screens";
-import { useScanner } from "@/hooks/useScanner";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +7,6 @@ import { Input } from "@/components/ui/input";
 export default function TopNavBar() {
   const [location] = useLocation();
   const currentScreen = getScreenByPath(location);
-  const { openScanner } = useScanner();
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleSearch = (e: React.FormEvent) => {
@@ -101,7 +99,10 @@ export default function TopNavBar() {
         {/* Scan Button */}
         {currentScreen?.scan.enabled && (
           <Button
-            onClick={() => openScanner(currentScreen.scan.context || "general")}
+            onClick={() => {
+              // Temporarily log instead of opening scanner
+              console.log("Scan button clicked for context:", currentScreen.scan.context || "general");
+            }}
             className="flex items-center px-2 lg:px-4 py-2 bg-primary-500 text-white hover:bg-primary-600"
           >
             <i className="fas fa-qrcode lg:mr-2"></i>

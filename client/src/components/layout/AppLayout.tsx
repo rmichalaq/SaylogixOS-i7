@@ -3,7 +3,6 @@ import SidebarMenu from "./SidebarMenu";
 import TopNavBar from "./TopNavBar";
 import AlertsBanner from "./AlertsBanner";
 import MyTasks from "./MyTasks";
-import ScanOverlay from "./ScanOverlay";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -26,7 +25,6 @@ export function AppLayout({ children }: AppLayoutProps) {
       </div>
       
       <MyTasks />
-      <ScanOverlay />
     </div>
   );
 }
