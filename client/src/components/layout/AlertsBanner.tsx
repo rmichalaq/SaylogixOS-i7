@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 
 interface SystemAlert {
   id: string;
@@ -71,11 +71,9 @@ export default function AlertsBanner() {
               <i className={`${getAlertIcon(alert.type)} mr-3 mt-0.5 sm:mt-0 flex-shrink-0`}></i>
               <AlertDescription className="flex-1">
                 {alert.actionLink ? (
-                  <Link href={alert.actionLink}>
-                    <span className="hover:underline cursor-pointer">
-                      <strong>System Alert:</strong> {alert.message}
-                      {alert.count && ` (${alert.count})`}
-                    </span>
+                  <Link to={alert.actionLink} className="hover:underline cursor-pointer">
+                    <strong>System Alert:</strong> {alert.message}
+                    {alert.count && ` (${alert.count})`}
                   </Link>
                 ) : (
                   <>

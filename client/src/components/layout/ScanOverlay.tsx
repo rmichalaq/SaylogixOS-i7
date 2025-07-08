@@ -5,8 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useScanner } from "@/hooks/useScanner";
 
-export default function ScanOverlay() {
-  const { isOpen, context, closeScanner, processScan } = useScanner();
+interface ScanOverlayProps {
+  context?: string;
+}
+
+export function ScanOverlay({ context: propContext }: ScanOverlayProps) {
+  const { isOpen, context: hookContext, closeScanner, processScan } = useScanner();
+  const context = propContext || hookContext;
   const [manualInput, setManualInput] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -68,8 +73,11 @@ export default function ScanOverlay() {
     }
   };
 
+  // Show overlay when explicitly enabled or when hook indicates open
+  const shouldShow = propContext ? true : isOpen;
+
   return (
-    <Dialog open={isOpen} onOpenChange={closeScanner}>
+    <Dialog open={shouldShow} onOpenChange={closeScanner}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center">
@@ -137,3 +145,5 @@ export default function ScanOverlay() {
     </Dialog>
   );
 }
+
+export default ScanOverlay;

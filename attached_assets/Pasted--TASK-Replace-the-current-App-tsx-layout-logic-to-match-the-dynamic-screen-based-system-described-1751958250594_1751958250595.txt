@@ -1,0 +1,88 @@
+🟦 TASK: Replace the current App.tsx layout logic to match the dynamic screen-based system described below. Do NOT hardcode routes manually. Instead:
+
+---
+
+✅ 1. ROUTING BASED ON `screens[]` CONFIG
+
+- Import the `screens` array from `/client/src/config/screens.ts`
+- Use React Router’s `useRoutes()` to auto-generate routes based on this array
+- Support nested routes using `.children[]` if present
+
+---
+
+✅ 2. SCAN OVERLAY LOGIC (PER ROUTE)
+
+- Use `useLocation()` to detect the current path
+- Match the active screen (and child if nested)
+- If `scan.enabled = true`, display `<ScanOverlay context={scan.context} />`
+- Otherwise, do not show ScanOverlay
+
+---
+
+✅ 3. LAYOUT STRUCTURE
+
+The layout should follow this structure:
+- Sidebar on the left → use `<SidebarMenu />`
+- Top navbar at top → use `<TopNavBar />`
+- Alerts banner just below navbar → `<AlertsBanner />`
+- Main content in `<main className="flex-grow p-4 overflow-auto">`
+- Floating task panel appears automatically (already in layout)
+
+---
+
+✅ 4. REQUIRED COMPONENTS
+
+Ensure these components are imported:
+- `SidebarMenu` from `/components/layout/SidebarMenu.tsx`
+- `TopNavBar` from `/components/layout/TopNavBar.tsx`
+- `AlertsBanner` from `/components/layout/AlertsBanner.tsx`
+- `ScanOverlay` from `/components/scanner/ScanOverlay.tsx`
+
+---
+
+✅ 5. SAMPLE STRUCTURE FOR App.tsx
+
+Use this logic (don’t hardcode):
+```tsx
+import { screens } from './config/screens';
+import { useRoutes, useLocation } from 'react-router-dom';
+import { SidebarMenu, TopNavBar, AlertsBanner } from './components/layout';
+import { ScanOverlay } from './components/scanner/ScanOverlay';
+
+function AppRoutes() {
+  const routes = screens.flatMap(screen =>
+    screen.children
+      ? screen.children.map(child => ({
+          path: `${screen.path}/${child.path}`,
+          element: <child.component />,
+        }))
+      : [{ path: screen.path, element: <screen.component /> }]
+  );
+  return useRoutes(routes);
+}
+
+function useScanContext() {
+  const location = useLocation();
+  const route = screens.find(s => location.pathname.startsWith(s.path));
+  const child = route?.children?.find(c => location.pathname.includes(c.path));
+  const scan = child?.scan ?? route?.scan ?? { enabled: false };
+  return scan;
+}
+
+export default function App() {
+  const scan = useScanContext();
+
+  return (
+    <div className="flex h-screen w-full">
+      <SidebarMenu />
+      <div className="flex flex-col flex-grow">
+        <TopNavBar />
+        <AlertsBanner />
+        <main className="flex-grow p-4 overflow-auto">
+          <AppRoutes />
+        </main>
+        {scan.enabled && <ScanOverlay context={scan.context} />}
+      </div>
+    </div>
+  );
+}

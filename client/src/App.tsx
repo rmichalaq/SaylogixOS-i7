@@ -1,55 +1,78 @@
-import { Route, Router } from "wouter";
+import { BrowserRouter, useRoutes, useLocation } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
-import { AppLayout } from "@/components/layout/AppLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SidebarProvider } from "@/context/SidebarContext";
-import TestDashboard from "@/pages/TestDashboard";
-import Dashboard from "@/pages/Dashboard";
-import OrdersPage from "@/pages/orders/OrdersPage";
-import VerifyPage from "@/pages/AddressVerify";
-import InventoryPage from "@/pages/inventory/InventoryPage";
-import InboundPage from "@/pages/Inbound";
-import PickingPage from "@/pages/picking/PickingPage";
-import PackingPage from "@/pages/packing/PackingPage";
-import DispatchPage from "@/pages/dispatch/DispatchPage";
-import LastMilePage from "@/pages/lastmile/LastMilePage";
-import TrackingPage from "@/pages/tracking/TrackingPage";
-import ReportsPage from "@/pages/reports/ReportsPage";
-import NotFoundPage from "@/pages/not-found";
+import { screens, type ScreenConfig } from "@/config/screens";
+import SidebarMenu from "@/components/layout/SidebarMenu";
+import TopNavBar from "@/components/layout/TopNavBar";
+import AlertsBanner from "@/components/layout/AlertsBanner";
+import MyTasks from "@/components/layout/MyTasks";
+import ScanOverlay from "@/components/layout/ScanOverlay";
+
+function AppRoutes() {
+  const routes = screens.flatMap(screen => {
+    const Component = screen.component;
+    const mainRoute = { path: screen.path, element: <Component /> };
+    
+    if (screen.children) {
+      const childRoutes = screen.children.map(child => {
+        const ChildComponent = child.component;
+        return {
+          path: child.path,
+          element: <ChildComponent />
+        };
+      });
+      return [mainRoute, ...childRoutes];
+    }
+    
+    return [mainRoute];
+  });
+
+  // Add root route to redirect to dashboard
+  const DashboardComponent = screens[0].component;
+  routes.unshift({ path: "/", element: <DashboardComponent /> });
+
+  return useRoutes(routes);
+}
+
+function useScanContext() {
+  const location = useLocation();
+  const route = screens.find(s => location.pathname.startsWith(s.path));
+  const child = route?.children?.find(c => location.pathname === c.path);
+  const scan = child?.scan ?? route?.scan ?? { enabled: false };
+  return scan;
+}
 
 function App() {
+  const scan = useScanContext();
+
+  return (
+    <div className="layout-container bg-gray-50">
+      <SidebarMenu />
+      <div className="main-content">
+        <TopNavBar />
+        <AlertsBanner />
+        <main className="content-area">
+          <AppRoutes />
+        </main>
+        {scan.enabled && <ScanOverlay context={scan.context} />}
+      </div>
+      <MyTasks />
+    </div>
+  );
+}
+
+function AppWithProviders() {
   return (
     <ErrorBoundary>
       <SidebarProvider>
-        <Router>
-          <AppLayout>
-            <Route path="/" component={TestDashboard} />
-            <Route path="/dashboard" component={TestDashboard} />
-            <Route path="/orders" component={OrdersPage} />
-            <Route path="/verify" component={VerifyPage} />
-            <Route path="/inventory" component={InventoryPage} />
-            <Route path="/inventory/view" component={InventoryPage} />
-            <Route path="/inventory/adjust" component={InventoryPage} />
-            <Route path="/inventory/cycle-count" component={InventoryPage} />
-            <Route path="/inbound" component={InboundPage} />
-            <Route path="/picking" component={PickingPage} />
-            <Route path="/packing" component={PackingPage} />
-            <Route path="/dispatch" component={DispatchPage} />
-            <Route path="/lastmile" component={LastMilePage} />
-            <Route path="/tracking" component={TrackingPage} />
-            <Route path="/reports" component={ReportsPage} />
-            <Route path="/reports/operations" component={ReportsPage} />
-            <Route path="/reports/courier-performance" component={ReportsPage} />
-            <Route path="/reports/returns" component={ReportsPage} />
-            <Route path="/reports/address-quality" component={ReportsPage} />
-            <Route path="/reports/exceptions" component={ReportsPage} />
-            <Route component={NotFoundPage} />
-          </AppLayout>
+        <BrowserRouter>
+          <App />
           <Toaster />
-        </Router>
+        </BrowserRouter>
       </SidebarProvider>
     </ErrorBoundary>
   );
 }
 
-export default App;
+export default AppWithProviders;
