@@ -1,4 +1,4 @@
-# Saylogix OS - Logistics Management System
+# Saylogix OS - Logistics Orchestration System
 
 ## Overview
 
@@ -75,6 +75,37 @@ Saylogix OS is a comprehensive fullstack logistics management system built as a 
 - **Real-time WebSocket** for live updates
 - **Webhook handlers** for external system integration
 - **Standardized error responses** and logging
+- **No dummy data used at any stage of development or testing**
+- **All integrations must connect and operate in real-time (no scheduled sync)**
+
+## Internal Order ID Format
+
+**Format:** `SL{YY}-{N}`  
+- **`SL`** – Static prefix identifying Saylogix orders  
+- **`{YY}`** – Last two digits of the Gregorian calendar year when the order was ingested  
+- **`{N}`** – Incremental integer starting from `1` per year, increasing sequentially for each new order
+
+### Examples
+- First order in 2025 → `SL25-1`
+- Second order in 2025 → `SL25-2`
+- First order in 2026 → `SL26-1`
+
+### Implementation Notes
+- **Storage:** Save in OMS database as `internal_order_id`
+- **Generation Logic:**  
+  On order ingestion:
+  1. Extract current year (`YY = new Date().getFullYear() % 100`)
+  2. Query existing max `N` where prefix = `SL{YY}` (e.g. `SL25`)
+  3. Increment `N` by 1
+  4. Format as `SL{YY}-{N}` and assign to order
+
+- **Uniqueness Guarantee:**
+  - Add a unique constraint on `internal_order_id`
+  - Ensure transactional lock or atomic increment to avoid duplicate IDs under race conditions
+
+- **Use Across Modules:**
+  - Pass both `internal_order_id` and `external_order_id` to all downstream systems (WMS, DMS, LMS, Tracking)
+  - Use in customer notifications and dashboards for consistency
 
 ## External Dependencies
 
