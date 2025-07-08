@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "wouter";
 import { getMenuGroups, type ScreenConfig } from "@/config/screens";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/context/SidebarContext";
 
 export default function SidebarMenu() {
-  const location = useLocation();
+  const [location] = useLocation();
   const menuGroups = getMenuGroups();
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const { isCollapsed, isMobile, toggleSidebar, setIsCollapsed, setIsMobile } = useSidebar();
@@ -44,9 +44,9 @@ export default function SidebarMenu() {
   };
 
   const isActiveScreen = (screen: ScreenConfig): boolean => {
-    if (screen.path === location.pathname) return true;
+    if (screen.path === location) return true;
     if (screen.children) {
-      return screen.children.some(child => child.path === location.pathname);
+      return screen.children.some(child => child.path === location);
     }
     return false;
   };

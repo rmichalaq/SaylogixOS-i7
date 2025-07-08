@@ -1,4 +1,4 @@
-import { useLocation } from "react-router-dom";
+import { useLocation } from "wouter";
 import { getScreenByPath } from "@/config/screens";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -7,8 +7,8 @@ import { useSidebar } from "@/context/SidebarContext";
 import { useScanner } from "@/hooks/useScanner";
 
 export default function TopNavBar() {
-  const location = useLocation();
-  const currentScreen = getScreenByPath(location.pathname);
+  const [location] = useLocation();
+  const currentScreen = getScreenByPath(location);
   const [searchQuery, setSearchQuery] = useState("");
   const { toggleSidebar } = useSidebar();
   const { openScanner } = useScanner();
@@ -20,7 +20,7 @@ export default function TopNavBar() {
   };
 
   const getBreadcrumb = () => {
-    const pathname = location.pathname;
+    const pathname = location;
     if (pathname === "/" || pathname === "/dashboard") {
       return "Home / Dashboard";
     }

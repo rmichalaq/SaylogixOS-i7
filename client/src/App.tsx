@@ -1,4 +1,4 @@
-import { BrowserRouter, useRoutes, useLocation } from "react-router-dom";
+import { Router, useLocation, Route, Switch } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SidebarProvider } from "@/context/SidebarContext";
@@ -10,46 +10,33 @@ import MyTasks from "@/components/layout/MyTasks";
 import ScanOverlay from "@/components/layout/ScanOverlay";
 
 function AppRoutes() {
-  const routes = screens.flatMap(screen => {
-    const Component = screen.component;
-    const mainRoute = { path: screen.path, element: <Component /> };
-    
-    if (screen.children) {
-      const childRoutes = screen.children.map(child => {
-        const ChildComponent = child.component;
-        return {
-          path: child.path,
-          element: <ChildComponent />
-        };
-      });
-      return [mainRoute, ...childRoutes];
-    }
-    
-    return [mainRoute];
-  });
-
-  // Add root route to redirect to dashboard
-  const DashboardComponent = screens[0].component;
-  routes.unshift({ path: "/", element: <DashboardComponent /> });
-
-  return useRoutes(routes);
+  return (
+    <Switch>
+      {screens.map(screen => {
+        const Component = screen.component;
+        return <Route key={screen.path} path={screen.path} component={Component} />;
+      })}
+      <Route path="/" component={screens[0].component} />
+    </Switch>
+  );
 }
 
 function App() {
-
   return (
-    <div className="layout-container bg-gray-50">
-      <SidebarMenu />
-      <div className="main-content">
-        <TopNavBar />
-        <AlertsBanner />
-        <main className="content-area">
-          <AppRoutes />
-        </main>
-        <ScanOverlay />
+    <Router>
+      <div className="layout-container bg-gray-50">
+        <SidebarMenu />
+        <div className="main-content">
+          <TopNavBar />
+          <AlertsBanner />
+          <main className="content-area">
+            <AppRoutes />
+          </main>
+          <ScanOverlay />
+        </div>
+        <MyTasks />
       </div>
-      <MyTasks />
-    </div>
+    </Router>
   );
 }
 
@@ -57,10 +44,8 @@ function AppWithProviders() {
   return (
     <ErrorBoundary>
       <SidebarProvider>
-        <BrowserRouter>
-          <App />
-          <Toaster />
-        </BrowserRouter>
+        <App />
+        <Toaster />
       </SidebarProvider>
     </ErrorBoundary>
   );
