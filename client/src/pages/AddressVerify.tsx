@@ -138,7 +138,7 @@ export default function AddressVerify() {
               <div>
                 <p className="text-sm font-medium text-secondary-600">Verification Rate</p>
                 <p className="text-3xl font-bold text-secondary-900">
-                  {stats?.verificationRate.toFixed(1) || 0}%
+                  {stats?.verificationRate ? stats.verificationRate.toFixed(1) : 0}%
                 </p>
                 <p className="text-sm text-success-600">↗ +2.3% this week</p>
               </div>

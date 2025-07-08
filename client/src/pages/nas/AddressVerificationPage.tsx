@@ -217,7 +217,7 @@ export default function AddressVerificationPage() {
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-purple-600">
-              {statsLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : `${stats?.successRate?.toFixed(1) || 0}%`}
+              {statsLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : `${stats?.successRate ? stats.successRate.toFixed(1) : 0}%`}
             </div>
             <div className="text-sm text-gray-600">Success Rate</div>
           </CardContent>
