@@ -14,24 +14,9 @@ interface SystemAlert {
 }
 
 export default function AlertsBanner() {
-  const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
-
-  const { data: alerts = [] } = useQuery({
-    queryKey: ["/api/dashboard/alerts"],
-    refetchInterval: 30000, // Refresh every 30 seconds
-  });
-
-  const activeAlerts = alerts.filter((alert: SystemAlert) => 
-    !dismissedAlerts.includes(alert.id)
-  );
-
-  const dismissAlert = (alertId: string) => {
-    setDismissedAlerts(prev => [...prev, alertId]);
-  };
-
-  if (activeAlerts.length === 0) {
-    return null;
-  }
+  // Disable system alerts banner per user requirements
+  // All alerts are now handled silently in background
+  return null;
 
   const getAlertColor = (type: string) => {
     switch (type) {

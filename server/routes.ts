@@ -46,21 +46,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const recentOrders = await storage.getRecentOrders(10);
-      const unassignedOrders = recentOrders.filter(order => !order.courierName);
-      
-      if (unassignedOrders.length > 0) {
-        alerts.push({
-          id: `courier-${Date.now()}`,
-          type: "info", 
-          message: `${unassignedOrders.length} orders pending courier assignment`,
-          count: unassignedOrders.length,
-          action: "Assign",
-          actionLink: "/dispatch"
-        });
-      }
-
-      res.json(alerts);
+      // System alerts disabled per user requirements
+      // All alerts now handled silently in background
+      res.json([]);
     } catch (error) {
       console.error("Failed to get alerts:", error);
       res.status(500).json({ error: "Internal server error" });

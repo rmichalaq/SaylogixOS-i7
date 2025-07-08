@@ -143,24 +143,7 @@ export default function Orders() {
                   Export
                 </Button>
               )}
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={async () => {
-                  try {
-                    const response = await fetch('/api/shopify/sync', { method: 'POST' });
-                    if (response.ok) {
-                      // Refresh orders list
-                      window.location.reload();
-                    }
-                  } catch (error) {
-                    console.error('Failed to sync Shopify orders:', error);
-                  }
-                }}
-              >
-                <i className="fas fa-sync mr-2"></i>
-                Sync Shopify
-              </Button>
+
             </div>
           </div>
 

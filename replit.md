@@ -147,6 +147,14 @@ Saylogix OS is a comprehensive fullstack logistics management system built as a 
 ## Changelog
 ```
 Changelog:
+- July 08, 2025. Improved Shopify sync system and removed manual controls
+  - Implemented full order fetching (all statuses, not just open) with pagination support
+  - Removed "Sync Shopify" button - now handles syncing automatically via webhooks
+  - Fixed sequential order numbering: SL25-001, SL25-002, etc. based on chronological order
+  - Disabled system alerts banner - courier assignments handled silently
+  - Enhanced null address handling for orders without shipping/billing info
+  - All 17 Shopify orders now synced with proper sequential Saylogix numbers
+  - System operates with webhook-driven real-time sync, no manual intervention needed
 - July 08, 2025. Completed Shopify integration and database cleanup
   - Fixed Shopify connector issues: null address handling, missing event_id fields
   - Successfully synced 14 real Shopify orders with authentic customer data

@@ -157,14 +157,31 @@ export class ShopifyService {
     );
   }
 
-  private generateInternalOrderId(): string {
-    const year = new Date().getFullYear() % 100;
-    // This should be implemented with proper database sequence to avoid race conditions
-    const orderCount = Math.floor(Math.random() * 1000) + 1; // Temporary - should query max order number
-    return `SL${year.toString().padStart(2, "0")}-${orderCount}`;
+  // Keep the original method for webhook processing
+  async processShopifyOrder(shopifyOrder: ShopifyOrder): Promise<void> {
+    // For webhooks, generate proper sequential ID
+    const year = new Date().getFullYear().toString().slice(-2);
+    const existingOrders = await storage.getRecentOrders(1000);
+    const thisYearOrders = existingOrders.filter(order => 
+      order.saylogixNumber && order.saylogixNumber.startsWith(`SL${year}-`)
+    );
+    
+    let maxNumber = 0;
+    thisYearOrders.forEach(order => {
+      const match = order.saylogixNumber.match(/SL\d{2}-(\d+)/);
+      if (match) {
+        const num = parseInt(match[1]);
+        if (num > maxNumber) {
+          maxNumber = num;
+        }
+      }
+    });
+    
+    const nextNumber = maxNumber + 1;
+    return this.processShopifyOrderWithSequence(shopifyOrder, nextNumber);
   }
 
-  async processShopifyOrder(shopifyOrder: ShopifyOrder): Promise<void> {
+  async processShopifyOrderWithSequence(shopifyOrder: ShopifyOrder, sequenceNumber: number): Promise<void> {
     try {
       // Check if order already exists
       const existingOrder = await storage.getOrderBySourceNumber(
@@ -177,8 +194,9 @@ export class ShopifyService {
         return;
       }
 
-      // Generate internal order ID
-      const internalOrderId = this.generateInternalOrderId();
+      // Generate sequential internal order ID
+      const year = new Date().getFullYear().toString().slice(-2);
+      const internalOrderId = `SL${year}-${sequenceNumber.toString().padStart(3, '0')}`;
 
       // Process shipping address (handle null/missing addresses)
       const rawAddress = shopifyOrder.shipping_address || shopifyOrder.billing_address;
@@ -298,15 +316,37 @@ export class ShopifyService {
     return "received"; // default status
   }
 
-  async fetchOpenOrders(): Promise<ShopifyOrder[]> {
+  async fetchAllOrders(limit: number = 250): Promise<ShopifyOrder[]> {
     if (!this.isConfigured()) {
       throw new Error("Shopify not configured");
     }
 
     try {
-      const response = await this.makeRequest("orders.json?status=open&limit=50");
-      console.log(`Fetched ${response.orders.length} open orders from Shopify`);
-      return response.orders;
+      // Fetch ALL orders (not just open) with pagination support
+      const allOrders: ShopifyOrder[] = [];
+      let hasNextPage = true;
+      let pageInfo = "";
+
+      while (hasNextPage && allOrders.length < limit) {
+        const url = pageInfo 
+          ? `orders.json?limit=50&page_info=${pageInfo}`
+          : "orders.json?limit=50&status=any"; // Fetch all statuses
+
+        const response = await this.makeRequest(url);
+        allOrders.push(...response.orders);
+        
+        // Check for pagination (Shopify uses Link header)
+        const linkHeader = response.headers?.get?.('Link');
+        if (linkHeader && linkHeader.includes('rel="next"')) {
+          const nextMatch = linkHeader.match(/page_info=([^&>]+)/);
+          pageInfo = nextMatch ? nextMatch[1] : "";
+        } else {
+          hasNextPage = false;
+        }
+      }
+
+      console.log(`Fetched ${allOrders.length} total orders from Shopify`);
+      return allOrders;
     } catch (error) {
       console.error("Failed to fetch Shopify orders:", error);
       await this.updateIntegrationStatus(false, `Failed to fetch orders: ${error.message}`);
@@ -320,13 +360,21 @@ export class ShopifyService {
     }
 
     try {
-      const orders = await this.fetchOpenOrders();
+      const orders = await this.fetchAllOrders();
+      
+      // Sort orders by created_at to ensure sequential processing
+      const sortedOrders = orders.sort((a, b) => 
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+      
       let processedCount = 0;
+      let sequenceNumber = 1; // Start sequential numbering
 
-      for (const order of orders) {
+      for (const order of sortedOrders) {
         try {
-          await this.processShopifyOrder(order);
+          await this.processShopifyOrderWithSequence(order, sequenceNumber);
           processedCount++;
+          sequenceNumber++;
         } catch (error) {
           console.error(`Failed to process order ${order.id}:`, error);
         }
