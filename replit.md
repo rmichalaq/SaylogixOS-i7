@@ -38,6 +38,8 @@ Saylogix OS is a comprehensive fullstack logistics management system built as a 
 5. **LMS (Last Mile)** - Route assignment, driver coordination, GPS tracking
 6. **Tracking System** - Real-time order status and customer notifications
 7. **Reports & Analytics** - Operational dashboards and KPI monitoring
+8. **Integrations** - Tabs with integration types
+9. **Settings** - Warehouse locations, Users
 
 ### Core Services
 - **Event Bus** - Central event coordination with 100+ defined event types

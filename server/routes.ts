@@ -2,13 +2,16 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { shopifyService } from "./services/shopifyService";
+import { shopifyService } from "./services/shopify";
 import { nasService } from "./services/nasService";
 import { whatsappService } from "./services/whatsappService";
 import { webhookService } from "./services/webhookService";
 import { courierService } from "./services/courierService";
 import { eventBus } from "./services/eventBus";
 import { insertOrderSchema, insertOrderItemSchema, insertInventorySchema } from "@shared/schema";
+import webhookRoutes from "./routes/webhooks";
+import integrationRoutes from "./routes/integrations";
+import settingsRoutes from "./routes/settings";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard API
@@ -114,6 +117,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Internal server error" });
     }
   });
+
+  // Integration, webhook and settings routes
+  app.use("/api/webhooks", webhookRoutes);
+  app.use("/api/integrations", integrationRoutes);
+  app.use("/api", settingsRoutes);
 
   // Orders API
   app.get("/api/orders", async (req, res) => {

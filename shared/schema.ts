@@ -26,6 +26,7 @@ export const orders = pgTable("orders", {
   customerEmail: text("customer_email"),
   shippingAddress: jsonb("shipping_address").notNull(),
   billingAddress: jsonb("billing_address"),
+  coordinates: jsonb("coordinates"), // {lat: number, lng: number}
   orderValue: decimal("order_value", { precision: 10, scale: 2 }),
   currency: varchar("currency", { length: 3 }).default("SAR"),
   nasCode: varchar("nas_code", { length: 10 }),
@@ -370,6 +371,73 @@ export const insertWebhookLogSchema = createInsertSchema(webhookLogs).omit({
   createdAt: true,
 });
 
+// Integration Configuration
+export const integrations = pgTable("integrations", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  type: varchar("type", { length: 50 }).notNull(), // shopify, google_maps, aramex, etc.
+  category: varchar("category", { length: 50 }).notNull(), // ecommerce, courier, messaging, etc.
+  isEnabled: boolean("is_enabled").default(false),
+  config: jsonb("config"), // API keys, URLs, settings
+  lastSyncAt: timestamp("last_sync_at"),
+  successCount: integer("success_count").default(0),
+  failureCount: integer("failure_count").default(0),
+  lastError: text("last_error"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Settings Tables
+export const warehouseZones = pgTable("warehouse_zones", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const staffRoles = pgTable("staff_roles", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 100 }).notNull().unique(),
+  description: text("description"),
+  permissions: jsonb("permissions"), // Array of permission strings
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const toteCartTypes = pgTable("tote_cart_types", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  type: varchar("type", { length: 20 }).notNull(), // tote, cart
+  capacity: integer("capacity"),
+  dimensions: jsonb("dimensions"), // {length, width, height}
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertIntegrationSchema = createInsertSchema(integrations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  name: z.string().optional(),
+});
+
+export const insertWarehouseZoneSchema = createInsertSchema(warehouseZones).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertStaffRoleSchema = createInsertSchema(staffRoles).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertToteCartTypeSchema = createInsertSchema(toteCartTypes).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -399,3 +467,11 @@ export type RouteStop = typeof routeStops.$inferSelect;
 export type InsertRouteStop = z.infer<typeof insertRouteStopSchema>;
 export type WebhookLog = typeof webhookLogs.$inferSelect;
 export type InsertWebhookLog = z.infer<typeof insertWebhookLogSchema>;
+export type Integration = typeof integrations.$inferSelect;
+export type InsertIntegration = z.infer<typeof insertIntegrationSchema>;
+export type WarehouseZone = typeof warehouseZones.$inferSelect;
+export type InsertWarehouseZone = z.infer<typeof insertWarehouseZoneSchema>;
+export type StaffRole = typeof staffRoles.$inferSelect;
+export type InsertStaffRole = z.infer<typeof insertStaffRoleSchema>;
+export type ToteCartType = typeof toteCartTypes.$inferSelect;
+export type InsertToteCartType = z.infer<typeof insertToteCartTypeSchema>;

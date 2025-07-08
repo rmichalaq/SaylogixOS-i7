@@ -9,6 +9,8 @@ import PackingPage from "@/pages/packing/PackingPage";
 import DispatchPage from "@/pages/dispatch/DispatchPage";
 import LastMilePage from "@/pages/lastmile/LastMilePage";
 import ReportsPage from "@/pages/reports/ReportsPage";
+import Settings from "@/pages/Settings";
+import Integrations from "@/pages/Integrations";
 
 export interface ScreenConfig {
   path: string;
@@ -184,6 +186,22 @@ export const screens: ScreenConfig[] = [
         icon: "fas fa-exclamation-triangle"
       }
     ]
+  },
+  {
+    path: "/integrations",
+    component: Integrations,
+    label: "Integrations",
+    menuGroup: "System",
+    scan: { enabled: false },
+    icon: "fas fa-plug"
+  },
+  {
+    path: "/settings",
+    component: Settings,
+    label: "Settings",
+    menuGroup: "System",
+    scan: { enabled: false },
+    icon: "fas fa-cog"
   }
 ];
 

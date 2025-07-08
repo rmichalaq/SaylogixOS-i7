@@ -1,14 +1,17 @@
 import {
   users, orders, orderItems, inventory, events, addressVerifications,
   nasLookups, pickTasks, packTasks, manifests, manifestItems,
-  routes, routeStops, webhookLogs,
+  routes, routeStops, webhookLogs, integrations, warehouseZones, 
+  staffRoles, toteCartTypes,
   type User, type InsertUser, type Order, type InsertOrder,
   type OrderItem, type InsertOrderItem, type Inventory, type InsertInventory,
   type Event, type InsertEvent, type AddressVerification, type InsertAddressVerification,
   type NasLookup, type InsertNasLookup, type PickTask, type InsertPickTask,
   type PackTask, type InsertPackTask, type Manifest, type InsertManifest,
   type ManifestItem, type InsertManifestItem, type Route, type InsertRoute,
-  type RouteStop, type InsertRouteStop, type WebhookLog, type InsertWebhookLog
+  type RouteStop, type InsertRouteStop, type WebhookLog, type InsertWebhookLog,
+  type Integration, type InsertIntegration, type WarehouseZone, type InsertWarehouseZone,
+  type StaffRole, type InsertStaffRole, type ToteCartType, type InsertToteCartType
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, sql, count, sum } from "drizzle-orm";
@@ -72,6 +75,28 @@ export interface IStorage {
 
   // Dashboard
   getDashboardStats(): Promise<any>;
+  
+  // Integrations
+  getIntegration(name: string): Promise<Integration | undefined>;
+  createIntegration(integration: InsertIntegration): Promise<Integration>;
+  updateIntegration(id: number, updates: Partial<InsertIntegration>): Promise<void>;
+  getAllIntegrations(): Promise<Integration[]>;
+  
+  // Settings
+  getWarehouseZones(): Promise<WarehouseZone[]>;
+  createWarehouseZone(zone: InsertWarehouseZone): Promise<WarehouseZone>;
+  updateWarehouseZone(id: number, updates: Partial<InsertWarehouseZone>): Promise<void>;
+  
+  getStaffRoles(): Promise<StaffRole[]>;
+  createStaffRole(role: InsertStaffRole): Promise<StaffRole>;
+  updateStaffRole(id: number, updates: Partial<InsertStaffRole>): Promise<void>;
+  
+  getToteCartTypes(): Promise<ToteCartType[]>;
+  createToteCartType(type: InsertToteCartType): Promise<ToteCartType>;
+  updateToteCartType(id: number, updates: Partial<InsertToteCartType>): Promise<void>;
+  
+  // Maps and coordinates
+  getOrdersForMapping(): Promise<Order[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -325,6 +350,78 @@ export class DatabaseStorage implements IStorage {
       readyToShip: readyToShip[0]?.count || 0,
       deliveredToday: deliveredToday[0]?.count || 0
     };
+  }
+
+  // Integrations
+  async getIntegration(name: string): Promise<Integration | undefined> {
+    const [integration] = await db.select().from(integrations).where(eq(integrations.name, name));
+    return integration || undefined;
+  }
+
+  async createIntegration(integration: InsertIntegration): Promise<Integration> {
+    const [result] = await db.insert(integrations).values(integration).returning();
+    return result;
+  }
+
+  async updateIntegration(id: number, updates: Partial<InsertIntegration>): Promise<void> {
+    await db.update(integrations)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(integrations.id, id));
+  }
+
+  async getAllIntegrations(): Promise<Integration[]> {
+    return await db.select().from(integrations).orderBy(integrations.category, integrations.name);
+  }
+
+  // Settings
+  async getWarehouseZones(): Promise<WarehouseZone[]> {
+    return await db.select().from(warehouseZones).orderBy(warehouseZones.name);
+  }
+
+  async createWarehouseZone(zone: InsertWarehouseZone): Promise<WarehouseZone> {
+    const [result] = await db.insert(warehouseZones).values(zone).returning();
+    return result;
+  }
+
+  async updateWarehouseZone(id: number, updates: Partial<InsertWarehouseZone>): Promise<void> {
+    await db.update(warehouseZones).set(updates).where(eq(warehouseZones.id, id));
+  }
+
+  async getStaffRoles(): Promise<StaffRole[]> {
+    return await db.select().from(staffRoles).orderBy(staffRoles.title);
+  }
+
+  async createStaffRole(role: InsertStaffRole): Promise<StaffRole> {
+    const [result] = await db.insert(staffRoles).values(role).returning();
+    return result;
+  }
+
+  async updateStaffRole(id: number, updates: Partial<InsertStaffRole>): Promise<void> {
+    await db.update(staffRoles).set(updates).where(eq(staffRoles.id, id));
+  }
+
+  async getToteCartTypes(): Promise<ToteCartType[]> {
+    return await db.select().from(toteCartTypes).orderBy(toteCartTypes.name);
+  }
+
+  async createToteCartType(type: InsertToteCartType): Promise<ToteCartType> {
+    const [result] = await db.insert(toteCartTypes).values(type).returning();
+    return result;
+  }
+
+  async updateToteCartType(id: number, updates: Partial<InsertToteCartType>): Promise<void> {
+    await db.update(toteCartTypes).set(updates).where(eq(toteCartTypes.id, id));
+  }
+
+  // Maps and coordinates
+  async getOrdersForMapping(): Promise<Order[]> {
+    return await db.select().from(orders)
+      .where(or(
+        eq(orders.status, "ready_to_dispatch"),
+        eq(orders.status, "in_delivery"),
+        eq(orders.status, "dispatched")
+      ))
+      .orderBy(desc(orders.createdAt));
   }
 }
 
