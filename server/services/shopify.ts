@@ -180,17 +180,23 @@ export class ShopifyService {
       // Generate internal order ID
       const internalOrderId = this.generateInternalOrderId();
 
-      // Process shipping address
+      // Process shipping address (handle null/missing addresses)
+      const rawAddress = shopifyOrder.shipping_address || shopifyOrder.billing_address;
+      if (!rawAddress || (!rawAddress.first_name && !rawAddress.last_name)) {
+        console.log(`Order ${shopifyOrder.order_number} has no valid shipping or billing address, skipping`);
+        return;
+      }
+
       const shippingAddress = {
-        firstName: shopifyOrder.shipping_address.first_name,
-        lastName: shopifyOrder.shipping_address.last_name,
-        address1: shopifyOrder.shipping_address.address1,
-        address2: shopifyOrder.shipping_address.address2 || "",
-        city: shopifyOrder.shipping_address.city,
-        province: shopifyOrder.shipping_address.province,
-        country: shopifyOrder.shipping_address.country,
-        zip: shopifyOrder.shipping_address.zip,
-        phone: shopifyOrder.shipping_address.phone,
+        firstName: rawAddress.first_name || "Unknown",
+        lastName: rawAddress.last_name || "Customer", 
+        address1: rawAddress.address1 || "",
+        address2: rawAddress.address2 || "",
+        city: rawAddress.city || "",
+        province: rawAddress.province || "",
+        country: rawAddress.country || "",
+        zip: rawAddress.zip || "",
+        phone: rawAddress.phone || shopifyOrder.phone || "",
       };
 
       // Create order
@@ -200,8 +206,8 @@ export class ShopifyService {
         sourceChannel: "shopify",
         sourceChannelData: { shopifyOrderId: shopifyOrder.id },
         status: "fetched",
-        customerName: `${shopifyOrder.shipping_address.first_name} ${shopifyOrder.shipping_address.last_name}`,
-        customerPhone: shopifyOrder.phone || shopifyOrder.shipping_address.phone,
+        customerName: `${shippingAddress.firstName} ${shippingAddress.lastName}`,
+        customerPhone: shippingAddress.phone,
         customerEmail: shopifyOrder.email,
         shippingAddress,
         billingAddress: shopifyOrder.billing_address,
@@ -223,10 +229,11 @@ export class ShopifyService {
         });
       }
 
-      // Create event
+      // Create event with proper event ID
       await storage.createEvent({
+        eventId: `EV001-${Date.now()}`, // Generate unique event ID
         type: "order_received",
-        entityType: "order",
+        entityType: "order", 
         entityId: order.id,
         data: { source: "shopify", shopifyOrderId: shopifyOrder.id },
         description: `Order ${internalOrderId} received from Shopify`,
