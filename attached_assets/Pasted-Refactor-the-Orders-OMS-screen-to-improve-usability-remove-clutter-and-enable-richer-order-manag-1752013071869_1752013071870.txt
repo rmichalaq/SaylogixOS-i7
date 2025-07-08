@@ -1,0 +1,63 @@
+Refactor the Orders (OMS) screen to improve usability, remove clutter, and enable richer order management. Apply the following changes:
+
+---
+
+#### 🧹 UI CLEANUP
+
+- ✅ Remove the **"Sync Shopify"** button — no longer needed (sync is webhook-driven).
+- ✅ Remove the **"Order Management"** header and description (“Manage and track all order fulfillment”).
+- ✅ Move the **Filters** button **to the left** of the **Export** button (same row, right-aligned).
+
+---
+
+#### 📊 ORDER STATUS AS TABS
+
+- Replace the **status filter** with **status tabs** above the table:
+  - Tabs: `All`, `Fetched`, `Picked`, `Packed`, `Dispatched`, `Delivered`, `Cancelled`
+  - Clicking each tab filters the visible orders by that status.
+
+---
+
+#### 🔢 ORDER DETAILS IMPROVEMENTS
+
+- In the **Order Details** column:
+  - Show both internal order ID (e.g. `SL25-014`)
+  - And **Shopify order ID** (e.g. `#1017`)  
+  - Also show **Shopify's original order number** (e.g. `Order: 4416357456871`) underneath.
+
+---
+
+#### 📦 ORDER DETAILS PAGE (On Click)
+
+Enable **clicking an order row** to open a full **Order Details Drawer** or page view:
+- **Sections to include:**
+  - 🧾 Order Summary:
+    - Internal ID, Shopify ID, Order value, Status, Creation Date
+  - 👤 Customer Info:
+    - Name, Phone, Email, NAS code (if available)
+  - 📍 Delivery Address:
+    - Full address, verified status, Google Maps preview (if integrated)
+  - 📦 Ordered Items:
+    - Table of SKUs, titles, quantities, unit prices, stock status
+  - 🚚 Fulfillment & Courier:
+    - Courier assigned (if any), AWB number, current stage, tracking link
+  - 🛠 Actions:
+    - ✅ Edit order (change items/quantities/address if not yet packed)
+    - 🚫 Cancel order
+    - 🔄 Change status manually
+
+---
+
+#### 🛠 TECH NOTE
+
+- Use real data from Shopify, including:
+  - Original order ID: `order.id`
+  - Order number: `order.order_number`
+  - Display internal SL25 format as `SL25-00X` based on import sequence
+
+---
+
+### 🎯 Objective
+
+Create a modern, user-friendly OMS that gives warehouse teams full visibility and control over orders without needing to switch tabs or use external tools. Prioritize clarity and efficiency.
+

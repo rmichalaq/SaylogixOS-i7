@@ -4,8 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Download, Filter, MapPin, Phone, Mail, Package, Truck } from "lucide-react";
 
 interface Order {
   id: number;
@@ -34,20 +36,15 @@ interface Order {
 export default function Orders() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [page, setPage] = useState(1);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const { data: ordersData, isLoading } = useQuery({
-    queryKey: ["/api/orders", { status: statusFilter, page, limit: 50, search: searchQuery }],
+    queryKey: ["/api/orders", { status: statusFilter, limit: 100, search: searchQuery }],
     refetchInterval: 30000,
   });
 
-  // Also fetch live Shopify orders to show real-time data
-  const { data: shopifyOrders = [] } = useQuery({
-    queryKey: ["/api/integrations/shopify/orders"],
-    refetchInterval: 10000,
-  });
-
-  const orders = ordersData?.orders || [];
+  const orders = ordersData || [];
   const totalOrders = ordersData?.total || 0;
 
   const getStatusColor = (status: string) => {

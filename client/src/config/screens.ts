@@ -1,5 +1,5 @@
 import Dashboard from "@/pages/Dashboard";
-import OrdersPage from "@/pages/orders/OrdersPage";
+import OrdersPage from "@/pages/OrdersRefactored";
 import VerifyPage from "@/pages/AddressVerify";
 import TrackingPage from "@/pages/tracking/TrackingPage";
 import InventoryPage from "@/pages/inventory/InventoryPage";
