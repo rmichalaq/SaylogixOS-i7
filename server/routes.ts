@@ -323,16 +323,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Shopify Configuration
   app.post("/api/integrations/shopify/configure", async (req, res) => {
     try {
-      const { storeName, storeUrl, adminApiKey, adminApiSecret, accessToken } = req.body;
+      const { storeUrl, adminApiKey, adminApiSecret, accessToken } = req.body;
       
-      if (!storeName || !storeUrl || !adminApiKey) {
-        return res.status(400).json({ error: "Missing required fields" });
+      if (!storeUrl || !adminApiKey) {
+        return res.status(400).json({ error: "Missing required fields: Store URL and Admin API Key" });
       }
 
-      // Save configuration to integration
+      // Test connection and fetch store name automatically
+      const testService = new ShopifyService();
+      const tempConfig = { storeUrl, adminApiKey, adminApiSecret, accessToken };
+      testService.configure(tempConfig);
+      
+      let storeName = "Unknown Store";
+      try {
+        const shopInfo = await testService.makeRequest("shop.json");
+        storeName = shopInfo.shop.name;
+      } catch (error) {
+        return res.status(400).json({ error: "Failed to connect to Shopify. Please check your credentials." });
+      }
+
+      // Save configuration to integration with fetched store name
       const integration = await storage.getIntegration("shopify");
       const config = {
-        storeName,
+        storeName, // Automatically fetched from Shopify
         storeUrl,
         adminApiKey,
         adminApiSecret,
@@ -364,7 +377,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Don't fail the configuration save if webhook registration fails
       }
 
-      res.json({ success: true, message: "Shopify configuration saved and webhooks registered" });
+      res.json({ 
+        success: true, 
+        message: `Shopify store "${storeName}" configured successfully and webhooks registered` 
+      });
     } catch (error) {
       console.error("Failed to configure Shopify:", error);
       res.status(500).json({ error: "Failed to save configuration" });

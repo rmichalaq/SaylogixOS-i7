@@ -183,7 +183,6 @@ export default function Integrations() {
       switch (name) {
         case "shopify":
           return [
-            { name: "storeName", label: "Store Name", type: "text", placeholder: "My Store Name", required: true },
             { name: "storeUrl", label: "Store URL", type: "text", placeholder: "your-store.myshopify.com", required: true },
             { name: "adminApiKey", label: "Admin API Key", type: "password", placeholder: "shpat_xxxxx", required: true },
             { name: "adminApiSecret", label: "Admin API Secret", type: "password", placeholder: "Enter admin API secret" },
@@ -358,7 +357,7 @@ export default function Integrations() {
               <div className="text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Store:</span>
-                  <span className="font-medium">{integration.config.storeName || integration.config.storeUrl || "Not configured"}</span>
+                  <span className="font-medium">{integration.config.storeName || "Loading..."}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">API Key:</span>
