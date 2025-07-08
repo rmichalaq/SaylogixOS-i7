@@ -25,6 +25,10 @@ function App() {
   return (
     <Router>
       <div className="layout-container bg-gray-50">
+        <div style={{ padding: '20px', backgroundColor: 'white' }}>
+          <h1>Saylogix OS Loading...</h1>
+          <p>Testing React render</p>
+        </div>
         <SidebarMenu />
         <div className="main-content">
           <TopNavBar />
@@ -34,7 +38,6 @@ function App() {
           </main>
           <ScanOverlay />
         </div>
-
       </div>
     </Router>
   );
