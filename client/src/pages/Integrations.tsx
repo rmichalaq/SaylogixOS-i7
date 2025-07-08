@@ -178,20 +178,30 @@ export default function Integrations() {
       switch (name) {
         case "shopify":
           return [
+            { name: "storeName", label: "Store Name", type: "text", placeholder: "My Store Name" },
             { name: "storeUrl", label: "Store URL", type: "text", placeholder: "your-store.myshopify.com" },
             { name: "adminApiKey", label: "Admin API Key", type: "password", placeholder: "Enter admin API key" },
             { name: "apiKey", label: "API Key", type: "password", placeholder: "Enter API key" },
             { name: "apiSecret", label: "API Secret", type: "password", placeholder: "Enter API secret" },
           ];
-        case "google_maps":
-          return [
-            { name: "apiKey", label: "API Key", type: "password", placeholder: "Enter Google Maps API key" },
-          ];
         case "aramex":
           return [
+            { name: "contractName", label: "Contract Name", type: "text", placeholder: "Main Contract" },
             { name: "username", label: "Username", type: "text", placeholder: "Enter username" },
             { name: "password", label: "Password", type: "password", placeholder: "Enter password" },
             { name: "accountNumber", label: "Account Number", type: "text", placeholder: "Enter account number" },
+            { name: "pickupZone", label: "Pickup Zone", type: "text", placeholder: "Enter pickup zone" },
+          ];
+        case "fastlo":
+          return [
+            { name: "contractName", label: "Contract Name", type: "text", placeholder: "Main Contract" },
+            { name: "apiKey", label: "API Key", type: "password", placeholder: "Enter API key" },
+            { name: "clientId", label: "Client ID", type: "text", placeholder: "Enter client ID" },
+            { name: "pickupZone", label: "Pickup Zone", type: "text", placeholder: "Enter pickup zone" },
+          ];
+        case "google_maps":
+          return [
+            { name: "apiKey", label: "API Key", type: "password", placeholder: "Enter Google Maps API key" },
           ];
         default:
           return [
@@ -324,30 +334,63 @@ export default function Integrations() {
             </Button>
           </div>
 
-          {/* Shopify specific actions */}
-          {config.name === "shopify" && integration?.isEnabled && (
-            <Button 
-              className="w-full" 
-              variant="outline"
-              onClick={async () => {
-                try {
-                  const response = await fetch("/api/integrations/shopify/fetch-orders", {
-                    method: "POST",
-                  });
-                  const result = await response.json();
-                  if (result.success) {
-                    toast({ title: "Orders synced", description: result.message });
-                  } else {
+          {/* Shopify specific info */}
+          {config.name === "shopify" && integration?.isEnabled && integration?.config && (
+            <div className="space-y-2 p-3 bg-gray-50 rounded-lg">
+              <div className="text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Store:</span>
+                  <span className="font-medium">{integration.config.storeName || integration.config.storeUrl || "Not configured"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">API Key:</span>
+                  <span className="font-medium text-gray-400">••••••••</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Synced SKUs:</span>
+                  <span className="font-medium">{integration.config.syncedSkus || 0}</span>
+                </div>
+              </div>
+              <Button 
+                className="w-full" 
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const response = await fetch("/api/shopify/sync", {
+                      method: "POST",
+                    });
+                    const result = await response.json();
+                    toast({ title: "Sync started", description: result.message || "Syncing orders from Shopify" });
+                  } catch (error) {
                     toast({ title: "Sync failed", variant: "destructive" });
                   }
-                } catch (error) {
-                  toast({ title: "Sync failed", variant: "destructive" });
-                }
-              }}
-            >
-              <Zap className="h-4 w-4 mr-2" />
-              Sync Orders Now
-            </Button>
+                }}
+              >
+                <Zap className="h-4 w-4 mr-2" />
+                Sync Orders Now
+              </Button>
+            </div>
+          )}
+
+          {/* Courier specific info */}
+          {(config.name === "aramex" || config.name === "fastlo") && integration?.isEnabled && integration?.config && (
+            <div className="space-y-2 p-3 bg-gray-50 rounded-lg">
+              <div className="text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Contract:</span>
+                  <span className="font-medium">{integration.config.contractName || "Main Contract"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Pickup Zone:</span>
+                  <span className="font-medium">{integration.config.pickupZone || "Not set"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Account:</span>
+                  <span className="font-medium text-gray-400">••••••••</span>
+                </div>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -367,12 +410,24 @@ export default function Integrations() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="ecommerce">E-Commerce</TabsTrigger>
+          <TabsTrigger value="ecommerce">
+            <span className="hidden sm:inline">E-Commerce</span>
+            <span className="sm:hidden">E-Com</span>
+          </TabsTrigger>
           <TabsTrigger value="courier">Courier</TabsTrigger>
-          <TabsTrigger value="messaging">Messaging</TabsTrigger>
-          <TabsTrigger value="payments">Payments</TabsTrigger>
+          <TabsTrigger value="messaging">
+            <span className="hidden sm:inline">Messaging</span>
+            <span className="sm:hidden">Msg</span>
+          </TabsTrigger>
+          <TabsTrigger value="payments">
+            <span className="hidden sm:inline">Payments</span>
+            <span className="sm:hidden">Pay</span>
+          </TabsTrigger>
           <TabsTrigger value="erp">ERP</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="analytics">
+            <span className="hidden sm:inline">Analytics</span>
+            <span className="sm:hidden">Stats</span>
+          </TabsTrigger>
         </TabsList>
 
         {Object.entries(integrationConfigs).map(([category, configs]) => (

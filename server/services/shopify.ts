@@ -63,7 +63,16 @@ export class ShopifyService {
       throw new Error("Shopify not configured");
     }
 
-    const url = `https://${this.storeUrl}/admin/api/2024-01/${endpoint}`;
+    // Ensure proper URL construction
+    let baseUrl = this.storeUrl;
+    if (!baseUrl.includes('://')) {
+      baseUrl = `https://${baseUrl}`;
+    }
+    if (!baseUrl.includes('.myshopify.com') && !baseUrl.includes('shopify.com')) {
+      baseUrl = `https://${this.storeUrl}.myshopify.com`;
+    }
+    
+    const url = `${baseUrl}/admin/api/2024-01/${endpoint}`;
     
     const response = await fetch(url, {
       ...options,

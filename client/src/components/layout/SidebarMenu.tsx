@@ -78,7 +78,7 @@ export default function SidebarMenu() {
             </div>
             {!isCollapsed && (
               <span className="text-xl font-bold text-secondary-700 whitespace-nowrap overflow-hidden">
-                SaylogixOS
+                Saylogix
               </span>
             )}
           </div>
@@ -119,13 +119,13 @@ export default function SidebarMenu() {
                         title={isCollapsed ? screen.label : undefined}
                         onClick={() => toggleGroup(screen.path)}
                       >
-                        <i className={cn(screen.icon, "w-5 h-5 flex-shrink-0", isCollapsed ? "mx-auto" : "mr-3")}></i>
+                        <i className={cn(screen.icon, "w-5 h-5 flex-shrink-0 text-current", isCollapsed ? "mx-auto" : "mr-3")}></i>
                         {!isCollapsed && (
                           <>
                             <span className="truncate">{screen.label}</span>
                             <i 
                               className={cn(
-                                "fas fa-chevron-right w-3 h-3 ml-auto transition-transform flex-shrink-0",
+                                "fas fa-chevron-right w-3 h-3 ml-auto transition-transform flex-shrink-0 text-current",
                                 expandedGroups[screen.path] ? "rotate-90" : ""
                               )}
                             ></i>
@@ -150,7 +150,7 @@ export default function SidebarMenu() {
                           )}
                           title={isCollapsed ? screen.label : undefined}
                         >
-                          <i className={cn(screen.icon, "w-5 h-5 flex-shrink-0", isCollapsed ? "mx-auto" : "mr-3")}></i>
+                          <i className={cn(screen.icon, "w-5 h-5 flex-shrink-0 text-current", isCollapsed ? "mx-auto" : "mr-3")}></i>
                           {!isCollapsed && (
                             <span className="truncate">{screen.label}</span>
                           )}
@@ -178,7 +178,7 @@ export default function SidebarMenu() {
                                   : "text-secondary-500 hover:bg-gray-50"
                               )}
                             >
-                              <i className={cn(child.icon, "w-4 h-4 mr-3 flex-shrink-0")}></i>
+                              <i className={cn(child.icon, "w-4 h-4 mr-3 flex-shrink-0 text-current")}></i>
                               <span className="truncate">{child.label}</span>
                             </div>
                           </Link>
