@@ -147,6 +147,15 @@ Saylogix OS is a comprehensive fullstack logistics management system built as a 
 ## Changelog
 ```
 Changelog:
+- July 08, 2025. Unified NAS verification system with SPL integration
+  - Refactored "Address Verify (NAS)" to "Verify NAS" with single verification tab
+  - Removed redundant "SPL Address Verification" menu item
+  - Implemented unified SPL-first, NAS-fallback verification architecture
+  - Added SPL NAD service with proper error handling and token configuration
+  - Created comprehensive order NAS parsing with automatic verification
+  - Added SPL integration to Settings > Integrations with verification tab
+  - Implemented automatic address verification for marketplace orders
+  - All NAS verification now uses authentic SPL API with fallback to internal NAS
 - July 08, 2025. Improved Shopify sync system and removed manual controls
   - Implemented full order fetching (all statuses, not just open) with pagination support
   - Removed "Sync Shopify" button - now handles syncing automatically via webhooks

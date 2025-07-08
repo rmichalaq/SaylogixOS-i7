@@ -73,6 +73,10 @@ const integrationConfigs = {
     { name: "powerbi", title: "Power BI", description: "Business intelligence", icon: "📊" },
     { name: "tableau", title: "Tableau", description: "Data visualization platform", icon: "📊" },
     { name: "amplitude", title: "Amplitude", description: "Digital analytics platform", icon: "📈" },
+  ],
+  verification: [
+    { name: "spl", title: "SPL NAD", description: "Saudi National Address Database", icon: "📍" },
+    { name: "nas", title: "NAS API", description: "National Address Service", icon: "🗺️" },
   ]
 };
 
@@ -214,6 +218,16 @@ export default function Integrations() {
         case "google_maps":
           return [
             { name: "apiKey", label: "API Key", type: "password", placeholder: "Enter Google Maps API key" },
+          ];
+        case "spl":
+          return [
+            { name: "apiToken", label: "API Token", type: "password", placeholder: "Enter SPL API token" },
+            { name: "baseUrl", label: "Base URL", type: "text", placeholder: "https://api.splonline.com.sa/v1" },
+          ];
+        case "nas":
+          return [
+            { name: "apiKey", label: "API Key", type: "password", placeholder: "Enter NAS API key" },
+            { name: "baseUrl", label: "Base URL", type: "text", placeholder: "Enter NAS API base URL" },
           ];
         default:
           return [
@@ -430,7 +444,7 @@ export default function Integrations() {
     <div className="p-6">
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="ecommerce">
             <span className="hidden sm:inline">E-Commerce</span>
             <span className="sm:hidden">E-Com</span>
@@ -448,6 +462,10 @@ export default function Integrations() {
           <TabsTrigger value="analytics">
             <span className="hidden sm:inline">Analytics</span>
             <span className="sm:hidden">Stats</span>
+          </TabsTrigger>
+          <TabsTrigger value="verification">
+            <span className="hidden sm:inline">Verification</span>
+            <span className="sm:hidden">Verify</span>
           </TabsTrigger>
         </TabsList>
 

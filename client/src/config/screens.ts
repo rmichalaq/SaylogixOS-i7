@@ -2,7 +2,7 @@ import Dashboard from "@/pages/Dashboard";
 import OrdersPage from "@/pages/OrdersRefactored";
 import VerifyPage from "@/pages/AddressVerify";
 import TrackingPage from "@/pages/tracking/TrackingPage";
-import AddressVerificationPage from "@/pages/nas/AddressVerificationPage";
+
 import InventoryPage from "@/pages/inventory/InventoryPage";
 import InboundPage from "@/pages/Inbound";
 import PickingPage from "@/pages/picking/PickingPage";
@@ -43,18 +43,10 @@ export const screens: ScreenConfig[] = [
   {
     path: "/verify",
     component: VerifyPage,
-    label: "Address Verify (NAS)",
+    label: "Verify NAS",
     menuGroup: "Fulfillment",
     scan: { enabled: false },
     icon: "fas fa-map-marker-alt"
-  },
-  {
-    path: "/address-verification",
-    component: AddressVerificationPage,
-    label: "SPL Address Verification",
-    menuGroup: "Fulfillment",
-    scan: { enabled: false },
-    icon: "fas fa-search-location"
   },
   {
     path: "/tracking",

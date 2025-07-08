@@ -4,7 +4,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { shopifyService, ShopifyService } from "./services/shopify";
 import { nasService } from "./services/nasService";
-import { splService } from "./services/splService";
+import { fetchAddressFromSPL } from "./services/splService";
 import { whatsappService } from "./services/whatsappService";
 import { webhookService } from "./services/webhookService";
 import { courierService } from "./services/courierService";
@@ -671,6 +671,168 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Failed to get verification stats:", error);
       res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // SPL verification endpoint
+  app.post("/api/address/verify/spl", async (req, res) => {
+    try {
+      const { shortcode } = req.body;
+      
+      if (!shortcode) {
+        return res.status(400).json({ error: 'Missing shortcode' });
+      }
+
+      const { fetchAddressFromSPL } = await import('./services/splService.js');
+      const result = await fetchAddressFromSPL(shortcode);
+      
+      res.json({ success: true, data: result });
+    } catch (error) {
+      console.error('SPL verification error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Unified address validation (SPL + NAS fallback)
+  app.post("/api/address/validate", async (req, res) => {
+    try {
+      const { shortcode } = req.body;
+      
+      if (!shortcode) {
+        return res.status(400).json({ error: 'Missing shortcode' });
+      }
+
+      let result = null;
+
+      // Try SPL first
+      try {
+        const { fetchAddressFromSPL } = await import('./services/splService.js');
+        const splResult = await fetchAddressFromSPL(shortcode);
+        result = {
+          found: true,
+          verified: true,
+          address: {
+            address: splResult.fullAddress,
+            city: splResult.fullAddress.split(', ')[3] || '',
+            district: splResult.fullAddress.split(', ')[2] || '',
+            postalCode: splResult.postalCode
+          },
+          coordinates: splResult.coordinates,
+          source: 'SPL'
+        };
+      } catch (splError) {
+        console.log('SPL failed, trying NAS fallback:', splError.message);
+        
+        // Fallback to NAS verification if exists
+        try {
+          const nasLookup = await storage.getNasLookup(shortcode);
+          if (nasLookup) {
+            result = {
+              found: true,
+              verified: true,
+              address: {
+                address: nasLookup.fullAddress,
+                city: nasLookup.city || '',
+                district: nasLookup.district || '',
+                postalCode: nasLookup.postalCode || ''
+              },
+              coordinates: {
+                lat: parseFloat(nasLookup.latitude || '0'),
+                lng: parseFloat(nasLookup.longitude || '0')
+              },
+              source: 'NAS'
+            };
+          } else {
+            result = {
+              found: false,
+              verified: false,
+              source: 'none'
+            };
+          }
+        } catch (nasError) {
+          console.error('NAS fallback failed:', nasError);
+          result = {
+            found: false,
+            verified: false,
+            source: 'none'
+          };
+        }
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error('Address validation error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Order verification endpoint
+  app.post("/api/verify/:orderId", async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      const order = await storage.getOrder(orderId);
+      
+      if (!order) {
+        return res.status(404).json({ error: 'Order not found' });
+      }
+
+      // Extract NAS code from shipping address
+      const extractNasCode = (address: any): string | null => {
+        if (!address) return null;
+        
+        const addressText = typeof address === 'string' ? address : 
+          `${address.address1 || ''} ${address.address2 || ''} ${address.city || ''} ${address.zip || ''}`;
+        
+        const nasPattern = /\b[A-Z]{4}[0-9]{4}\b/g;
+        const matches = addressText.match(nasPattern);
+        return matches ? matches[0] : null;
+      };
+
+      const nasCode = extractNasCode(order.shippingAddress);
+      
+      if (!nasCode) {
+        return res.status(400).json({ error: 'No NAS code found in shipping address' });
+      }
+
+      // Verify using SPL
+      const { fetchAddressFromSPL } = await import('./services/splService.js');
+      try {
+        const splResult = await fetchAddressFromSPL(nasCode);
+        
+        // Update order with verified address
+        await storage.updateOrder(orderId, {
+          shippingAddress: typeof order.shippingAddress === 'string' 
+            ? splResult.fullAddress 
+            : { ...order.shippingAddress, address1: splResult.fullAddress },
+          addressVerified: true
+        });
+
+        // Create address verification record
+        await storage.createAddressVerification({
+          orderId,
+          originalAddress: typeof order.shippingAddress === 'string' 
+            ? order.shippingAddress 
+            : JSON.stringify(order.shippingAddress),
+          verifiedAddress: splResult.fullAddress,
+          nasCode,
+          isVerified: true,
+          verificationSource: 'SPL',
+          latitude: splResult.coordinates.lat?.toString(),
+          longitude: splResult.coordinates.lng?.toString()
+        });
+
+        res.json({ 
+          success: true, 
+          verifiedAddress: splResult.fullAddress,
+          source: 'SPL'
+        });
+      } catch (error) {
+        console.error('Order verification failed:', error);
+        res.status(500).json({ error: error.message });
+      }
+    } catch (error) {
+      console.error('Order verification error:', error);
+      res.status(500).json({ error: error.message });
     }
   });
 
