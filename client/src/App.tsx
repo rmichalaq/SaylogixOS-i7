@@ -27,6 +27,7 @@ function App() {
       <div className="layout-container bg-gray-50">
         <SidebarMenu />
         <div className="main-content">
+          <TopNavBar />
           <main className="content-area">
             <AppRoutes />
           </main>
