@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { shopifyService } from "./services/shopify";
+import { shopifyService, ShopifyService } from "./services/shopify";
 import { nasService } from "./services/nasService";
 import { whatsappService } from "./services/whatsappService";
 import { webhookService } from "./services/webhookService";
@@ -320,32 +320,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Shopify Configuration
-  app.post("/api/integrations/shopify/configure", async (req, res) => {
+  // Shopify Configuration with automatic store name fetching  
+  app.post("/api/integrations/shopify/simple", async (req, res) => {
     try {
+      console.log("Shopify configuration:", req.body);
       const { storeUrl, adminApiKey, adminApiSecret, accessToken } = req.body;
       
       if (!storeUrl || !adminApiKey) {
         return res.status(400).json({ error: "Missing required fields: Store URL and Admin API Key" });
       }
 
-      // Test connection and fetch store name automatically
-      const testService = new ShopifyService();
-      const tempConfig = { storeUrl, adminApiKey, adminApiSecret, accessToken };
-      testService.configure(tempConfig);
-      
-      let storeName = "Unknown Store";
-      try {
-        const shopInfo = await testService.makeRequest("shop.json");
-        storeName = shopInfo.shop.name;
-      } catch (error) {
-        return res.status(400).json({ error: "Failed to connect to Shopify. Please check your credentials." });
-      }
-
-      // Save configuration to integration with fetched store name
-      const integration = await storage.getIntegration("shopify");
-      const config = {
-        storeName, // Automatically fetched from Shopify
+      // Save basic config first
+      const basicConfig = {
+        storeName: "Connecting...",
         storeUrl,
         adminApiKey,
         adminApiSecret,
@@ -353,8 +340,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
         configuredAt: new Date().toISOString()
       };
 
+      const integration = await storage.getIntegration("shopify");
+      
+      if (integration) {
+        await storage.updateIntegration(integration.id, { config: basicConfig, isEnabled: true });
+      } else {
+        await storage.createIntegration({
+          name: "shopify",
+          type: "shopify", 
+          category: "ecommerce",
+          isEnabled: true,
+          config: basicConfig
+        });
+      }
+
+      // Respond immediately, then update store name in background
+      res.json({ success: true, message: "Configuration saved. Validating connection..." });
+      
+      // Background process to fetch store name and register webhooks
+      setTimeout(async () => {
+        try {
+          const testService = new ShopifyService();
+          testService.configure(basicConfig);
+          
+          // Fetch real store name
+          const shopInfo = await testService.makeRequest("shop.json");
+          const storeName = shopInfo.shop.name;
+          
+          // Update with real store name
+          const finalConfig = { ...basicConfig, storeName };
+          const updatedIntegration = await storage.getIntegration("shopify");
+          if (updatedIntegration) {
+            await storage.updateIntegration(updatedIntegration.id, { 
+              config: finalConfig,
+              lastSyncAt: new Date(),
+              lastError: null
+            });
+          }
+          
+          // Register webhooks
+          await testService.registerWebhooks();
+          console.log(`Shopify store "${storeName}" successfully configured with webhooks`);
+          
+        } catch (bgError) {
+          console.error("Background Shopify setup failed:", bgError);
+          const failedIntegration = await storage.getIntegration("shopify");
+          if (failedIntegration) {
+            await storage.updateIntegration(failedIntegration.id, {
+              lastError: `Connection failed: ${bgError.message}`,
+              isEnabled: false
+            });
+          }
+        }
+      }, 500);
+      
+    } catch (error) {
+      console.error("Shopify config failed:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Shopify Configuration
+  app.post("/api/integrations/shopify/configure", async (req, res) => {
+    try {
+      console.log("Shopify configuration request body:", req.body);
+      const { storeUrl, adminApiKey, adminApiSecret, accessToken } = req.body;
+      
+      if (!storeUrl || !adminApiKey) {
+        return res.status(400).json({ error: "Missing required fields: Store URL and Admin API Key" });
+      }
+
+      // Create config object for saving
+      const config = {
+        storeName: "Test Store", // Will be updated after connection test
+        storeUrl,
+        adminApiKey,
+        adminApiSecret,
+        accessToken,
+        configuredAt: new Date().toISOString()
+      };
+
+      console.log("Saving integration config:", { ...config, adminApiKey: "***", adminApiSecret: "***", accessToken: "***" });
+
+      // Save configuration to integration first  
+      const integration = await storage.getIntegration("shopify");
+      
       if (integration) {
         await storage.updateIntegration(integration.id, { config, isEnabled: true });
+        console.log("Updated existing integration");
       } else {
         await storage.createIntegration({
           name: "shopify",
@@ -365,25 +438,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
           successCount: 0,
           failureCount: 0
         });
+        console.log("Created new integration");
       }
 
-      // Auto-register webhooks after successful configuration
-      try {
-        const testService = new ShopifyService();
-        testService.configure(config);
-        await testService.registerWebhooks();
-      } catch (webhookError) {
-        console.warn("Failed to register webhooks:", webhookError);
-        // Don't fail the configuration save if webhook registration fails
-      }
+      // Test connection and fetch store name in background (non-blocking)
+      setTimeout(async () => {
+        try {
+          const testService = new ShopifyService();
+          testService.configure(config);
+          const shopInfo = await testService.makeRequest("shop.json");
+          const storeName = shopInfo.shop.name;
+          
+          // Update with real store name
+          const updatedIntegration = await storage.getIntegration("shopify");
+          if (updatedIntegration) {
+            await storage.updateIntegration(updatedIntegration.id, { 
+              config: { ...config, storeName },
+              lastSyncAt: new Date()
+            });
+          }
+          
+          // Register webhooks
+          await testService.registerWebhooks();
+          console.log(`Store "${storeName}" configured and webhooks registered`);
+        } catch (error) {
+          console.error("Background Shopify setup failed:", error);
+        }
+      }, 100);
 
       res.json({ 
         success: true, 
-        message: `Shopify store "${storeName}" configured successfully and webhooks registered` 
+        message: "Shopify configuration saved successfully. Store validation in progress..." 
       });
     } catch (error) {
-      console.error("Failed to configure Shopify:", error);
-      res.status(500).json({ error: "Failed to save configuration" });
+      console.error("Failed to configure Shopify - Full error:", error);
+      res.status(500).json({ error: `Configuration failed: ${error.message}` });
     }
   });
 

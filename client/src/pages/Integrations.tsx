@@ -129,7 +129,7 @@ export default function Integrations() {
 
   const saveConfigMutation = useMutation({
     mutationFn: async ({ name, config }: { name: string; config: any }) => {
-      const endpoint = name === "shopify" ? `/api/integrations/shopify/configure` : `/api/integrations/${name}`;
+      const endpoint = name === "shopify" ? `/api/integrations/shopify/simple` : `/api/integrations/${name}`;
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -141,15 +141,23 @@ export default function Integrations() {
         }),
       });
       if (!response.ok) {
-        const error = await response.json();
+        const error = await response.json().catch(() => ({ error: "Unknown error" }));
         throw new Error(error.error || "Failed to save configuration");
       }
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/integrations"] });
-      toast({ title: "Configuration saved successfully" });
+      toast({ 
+        title: "Configuration saved successfully",
+        description: "Connection validation in progress..."
+      });
       setConfigDialogOpen(null);
+      
+      // Refresh after a short delay to show updated status
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/integrations"] });
+      }, 2000);
     },
     onError: (error) => {
       toast({ title: "Failed to save configuration", description: error.message, variant: "destructive" });
