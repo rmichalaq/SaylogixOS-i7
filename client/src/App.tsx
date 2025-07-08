@@ -28,9 +28,11 @@ function App() {
         <SidebarMenu />
         <div className="main-content">
           <TopNavBar />
+          <AlertsBanner />
           <main className="content-area">
             <AppRoutes />
           </main>
+          <ScanOverlay />
         </div>
       </div>
     </Router>
