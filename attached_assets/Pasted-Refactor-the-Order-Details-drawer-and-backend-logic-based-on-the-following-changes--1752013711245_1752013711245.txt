@@ -1,0 +1,60 @@
+Refactor the Order Details drawer and backend logic based on the following changes:
+
+---
+
+### 🧾 ORDER DETAILS DRAWER (UX/UI)
+
+1. ✅ **Fix Broken Buttons:**
+   - 🛠️ `Edit Order` must open editable fields (customer name, phone, delivery address, items).
+   - 🔁 `Change Status` must open a dropdown with valid statuses (fetched, picked, packed, dispatched, delivered, cancelled).
+   - ❌ `Cancel Order` must trigger confirmation dialog and update status to `cancelled`.
+
+2. 🧹 **Layout Cleanup:**
+   Break the content into clear sections with spacing and alignment for readability:
+   - **Order Summary**
+     - Internal ID: `SL25-009`
+     - Shopify Order #: `#1011`
+     - Shopify Order ID: `6488575869155`
+     - Order Value
+     - Created Time
+   - **Customer Info**
+     - Name
+     - Phone
+     - Email (if present)
+   - **Delivery Address**
+     - Full address
+     - NAS code (if available)
+   - **Fulfillment & Courier**
+     - Courier
+     - AWB
+     - Current status
+   - **Actions**
+     - Edit, Change Status, Cancel buttons
+
+3. 🧭 Add subtle section dividers or horizontal lines between major sections for better legibility.
+
+---
+
+### 🔄 BACKEND LOGIC FIX – ORDER FETCHING
+
+1. ✅ **Always fetch all orders from Shopify**, even if they have incomplete or invalid shipping addresses.
+2. 🟨 Display such orders with:
+   - Warning icon or yellow label: “⚠️ Address Missing”
+   - Do not block their import or indexing.
+   - Include them in status tabs and pagination.
+3. 🧠 Backend should only **block courier assignment or dispatch** for those without valid delivery addresses — not block them from being fetched at all.
+
+---
+
+### 🛠 TECH DETAILS
+
+- Shopify API: Use `GET /admin/api/2024-01/orders.json?status=any` to get all orders.
+- Preserve original Shopify IDs for traceability.
+- Add fallback when customer email is missing.
+
+---
+
+This will result in:
+- A fully functional Order Details Drawer with proper interactivity
+- Cleaner layout with improved usability
+- A more robust and complete order sync pipeline

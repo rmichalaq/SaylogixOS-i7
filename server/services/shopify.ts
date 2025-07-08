@@ -198,35 +198,43 @@ export class ShopifyService {
       const year = new Date().getFullYear().toString().slice(-2);
       const internalOrderId = `SL${year}-${sequenceNumber.toString().padStart(3, '0')}`;
 
-      // Process shipping address (handle null/missing addresses)
+      // Process shipping address (include orders with missing addresses but flag them)
       const rawAddress = shopifyOrder.shipping_address || shopifyOrder.billing_address;
-      if (!rawAddress || (!rawAddress.first_name && !rawAddress.last_name)) {
-        console.log(`Order ${shopifyOrder.order_number} has no valid shipping or billing address, skipping`);
-        return;
+      let shippingAddress = null;
+      
+      if (rawAddress && (rawAddress.first_name || rawAddress.last_name)) {
+        shippingAddress = {
+          firstName: rawAddress.first_name || "Unknown",
+          lastName: rawAddress.last_name || "Customer", 
+          address1: rawAddress.address1 || "",
+          address2: rawAddress.address2 || "",
+          city: rawAddress.city || "",
+          province: rawAddress.province || "",
+          country: rawAddress.country || "",
+          zip: rawAddress.zip || "",
+          phone: rawAddress.phone || shopifyOrder.phone || "",
+        };
+      } else {
+        console.log(`Order ${shopifyOrder.order_number} has no valid shipping or billing address, importing with warning flag`);
       }
 
-      const shippingAddress = {
-        firstName: rawAddress.first_name || "Unknown",
-        lastName: rawAddress.last_name || "Customer", 
-        address1: rawAddress.address1 || "",
-        address2: rawAddress.address2 || "",
-        city: rawAddress.city || "",
-        province: rawAddress.province || "",
-        country: rawAddress.country || "",
-        zip: rawAddress.zip || "",
-        phone: rawAddress.phone || shopifyOrder.phone || "",
-      };
+      // Use fallback customer name from order data
+      const customerName = shippingAddress 
+        ? `${shippingAddress.firstName} ${shippingAddress.lastName}`
+        : shopifyOrder.customer?.first_name && shopifyOrder.customer?.last_name
+          ? `${shopifyOrder.customer.first_name} ${shopifyOrder.customer.last_name}`
+          : `Customer ${shopifyOrder.order_number}`;
 
-      // Create order
+      // Create order (include even those without addresses)
       const order = await storage.createOrder({
         saylogixNumber: internalOrderId,
         sourceOrderNumber: shopifyOrder.order_number,
         sourceChannel: "shopify",
         sourceChannelData: { shopifyOrderId: shopifyOrder.id },
         status: "fetched",
-        customerName: `${shippingAddress.firstName} ${shippingAddress.lastName}`,
-        customerPhone: shippingAddress.phone,
-        customerEmail: shopifyOrder.email,
+        customerName,
+        customerPhone: shippingAddress?.phone || shopifyOrder.phone || shopifyOrder.customer?.phone || "",
+        customerEmail: shopifyOrder.email || shopifyOrder.customer?.email || "",
         shippingAddress,
         billingAddress: shopifyOrder.billing_address,
         orderValue: shopifyOrder.total_price,

@@ -191,6 +191,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update order status
+  app.patch("/api/orders/:id", async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const updates = req.body;
+      
+      await storage.updateOrder(orderId, updates);
+      
+      // Create event for status change
+      if (updates.status) {
+        await storage.createEvent({
+          entityType: 'order',
+          entityId: orderId,
+          eventType: `order.status.changed.${updates.status}`,
+          description: `Order status changed to ${updates.status}`,
+          status: 'completed'
+        });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to update order:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   app.get("/api/orders/:id/items", async (req, res) => {
     try {
       const orderId = parseInt(req.params.id);
