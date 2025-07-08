@@ -4,6 +4,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { shopifyService, ShopifyService } from "./services/shopify";
 import { nasService } from "./services/nasService";
+import { splService } from "./services/splService";
 import { whatsappService } from "./services/whatsappService";
 import { webhookService } from "./services/webhookService";
 import { courierService } from "./services/courierService";
@@ -576,6 +577,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Failed to start address verification:", error);
       res.status(500).json({ error: "Failed to start verification" });
+    }
+  });
+
+  // SPL Address Verification API
+  app.post("/api/address/verify/spl", async (req, res) => {
+    try {
+      const { shortcode } = req.body;
+      
+      if (!shortcode) {
+        return res.status(400).json({ error: "Shortcode is required" });
+      }
+
+      const result = await splService.fetchAddressFromSPL(shortcode);
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error("SPL address verification failed:", error);
+      res.status(500).json({ 
+        error: "Address verification failed",
+        details: error.message 
+      });
+    }
+  });
+
+  // Batch SPL Address Validation
+  app.post("/api/address/verify/spl/batch", async (req, res) => {
+    try {
+      const { shortcodes } = req.body;
+      
+      if (!Array.isArray(shortcodes) || shortcodes.length === 0) {
+        return res.status(400).json({ error: "Array of shortcodes is required" });
+      }
+
+      const results = await splService.batchValidateAddresses(shortcodes);
+      res.json({
+        success: true,
+        data: results
+      });
+    } catch (error) {
+      console.error("SPL batch verification failed:", error);
+      res.status(500).json({ 
+        error: "Batch verification failed",
+        details: error.message 
+      });
+    }
+  });
+
+  // Address validation endpoint (checks both SPL and NAS)
+  app.post("/api/address/validate", async (req, res) => {
+    try {
+      const { shortcode } = req.body;
+      
+      if (!shortcode) {
+        return res.status(400).json({ error: "Shortcode is required" });
+      }
+
+      const result = await nasService.verifyNasCode(shortcode);
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error("Address validation failed:", error);
+      res.status(500).json({ 
+        error: "Address validation failed",
+        details: error.message 
+      });
+    }
+  });
+
+  // Address verification status and pending verifications
+  app.get("/api/address/pending", async (req, res) => {
+    try {
+      const events = await storage.getEvents();
+      const pendingVerifications = events.filter(event => 
+        event.eventType.includes('address') && event.status === 'pending'
+      );
+      res.json(pendingVerifications);
+    } catch (error) {
+      console.error("Failed to get pending verifications:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Address verification statistics
+  app.get("/api/address/stats", async (req, res) => {
+    try {
+      const stats = await nasService.getVerificationStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Failed to get verification stats:", error);
+      res.status(500).json({ error: "Internal server error" });
     }
   });
 

@@ -1,6 +1,8 @@
 import { storage } from "../storage";
 import { eventBus } from "./eventBus";
 import { whatsappService } from "./whatsappService";
+import { splService } from "./splService";
+import fetch from "node-fetch";
 
 interface NasVerificationResult {
   found: boolean;
@@ -26,10 +28,6 @@ class NasService {
   }
 
   async verifyNasCode(nasCode: string): Promise<NasVerificationResult> {
-    if (!this.apiKey) {
-      throw new Error("NAS API credentials not configured");
-    }
-
     try {
       // Check local cache first
       const cachedLookup = await storage.getNasLookup(nasCode);
@@ -45,6 +43,42 @@ class NasService {
           },
           coordinates: cachedLookup.coordinates as any
         };
+      }
+
+      // Try SPL API first (more reliable for Saudi addresses)
+      try {
+        const splResult = await splService.fetchAddressFromSPL(nasCode);
+        
+        // Cache the SPL result
+        await this.cacheAddressLookup(nasCode, {
+          address: splResult.fullAddress,
+          city: splResult.fullAddress.split(', ')[3] || '',
+          district: splResult.fullAddress.split(', ')[2] || '',
+          postalCode: splResult.postalCode,
+          coordinates: splResult.coordinates,
+          verified: true,
+          source: 'spl'
+        });
+        
+        return {
+          found: true,
+          verified: true,
+          address: {
+            address: splResult.fullAddress,
+            city: splResult.fullAddress.split(', ')[3] || '',
+            district: splResult.fullAddress.split(', ')[2] || '',
+            postalCode: splResult.postalCode
+          },
+          coordinates: splResult.coordinates.lat && splResult.coordinates.lng ? 
+            { lat: splResult.coordinates.lat, lng: splResult.coordinates.lng } : undefined
+        };
+      } catch (splError) {
+        console.warn("SPL API failed, falling back to NAS API:", splError);
+      }
+
+      // Fallback to NAS API if SPL fails
+      if (!this.apiKey) {
+        throw new Error("Both SPL and NAS API credentials not configured");
       }
 
       // Call NAS API
@@ -64,9 +98,13 @@ class NasService {
 
       const data = await response.json();
       
-      // Cache the result
+      // Cache the NAS result
       if (data.found) {
-        await this.cacheNasLookup(nasCode, data);
+        await this.cacheAddressLookup(nasCode, {
+          ...data.address,
+          verified: data.verified,
+          source: 'nas'
+        });
       }
 
       return {
@@ -83,18 +121,19 @@ class NasService {
     }
   }
 
-  private async cacheNasLookup(nasCode: string, data: any): Promise<void> {
+  private async cacheAddressLookup(nasCode: string, data: any): Promise<void> {
     try {
+      // Store in NAS lookup cache for future use
       await storage.createEvent({
         eventId: 'CACHE',
-        eventType: 'nas.lookup.cached',
+        eventType: 'address.lookup.cached',
         entityType: 'nas',
         entityId: 0,
         eventData: { nasCode, data },
-        source: 'nas'
+        source: data.source || 'nas'
       });
     } catch (error) {
-      console.error("Failed to cache NAS lookup:", error);
+      console.error("Failed to cache address lookup:", error);
     }
   }
 
@@ -118,7 +157,7 @@ class NasService {
         orderId,
         originalAddress: order.shippingAddress,
         status: 'pending',
-        verificationMethod: 'nas_lookup'
+        verificationMethod: 'spl_nas_lookup'
       });
 
       // Extract NAS code from address (implement your logic here)
