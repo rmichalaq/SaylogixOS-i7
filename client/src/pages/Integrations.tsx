@@ -129,16 +129,21 @@ export default function Integrations() {
 
   const saveConfigMutation = useMutation({
     mutationFn: async ({ name, config }: { name: string; config: any }) => {
-      const response = await fetch(`/api/integrations/${name}`, {
+      const endpoint = name === "shopify" ? `/api/integrations/shopify/configure` : `/api/integrations/${name}`;
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: JSON.stringify(name === "shopify" ? config : {
           type: name,
           category: activeTab,
           config,
           isEnabled: true
         }),
       });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to save configuration");
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -146,8 +151,8 @@ export default function Integrations() {
       toast({ title: "Configuration saved successfully" });
       setConfigDialogOpen(null);
     },
-    onError: () => {
-      toast({ title: "Failed to save configuration", variant: "destructive" });
+    onError: (error) => {
+      toast({ title: "Failed to save configuration", description: error.message, variant: "destructive" });
     }
   });
 
@@ -178,11 +183,11 @@ export default function Integrations() {
       switch (name) {
         case "shopify":
           return [
-            { name: "storeName", label: "Store Name", type: "text", placeholder: "My Store Name" },
-            { name: "storeUrl", label: "Store URL", type: "text", placeholder: "your-store.myshopify.com" },
-            { name: "adminApiKey", label: "Admin API Key", type: "password", placeholder: "Enter admin API key" },
-            { name: "apiKey", label: "API Key", type: "password", placeholder: "Enter API key" },
-            { name: "apiSecret", label: "API Secret", type: "password", placeholder: "Enter API secret" },
+            { name: "storeName", label: "Store Name", type: "text", placeholder: "My Store Name", required: true },
+            { name: "storeUrl", label: "Store URL", type: "text", placeholder: "your-store.myshopify.com", required: true },
+            { name: "adminApiKey", label: "Admin API Key", type: "password", placeholder: "shpat_xxxxx", required: true },
+            { name: "adminApiSecret", label: "Admin API Secret", type: "password", placeholder: "Enter admin API secret" },
+            { name: "accessToken", label: "Access Token", type: "password", placeholder: "Enter access token" },
           ];
         case "aramex":
           return [
@@ -326,8 +331,21 @@ export default function Integrations() {
 
             <Button
               variant="outline"
-              onClick={() => testConnectionMutation.mutate(config.name)}
-              disabled={testConnectionMutation.isPending || !integration?.isEnabled}
+              onClick={async () => {
+                try {
+                  const endpoint = config.name === "shopify" ? `/api/integrations/shopify/test` : `/api/integrations/${config.name}/test`;
+                  const response = await fetch(endpoint);
+                  const result = await response.json();
+                  if (result.success) {
+                    toast({ title: "Connection successful", description: result.message });
+                  } else {
+                    toast({ title: "Connection failed", description: result.message, variant: "destructive" });
+                  }
+                } catch (error) {
+                  toast({ title: "Test failed", variant: "destructive" });
+                }
+              }}
+              disabled={!integration?.isEnabled}
             >
               <TestTube className="h-4 w-4 mr-2" />
               Test

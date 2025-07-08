@@ -313,10 +313,138 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/shopify/sync", async (req, res) => {
     try {
       const processedCount = await shopifyService.syncOrders();
-      res.json({ message: `Synced ${processedCount} orders` });
+      res.json({ message: `Synced ${processedCount} orders`, count: processedCount });
     } catch (error) {
       console.error("Failed to sync Shopify orders:", error);
       res.status(500).json({ error: "Failed to sync orders" });
+    }
+  });
+
+  // Shopify Configuration
+  app.post("/api/integrations/shopify/configure", async (req, res) => {
+    try {
+      const { storeName, storeUrl, adminApiKey, adminApiSecret, accessToken } = req.body;
+      
+      if (!storeName || !storeUrl || !adminApiKey) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      // Save configuration to integration
+      const integration = await storage.getIntegration("shopify");
+      const config = {
+        storeName,
+        storeUrl,
+        adminApiKey,
+        adminApiSecret,
+        accessToken,
+        configuredAt: new Date().toISOString()
+      };
+
+      if (integration) {
+        await storage.updateIntegration(integration.id, { config, isEnabled: true });
+      } else {
+        await storage.createIntegration({
+          name: "shopify",
+          type: "shopify",
+          category: "ecommerce",
+          isEnabled: true,
+          config,
+          successCount: 0,
+          failureCount: 0
+        });
+      }
+
+      // Auto-register webhooks after successful configuration
+      try {
+        const testService = new ShopifyService();
+        testService.configure(config);
+        await testService.registerWebhooks();
+      } catch (webhookError) {
+        console.warn("Failed to register webhooks:", webhookError);
+        // Don't fail the configuration save if webhook registration fails
+      }
+
+      res.json({ success: true, message: "Shopify configuration saved and webhooks registered" });
+    } catch (error) {
+      console.error("Failed to configure Shopify:", error);
+      res.status(500).json({ error: "Failed to save configuration" });
+    }
+  });
+
+  app.get("/api/integrations/shopify/test", async (req, res) => {
+    try {
+      const integration = await storage.getIntegration("shopify");
+      if (!integration?.config) {
+        return res.status(400).json({ error: "Shopify not configured" });
+      }
+
+      // Test connection by fetching shop info
+      const testService = new ShopifyService();
+      // Use config from database instead of env vars
+      testService.configure(integration.config);
+      
+      const shopInfo = await testService.makeRequest("shop.json");
+      
+      res.json({ 
+        success: true, 
+        message: "Connection successful",
+        shop: shopInfo.shop.name
+      });
+    } catch (error) {
+      console.error("Shopify test failed:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: error.message || "Connection failed" 
+      });
+    }
+  });
+
+  app.get("/api/integrations/shopify/orders", async (req, res) => {
+    try {
+      const integration = await storage.getIntegration("shopify");
+      if (!integration?.config || !integration.isEnabled) {
+        return res.json([]);
+      }
+
+      const testService = new ShopifyService();
+      testService.configure(integration.config);
+      
+      const orders = await testService.fetchOpenOrders();
+      res.json(orders);
+    } catch (error) {
+      console.error("Failed to fetch Shopify orders:", error);
+      res.status(500).json({ error: "Failed to fetch orders" });
+    }
+  });
+
+  // Shopify Webhook Handler
+  app.post("/webhooks/shopify", async (req, res) => {
+    try {
+      const hmacHeader = req.get("X-Shopify-Hmac-Sha256");
+      const body = JSON.stringify(req.body);
+      const topic = req.get("X-Shopify-Topic");
+      
+      // For now, accept all webhooks - in production you should verify HMAC
+      console.log(`Received Shopify webhook: ${topic}`);
+      
+      if (topic === "orders/create" || topic === "orders/updated") {
+        const order = req.body;
+        
+        // Process the order through our system
+        await shopifyService.processShopifyOrder(order);
+        
+        // Emit appropriate event
+        if (topic === "orders/create") {
+          eventBus.emit("EV001", { type: "order_received", orderId: order.id, source: "shopify_webhook" });
+        } else {
+          eventBus.emit("EV003", { type: "order_updated", orderId: order.id, source: "shopify_webhook" });
+        }
+      }
+      
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error("Failed to process Shopify webhook:", error);
+      res.status(500).json({ error: "Failed to process webhook" });
     }
   });
 

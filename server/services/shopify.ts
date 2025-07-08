@@ -54,11 +54,18 @@ export class ShopifyService {
     }
   }
 
-  isConfigured(): boolean {
-    return !!(this.storeUrl && this.adminApiKey && this.apiKey && this.apiSecret);
+  configure(config: any): void {
+    this.storeUrl = config.storeUrl;
+    this.adminApiKey = config.adminApiKey;
+    this.apiKey = config.apiKey || config.adminApiKey;
+    this.apiSecret = config.adminApiSecret || config.apiSecret;
   }
 
-  private async makeRequest(endpoint: string, options: RequestInit = {}): Promise<any> {
+  isConfigured(): boolean {
+    return !!(this.storeUrl && this.adminApiKey);
+  }
+
+  async makeRequest(endpoint: string, options: RequestInit = {}): Promise<any> {
     if (!this.isConfigured()) {
       throw new Error("Shopify not configured");
     }
@@ -235,6 +242,55 @@ export class ShopifyService {
     }
   }
 
+  async registerWebhooks(): Promise<void> {
+    if (!this.isConfigured()) {
+      throw new Error("Shopify not configured");
+    }
+
+    try {
+      const webhookTopics = [
+        { topic: "orders/create", endpoint: "/webhooks/shopify" },
+        { topic: "orders/updated", endpoint: "/webhooks/shopify" }
+      ];
+
+      for (const webhook of webhookTopics) {
+        const webhookData = {
+          webhook: {
+            topic: webhook.topic,
+            address: `${process.env.REPLIT_URL || 'https://your-app.replit.app'}${webhook.endpoint}`,
+            format: "json"
+          }
+        };
+
+        await this.makeRequest("webhooks.json", {
+          method: "POST",
+          body: JSON.stringify(webhookData),
+        });
+
+        console.log(`Registered Shopify webhook for ${webhook.topic}`);
+      }
+
+      await this.updateIntegrationStatus(true, "Webhooks registered successfully");
+    } catch (error) {
+      console.error("Failed to register webhooks:", error);
+      await this.updateIntegrationStatus(false, `Webhook registration failed: ${error.message}`);
+      throw error;
+    }
+  }
+
+  mapShopifyStatus(shopifyStatus: string, fulfillmentStatus?: string): string {
+    // Map Shopify statuses to internal Saylogix statuses
+    if (shopifyStatus === "cancelled") return "cancelled";
+    
+    if (fulfillmentStatus === "fulfilled") return "dispatched";
+    if (fulfillmentStatus === "partial") return "picking";
+    
+    if (shopifyStatus === "open") return "picking";
+    if (shopifyStatus === "closed") return "delivered";
+    
+    return "received"; // default status
+  }
+
   async fetchOpenOrders(): Promise<ShopifyOrder[]> {
     if (!this.isConfigured()) {
       throw new Error("Shopify not configured");
@@ -247,6 +303,33 @@ export class ShopifyService {
     } catch (error) {
       console.error("Failed to fetch Shopify orders:", error);
       await this.updateIntegrationStatus(false, `Failed to fetch orders: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async syncOrders(): Promise<number> {
+    if (!this.isConfigured()) {
+      throw new Error("Shopify not configured");
+    }
+
+    try {
+      const orders = await this.fetchOpenOrders();
+      let processedCount = 0;
+
+      for (const order of orders) {
+        try {
+          await this.processShopifyOrder(order);
+          processedCount++;
+        } catch (error) {
+          console.error(`Failed to process order ${order.id}:`, error);
+        }
+      }
+
+      await this.updateIntegrationStatus(true, `Successfully synced ${processedCount} orders`);
+      return processedCount;
+    } catch (error) {
+      console.error("Failed to sync Shopify orders:", error);
+      await this.updateIntegrationStatus(false, `Sync failed: ${error.message}`);
       throw error;
     }
   }

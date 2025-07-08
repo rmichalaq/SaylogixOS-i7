@@ -41,6 +41,12 @@ export default function Orders() {
     refetchInterval: 30000,
   });
 
+  // Also fetch live Shopify orders to show real-time data
+  const { data: shopifyOrders = [] } = useQuery({
+    queryKey: ["/api/integrations/shopify/orders"],
+    refetchInterval: 10000,
+  });
+
   const orders = ordersData?.orders || [];
   const totalOrders = ordersData?.total || 0;
 
