@@ -42,9 +42,6 @@ export default function DispatchPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dispatch Management (DMS)</h1>
-          <p className="text-gray-600">Manage courier manifests and package handovers</p>
-        </div>
         <div className="flex space-x-2">
           <Button variant="outline">
             <FileText className="h-4 w-4 mr-2" />

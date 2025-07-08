@@ -126,9 +126,6 @@ export default function TrackingPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Package Tracking</h1>
-          <p className="text-gray-600">Track orders and view delivery status</p>
-        </div>
       </div>
 
       {/* Tracking Search */}

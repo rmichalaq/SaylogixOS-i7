@@ -49,9 +49,6 @@ export default function PickingPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Picking Management</h1>
-          <p className="text-gray-600">Manage warehouse picking tasks and optimize pick paths</p>
-        </div>
         <Button className="saylogix-primary">
           <Hand className="h-4 w-4 mr-2" />
           Start Picking

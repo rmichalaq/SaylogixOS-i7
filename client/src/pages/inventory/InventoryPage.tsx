@@ -44,8 +44,6 @@ export default function InventoryPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Inventory Management (WMS)</h1>
-          <p className="text-gray-600">Monitor stock levels and manage warehouse inventory</p>
         </div>
         <div className="flex space-x-2">
           <Button variant="outline">

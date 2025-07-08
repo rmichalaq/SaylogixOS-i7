@@ -428,10 +428,6 @@ export default function Integrations() {
 
   return (
     <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Integrations</h1>
-        <p className="text-gray-600 mt-2">Connect external services and manage API integrations</p>
-      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-6">

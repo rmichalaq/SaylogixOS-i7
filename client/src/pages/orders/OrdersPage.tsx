@@ -58,8 +58,6 @@ export default function OrdersPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Orders Management</h1>
-          <p className="text-gray-600">Manage and track all order fulfillment</p>
         </div>
         <div className="flex space-x-2">
           <Button onClick={handleSyncShopify} variant="outline">
