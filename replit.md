@@ -147,6 +147,12 @@ Saylogix OS is a comprehensive fullstack logistics management system built as a 
 ## Changelog
 ```
 Changelog:
+- July 08, 2025. Purged all dummy/mock data from system
+  - Replaced hardcoded dashboard alerts/tasks/activity with real database queries
+  - Removed mock courier API responses, now properly error with configuration requirements
+  - Eliminated fake delivery estimates, now use actual courier service times
+  - Removed placeholder driver assignments, now require actual driver data
+  - All data now comes from live database or throws proper configuration errors
 - July 06, 2025. Initial setup
 ```
 

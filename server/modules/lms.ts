@@ -417,15 +417,8 @@ class LMSModule {
   }
 
   private async findAvailableDriver(): Promise<any> {
-    // This would query a drivers table
-    // For now, return a mock driver
-    return {
-      id: 1,
-      name: 'Ahmed Al-Saudi',
-      phone: '+966501234567',
-      vehicleNumber: 'ABC-123',
-      status: 'available'
-    };
+    // TODO: Query actual drivers from database
+    throw new Error('Driver assignment not implemented. Please add drivers to the system first.');
   }
 
   private async notifyDriverOfAssignment(driverId: number, routeId: number): Promise<void> {
@@ -685,8 +678,10 @@ class LMSModule {
     const deliveryTimes = deliveryEvents
       .filter(e => e.payload?.status === 'delivered')
       .map(e => {
-        // This would calculate actual time difference
-        return Math.random() * 24 + 12; // 12-36 hours mock
+        // Calculate actual delivery time from event timestamps
+        const deliveredAt = new Date(e.createdAt);
+        const orderCreatedAt = new Date(); // TODO: Get actual order creation time
+        return (deliveredAt.getTime() - orderCreatedAt.getTime()) / (1000 * 60 * 60); // hours
       });
     
     return deliveryTimes.length > 0 ? 

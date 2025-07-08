@@ -27,25 +27,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/dashboard/alerts", async (req, res) => {
     try {
-      // Sample alerts data - in production this would come from system monitoring
-      const alerts = [
-        {
-          id: "alert-001",
+      const alerts = [];
+      
+      // Get real alerts from database
+      const pendingVerifications = await storage.getEvents('order', undefined);
+      const verificationAlerts = pendingVerifications.filter(event => 
+        event.eventType.includes('address') && event.status === 'pending'
+      );
+      
+      if (verificationAlerts.length > 0) {
+        alerts.push({
+          id: `verification-${Date.now()}`,
           type: "warning",
-          message: "3 orders require address verification",
-          count: 3,
+          message: `${verificationAlerts.length} orders require address verification`,
+          count: verificationAlerts.length,
           action: "Review",
           actionLink: "/verify"
-        },
-        {
-          id: "alert-002", 
-          type: "info",
-          message: "2 courier assignments pending",
-          count: 2,
+        });
+      }
+
+      const recentOrders = await storage.getRecentOrders(10);
+      const unassignedOrders = recentOrders.filter(order => !order.courierName);
+      
+      if (unassignedOrders.length > 0) {
+        alerts.push({
+          id: `courier-${Date.now()}`,
+          type: "info", 
+          message: `${unassignedOrders.length} orders pending courier assignment`,
+          count: unassignedOrders.length,
           action: "Assign",
           actionLink: "/dispatch"
-        }
-      ];
+        });
+      }
+
       res.json(alerts);
     } catch (error) {
       console.error("Failed to get alerts:", error);
@@ -55,37 +69,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/dashboard/tasks", async (req, res) => {
     try {
-      // Sample tasks data - in production this would come from task management system
-      const tasks = [
-        {
-          id: "task-001",
-          type: "address_verification",
-          title: "Verify Customer Address",
-          description: "Customer reported incomplete address for order SLX-2024-001247",
-          priority: "high",
-          orderId: 1247,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: "task-002",
-          type: "picking_exception", 
-          title: "SKU Not Found",
-          description: "SKU ABC-123 not found in bin location A-12-03",
-          priority: "urgent",
-          orderId: 1248,
-          createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString()
-        },
-        {
-          id: "task-003",
-          type: "courier_assignment",
-          title: "Assign Courier Partner",
-          description: "Order ready for dispatch but no courier assigned",
-          priority: "normal",
-          orderId: 1249,
-          createdAt: new Date(Date.now() - 60 * 60 * 1000).toISOString()
+      const tasks = [];
+      
+      // Get real tasks from database events and orders
+      const events = await storage.getEvents();
+      const recentOrders = await storage.getRecentOrders(20);
+      
+      // Address verification tasks
+      const verificationEvents = events.filter(event => 
+        event.eventType.includes('address') && event.status === 'pending'
+      );
+      
+      for (const event of verificationEvents) {
+        const order = recentOrders.find(o => o.id === event.entityId);
+        if (order) {
+          tasks.push({
+            id: `verification-${event.id}`,
+            type: "address_verification",
+            title: "Verify Customer Address",
+            description: `Address verification required for order ${order.saylogixNumber}`,
+            priority: "high",
+            orderId: order.id,
+            createdAt: event.createdAt
+          });
         }
-      ];
-      res.json(tasks);
+      }
+
+      // Pick task exceptions
+      const pickTasks = await storage.getPickTasks();
+      const errorPickTasks = pickTasks.filter(task => task.status === 'error');
+      
+      for (const pickTask of errorPickTasks) {
+        const order = recentOrders.find(o => o.id === pickTask.orderId);
+        if (order) {
+          tasks.push({
+            id: `pick-error-${pickTask.id}`,
+            type: "picking_exception",
+            title: "Picking Exception",
+            description: `Picking issue for order ${order.saylogixNumber}`,
+            priority: "urgent",
+            orderId: order.id,
+            createdAt: pickTask.createdAt
+          });
+        }
+      }
+
+      // Courier assignment tasks
+      const unassignedOrders = recentOrders.filter(order => 
+        !order.courierName && order.status === 'ready_to_ship'
+      );
+      
+      for (const order of unassignedOrders) {
+        tasks.push({
+          id: `courier-${order.id}`,
+          type: "courier_assignment",
+          title: "Assign Courier",
+          description: `Order ${order.saylogixNumber} ready for shipment`,
+          priority: "medium",
+          orderId: order.id,
+          createdAt: order.createdAt
+        });
+      }
+
+      res.json(tasks.slice(0, 10)); // Limit to 10 most recent tasks
     } catch (error) {
       console.error("Failed to get tasks:", error);
       res.status(500).json({ error: "Internal server error" });
@@ -94,23 +140,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/dashboard/activity", async (req, res) => {
     try {
-      // Sample activity data for real-time updates
-      const activity = [
-        {
-          id: "activity-001",
-          type: "order_received",
-          message: "New order received from Shopify",
-          timestamp: new Date().toISOString(),
-          orderId: 1250
-        },
-        {
-          id: "activity-002",
-          type: "picking_completed",
-          message: "Order SLX-001247 picking completed",
-          timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-          orderId: 1247
-        }
-      ];
+      // Get real activity from events
+      const events = await storage.getEvents();
+      const recentEvents = events
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 20);
+      
+      const activity = recentEvents.map(event => ({
+        id: `activity-${event.id}`,
+        type: event.eventType,
+        message: event.description || `Event ${event.eventType} occurred`,
+        timestamp: event.createdAt,
+        orderId: event.entityType === 'order' ? event.entityId : undefined
+      }));
+
       res.json(activity);
     } catch (error) {
       console.error("Failed to get activity:", error);

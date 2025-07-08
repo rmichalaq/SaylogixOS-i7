@@ -229,10 +229,14 @@ class TrackingModule {
     return locations[status] || 'Processing';
   }
 
-  private calculateEstimatedDelivery(): Date {
-    // Calculate estimated delivery time (typically within 2-4 hours)
+  private calculateEstimatedDelivery(order?: any): Date {
+    // Calculate estimated delivery time based on courier service level and distance
     const now = new Date();
-    const estimatedHours = Math.random() * 2 + 2; // 2-4 hours
+    
+    // Get courier service details from order
+    const courierTransitTime = order?.courierService?.includes('Express') ? 24 : 48; // hours
+    const estimatedHours = courierTransitTime || 48; // Default to 48 hours if no order info
+    
     return new Date(now.getTime() + estimatedHours * 60 * 60 * 1000);
   }
 

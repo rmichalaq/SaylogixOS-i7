@@ -197,33 +197,18 @@ class CourierService {
       }
     };
 
-    // Mock response for now - implement actual API call
-    return {
-      courier: 'aramex',
-      service: 'Express',
-      rate: 25.00,
-      transitTime: '1-2 business days'
-    };
+    // TODO: Implement actual Aramex API call with the prepared payload
+    throw new Error('Aramex API not configured. Please provide ARAMEX_API_KEY and ARAMEX_ACCOUNT_NUMBER environment variables.');
   }
 
   private async getSmsaRate(order: any, weight: number): Promise<CourierRates | null> {
-    // SMSA API implementation
-    return {
-      courier: 'smsa',
-      service: 'Express',
-      rate: 22.00,
-      transitTime: '1-2 business days'
-    };
+    // TODO: Implement actual SMSA API call
+    throw new Error('SMSA API not configured. Please provide SMSA_API_KEY environment variable.');
   }
 
   private async getNaqelRate(order: any, weight: number): Promise<CourierRates | null> {
-    // Naqel API implementation
-    return {
-      courier: 'naqel',
-      service: 'Standard',
-      rate: 20.00,
-      transitTime: '2-3 business days'
-    };
+    // TODO: Implement actual Naqel API call
+    throw new Error('Naqel API not configured. Please provide NAQEL_API_KEY environment variable.');
   }
 
   private selectOptimalCourier(rates: CourierRates[], order: any): string {
@@ -329,17 +314,17 @@ class CourierService {
   }
 
   private async getCourierTracking(courier: string, trackingNumber: string): Promise<TrackingUpdate[]> {
-    // Implement actual courier tracking APIs
-    // For now, return mock data
-    return [
-      {
-        trackingNumber,
-        status: 'In Transit',
-        location: 'Riyadh Hub',
-        timestamp: new Date(),
-        description: 'Package is on route to destination'
-      }
-    ];
+    // TODO: Implement actual courier tracking APIs
+    switch (courier.toLowerCase()) {
+      case 'aramex':
+        throw new Error('Aramex tracking API not configured');
+      case 'smsa':
+        throw new Error('SMSA tracking API not configured');
+      case 'naqel':
+        throw new Error('Naqel tracking API not configured');
+      default:
+        throw new Error(`Unknown courier: ${courier}`);
+    }
   }
 
   async handleWebhook(payload: any, headers: any): Promise<void> {
