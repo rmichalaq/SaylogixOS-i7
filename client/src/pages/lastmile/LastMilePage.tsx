@@ -43,6 +43,8 @@ export default function LastMilePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
+          <h1 className="text-2xl font-bold text-gray-900">Last Mile</h1>
+          <p className="text-gray-600">Manage delivery routes and tracking</p>
         </div>
         <div className="flex space-x-2">
           <Button variant="outline">

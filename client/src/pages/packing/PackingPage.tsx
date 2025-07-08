@@ -40,6 +40,8 @@ export default function PackingPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
+          <h1 className="text-2xl font-bold text-gray-900">Packing</h1>
+          <p className="text-gray-600">Manage packing tasks and shipments</p>
         </div>
         <Button className="saylogix-primary">
           <Box className="h-4 w-4 mr-2" />
