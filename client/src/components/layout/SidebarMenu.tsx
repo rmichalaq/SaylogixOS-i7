@@ -1,4 +1,4 @@
-import { Link, useLocation } from "wouter";
+import { Link, useLocation } from "react-router-dom";
 import { getMenuGroups, type ScreenConfig } from "@/config/screens";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/context/SidebarContext";
 
 export default function SidebarMenu() {
-  const [location] = useLocation();
+  const location = useLocation();
   const menuGroups = getMenuGroups();
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const { isCollapsed, isMobile, toggleSidebar, setIsCollapsed, setIsMobile } = useSidebar();
@@ -44,9 +44,9 @@ export default function SidebarMenu() {
   };
 
   const isActiveScreen = (screen: ScreenConfig): boolean => {
-    if (screen.path === location) return true;
+    if (screen.path === location.pathname) return true;
     if (screen.children) {
-      return screen.children.some(child => child.path === location);
+      return screen.children.some(child => child.path === location.pathname);
     }
     return false;
   };
@@ -140,7 +140,7 @@ export default function SidebarMenu() {
                         )}
                       </div>
                     ) : (
-                      <Link href={screen.path}>
+                      <Link to={screen.path}>
                         <div 
                           className={cn(
                             "flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors group relative cursor-pointer",
@@ -169,11 +169,11 @@ export default function SidebarMenu() {
                     {!isCollapsed && screen.children && expandedGroups[screen.path] && (
                       <div className="ml-6 mt-1 space-y-1">
                         {screen.children.map((child) => (
-                          <Link key={child.path} href={child.path}>
+                          <Link key={child.path} to={child.path}>
                             <div
                               className={cn(
                                 "flex items-center px-3 py-2 text-sm rounded-lg transition-colors cursor-pointer",
-                                location === child.path
+                                location.pathname === child.path
                                   ? "text-primary-600 bg-primary-50"
                                   : "text-secondary-500 hover:bg-gray-50"
                               )}
