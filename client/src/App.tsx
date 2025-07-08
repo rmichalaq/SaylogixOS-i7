@@ -35,16 +35,7 @@ function AppRoutes() {
   return useRoutes(routes);
 }
 
-function useScanContext() {
-  const location = useLocation();
-  const route = screens.find(s => location.pathname.startsWith(s.path));
-  const child = route?.children?.find(c => location.pathname === c.path);
-  const scan = child?.scan ?? route?.scan ?? { enabled: false };
-  return scan;
-}
-
 function App() {
-  const scan = useScanContext();
 
   return (
     <div className="layout-container bg-gray-50">
@@ -55,7 +46,7 @@ function App() {
         <main className="content-area">
           <AppRoutes />
         </main>
-        {scan.enabled && <ScanOverlay context={scan.context} />}
+        <ScanOverlay />
       </div>
       <MyTasks />
     </div>

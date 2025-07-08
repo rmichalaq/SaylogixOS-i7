@@ -4,12 +4,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useSidebar } from "@/context/SidebarContext";
+import { useScanner } from "@/hooks/useScanner";
 
 export default function TopNavBar() {
   const location = useLocation();
   const currentScreen = getScreenByPath(location.pathname);
   const [searchQuery, setSearchQuery] = useState("");
   const { toggleSidebar } = useSidebar();
+  const { openScanner } = useScanner();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,8 +103,7 @@ export default function TopNavBar() {
         {currentScreen?.scan.enabled && (
           <Button
             onClick={() => {
-              // Temporarily log instead of opening scanner
-              console.log("Scan button clicked for context:", currentScreen.scan.context || "general");
+              openScanner(currentScreen.scan.context || "general");
             }}
             className="flex items-center px-2 lg:px-4 py-2 bg-primary-500 text-white hover:bg-primary-600"
           >

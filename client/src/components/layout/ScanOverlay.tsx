@@ -14,13 +14,32 @@ export function ScanOverlay({ context: propContext }: ScanOverlayProps) {
   const context = propContext || hookContext;
   const [manualInput, setManualInput] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [localOpen, setLocalOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (isOpen && inputRef.current) {
+    if ((isOpen || (propContext && localOpen)) && inputRef.current) {
       inputRef.current.focus();
     }
-  }, [isOpen]);
+  }, [isOpen, propContext, localOpen]);
+
+  // Handle Escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        handleClose();
+      }
+    };
+    
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, []);
+
+  const handleClose = () => {
+    setLocalOpen(false);
+    setManualInput("");
+    closeScanner();
+  };
 
   const handleProcessScan = async () => {
     if (!manualInput.trim()) return;
@@ -29,7 +48,7 @@ export function ScanOverlay({ context: propContext }: ScanOverlayProps) {
     try {
       await processScan(manualInput.trim());
       setManualInput("");
-      closeScanner();
+      handleClose();
     } catch (error) {
       console.error("Scan processing error:", error);
     } finally {
@@ -73,11 +92,12 @@ export function ScanOverlay({ context: propContext }: ScanOverlayProps) {
     }
   };
 
-  // Show overlay when explicitly enabled or when hook indicates open
-  const shouldShow = propContext ? true : isOpen;
+  // Show overlay when hook indicates open (opened via useScanner)
+  // Do NOT auto-show for propContext - only show when explicitly opened
+  const shouldShow = isOpen;
 
   return (
-    <Dialog open={shouldShow} onOpenChange={closeScanner}>
+    <Dialog open={shouldShow} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center">
@@ -133,7 +153,7 @@ export function ScanOverlay({ context: propContext }: ScanOverlayProps) {
               </Button>
               <Button 
                 variant="outline"
-                onClick={closeScanner}
+                onClick={handleClose}
                 disabled={isProcessing}
               >
                 Cancel
