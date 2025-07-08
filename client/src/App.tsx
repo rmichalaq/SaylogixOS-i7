@@ -34,7 +34,7 @@ function App() {
           </main>
           <ScanOverlay />
         </div>
-        <MyTasks />
+
       </div>
     </Router>
   );

@@ -117,67 +117,101 @@ export default function Orders() {
 
   return (
     <div className="space-y-6">
-      {/* Header and Filters */}
+      {/* Filters and Actions */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <i className="fas fa-shopping-cart text-primary-500"></i>
-              <span>Order Management System (OMS)</span>
-            </div>
-            <Button>
-              <i className="fas fa-plus mr-2"></i>
-              Manual Order
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex space-x-4">
-            <div className="flex-1">
+        <CardContent className="p-6">
+          <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+            <div className="flex flex-col sm:flex-row gap-4">
               <Input
-                placeholder="Search orders by number, customer, or phone..."
+                placeholder="Search by order ID, customer, or AWB..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full sm:w-80"
               />
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="received">Received</SelectItem>
-                <SelectItem value="validated">Validated</SelectItem>
-                <SelectItem value="picking">Picking</SelectItem>
-                <SelectItem value="picked">Picked</SelectItem>
-                <SelectItem value="packed">Packed</SelectItem>
-                <SelectItem value="dispatched">Dispatched</SelectItem>
-                <SelectItem value="delivered">Delivered</SelectItem>
-                <SelectItem value="exception">Exception</SelectItem>
-              </SelectContent>
-            </Select>
+            
+            <div className="flex gap-2">
+              {orders.length > 0 && (
+                <Button variant="outline" size="sm">
+                  <i className="fas fa-download mr-2"></i>
+                  Export
+                </Button>
+              )}
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/shopify/sync', { method: 'POST' });
+                    if (response.ok) {
+                      // Refresh orders list
+                      window.location.reload();
+                    }
+                  } catch (error) {
+                    console.error('Failed to sync Shopify orders:', error);
+                  }
+                }}
+              >
+                <i className="fas fa-sync mr-2"></i>
+                Sync Shopify
+              </Button>
+            </div>
+          </div>
+
+          {/* Status Tabs */}
+          <div className="mt-6 border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8">
+              {[
+                { key: 'all', label: 'All', count: orders.length },
+                { key: 'received', label: 'New', count: orders.filter(o => o.status === 'received').length },
+                { key: 'picking', label: 'Picking', count: orders.filter(o => o.status === 'picking').length },
+                { key: 'packed', label: 'Packed', count: orders.filter(o => o.status === 'packed').length },
+                { key: 'dispatched', label: 'Dispatched', count: orders.filter(o => o.status === 'dispatched').length },
+                { key: 'delivered', label: 'Delivered', count: orders.filter(o => o.status === 'delivered').length },
+                { key: 'returned', label: 'Returned', count: orders.filter(o => o.status === 'returned').length },
+                { key: 'exception', label: 'Issues', count: orders.filter(o => o.status === 'exception').length },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setStatusFilter(tab.key)}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                    statusFilter === tab.key
+                      ? 'border-primary-500 text-primary-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  {tab.label}
+                  {tab.count > 0 && (
+                    <span className={`ml-1 py-0.5 px-2 rounded-full text-xs ${
+                      statusFilter === tab.key
+                        ? 'bg-primary-100 text-primary-600'
+                        : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </nav>
           </div>
         </CardContent>
       </Card>
 
       {/* Orders Table */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Orders ({totalOrders})</span>
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-secondary-500">
-                Page {page} • Showing {orders.length} orders
-              </span>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           {orders.length === 0 ? (
             <div className="text-center py-12">
               <i className="fas fa-inbox text-4xl text-secondary-300 mb-4"></i>
               <h3 className="text-lg font-medium text-secondary-900 mb-2">No Orders Found</h3>
               <p className="text-secondary-500">
+                {statusFilter !== 'all' 
+                  ? `No orders found with status "${statusFilter}". Try switching to a different tab.`
+                  : "Connect your Shopify store and sync orders to get started."
+                }
+              </p>
+            </div>
+          ) : (
                 {searchQuery || statusFilter 
                   ? "Try adjusting your search or filter criteria"
                   : "No orders have been created yet"
