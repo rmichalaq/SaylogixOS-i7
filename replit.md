@@ -147,6 +147,15 @@ Saylogix OS is a comprehensive fullstack logistics management system built as a 
 ## Changelog
 ```
 Changelog:
+- July 09, 2025. Major UI consistency improvements and visual bug fixes
+  - Fixed all invisible navigation icons by replacing FontAwesome with Lucide React icons
+  - Implemented consistent tabbed layout across all screens (Orders, Dashboard, etc.)
+  - Refactored Orders (OMS) page with proper status tabs, clean layout, and slide-over drawer
+  - Updated Dashboard with proper Lucide icons and consistent spacing
+  - Enhanced sidebar navigation with comprehensive icon mapping
+  - Fixed notification bell visibility and all interactive elements
+  - Removed redundant search bars and duplicate controls per UI plan
+  - All icons now properly visible with consistent styling
 - July 08, 2025. Unified NAS verification system with SPL integration
   - Refactored "Address Verify (NAS)" to "Verify NAS" with single verification tab
   - Removed redundant "SPL Address Verification" menu item

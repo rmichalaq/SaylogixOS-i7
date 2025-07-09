@@ -2,6 +2,22 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { 
+  Package, 
+  Clock, 
+  CheckCircle, 
+  TruckIcon, 
+  AlertTriangle,
+  Activity,
+  BarChart3,
+  Users,
+  ShoppingCart,
+  Plus,
+  Edit,
+  ClipboardCheck,
+  Zap,
+  Hand
+} from "lucide-react";
 
 interface DashboardStats {
   activeOrders: number;
@@ -63,39 +79,39 @@ export default function Dashboard() {
   };
 
   const getActivityIcon = (type: string, status: string) => {
-    let icon = "fas fa-info-circle";
+    let IconComponent = Activity;
     switch (type) {
       case "order_picked":
-        icon = "fas fa-hand-paper";
+        IconComponent = Package;
         break;
       case "order_received":
-        icon = "fas fa-shopping-cart";
+        IconComponent = ShoppingCart;
         break;
       case "manifest_generated":
-        icon = "fas fa-file-alt";
+        IconComponent = TruckIcon;
         break;
       case "picking_exception":
-        icon = "fas fa-exclamation-triangle";
+        IconComponent = AlertTriangle;
         break;
       case "address_verification":
-        icon = "fas fa-map-marker-alt";
+        IconComponent = CheckCircle;
         break;
     }
 
     let colorClass = "text-primary-500";
     switch (status) {
       case "success":
-        colorClass = "text-success-500";
+        colorClass = "text-green-500";
         break;
       case "warning":
-        colorClass = "text-warning-500";
+        colorClass = "text-yellow-500";
         break;
       case "error":
-        colorClass = "text-error-500";
+        colorClass = "text-red-500";
         break;
     }
 
-    return `${icon} ${colorClass}`;
+    return <IconComponent className={`h-4 w-4 ${colorClass}`} />;
   };
 
   const handleQuickAction = (action: string) => {
@@ -118,7 +134,7 @@ export default function Dashboard() {
                 <p className="text-sm text-success-600">↗ +12% from yesterday</p>
               </div>
               <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-shopping-cart text-primary-600"></i>
+                <ShoppingCart className="h-6 w-6 text-primary-600" />
               </div>
             </div>
           </CardContent>
@@ -135,7 +151,7 @@ export default function Dashboard() {
                 <p className="text-sm text-warning-600">→ 2 priority orders</p>
               </div>
               <div className="w-12 h-12 bg-warning-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-hand-paper text-warning-600"></i>
+                <Hand className="h-6 w-6 text-warning-600" />
               </div>
             </div>
           </CardContent>
@@ -152,7 +168,7 @@ export default function Dashboard() {
                 <p className="text-sm text-success-600">↗ +8% efficiency</p>
               </div>
               <div className="w-12 h-12 bg-success-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-shipping-fast text-success-600"></i>
+                <TruckIcon className="h-6 w-6 text-success-600" />
               </div>
             </div>
           </CardContent>
@@ -169,7 +185,7 @@ export default function Dashboard() {
                 <p className="text-sm text-success-600">↗ 98.2% success rate</p>
               </div>
               <div className="w-12 h-12 bg-success-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-check-circle text-success-600"></i>
+                <CheckCircle className="h-6 w-6 text-success-600" />
               </div>
             </div>
           </CardContent>
@@ -182,7 +198,7 @@ export default function Dashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <i className="fas fa-pulse mr-2 text-primary-500"></i>
+              <Activity className="h-5 w-5 mr-2 text-primary-500" />
               Live Activity Feed
             </CardTitle>
           </CardHeader>
@@ -190,14 +206,14 @@ export default function Dashboard() {
             <div className="space-y-4 max-h-80 overflow-y-auto">
               {activity.length === 0 ? (
                 <div className="text-center text-secondary-500 py-8">
-                  <i className="fas fa-stream text-2xl mb-2"></i>
+                  <Activity className="h-8 w-8 text-secondary-300 mb-2 mx-auto" />
                   <p>No recent activity</p>
                 </div>
               ) : (
                 activity.map((event) => (
                   <div key={event.id} className="flex items-start space-x-3">
                     <div className="mt-1">
-                      <i className={getActivityIcon(event.type, event.status)}></i>
+                      {getActivityIcon(event.type, event.status)}
                     </div>
                     <div className="flex-1">
                       <p className="text-sm text-secondary-900">{event.message}</p>
@@ -217,14 +233,14 @@ export default function Dashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <i className="fas fa-chart-line mr-2 text-primary-500"></i>
+              <BarChart3 className="h-5 w-5 mr-2 text-primary-500" />
               Order Processing Performance
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80 bg-gray-50 rounded-lg flex items-center justify-center">
               <div className="text-center">
-                <i className="fas fa-chart-area text-4xl text-secondary-300 mb-4"></i>
+                <BarChart3 className="h-16 w-16 text-secondary-300 mb-4 mx-auto" />
                 <p className="text-secondary-500">Chart visualization</p>
                 <p className="text-sm text-secondary-400">Shows order processing trends over time</p>
               </div>
@@ -247,7 +263,7 @@ export default function Dashboard() {
                 className="flex flex-col items-center p-4 h-auto bg-primary-50 hover:bg-primary-100 border-primary-200"
                 onClick={() => handleQuickAction("manual_order")}
               >
-                <i className="fas fa-plus text-primary-600 text-xl mb-2"></i>
+                <Plus className="h-6 w-6 text-primary-600 mb-2" />
                 <span className="text-sm font-medium text-primary-700">Manual Order</span>
               </Button>
               
@@ -256,7 +272,7 @@ export default function Dashboard() {
                 className="flex flex-col items-center p-4 h-auto bg-success-50 hover:bg-success-100 border-success-200"
                 onClick={() => handleQuickAction("inventory_adjust")}
               >
-                <i className="fas fa-edit text-success-600 text-xl mb-2"></i>
+                <Edit className="h-6 w-6 text-success-600 mb-2" />
                 <span className="text-sm font-medium text-success-700">Adjust Inventory</span>
               </Button>
               
@@ -265,7 +281,7 @@ export default function Dashboard() {
                 className="flex flex-col items-center p-4 h-auto bg-warning-50 hover:bg-warning-100 border-warning-200"
                 onClick={() => handleQuickAction("cycle_count")}
               >
-                <i className="fas fa-clipboard-check text-warning-600 text-xl mb-2"></i>
+                <ClipboardCheck className="h-6 w-6 text-warning-600 mb-2" />
                 <span className="text-sm font-medium text-warning-700">Cycle Count</span>
               </Button>
               
@@ -274,7 +290,7 @@ export default function Dashboard() {
                 className="flex flex-col items-center p-4 h-auto bg-error-50 hover:bg-error-100 border-error-200"
                 onClick={() => handleQuickAction("emergency_ship")}
               >
-                <i className="fas fa-exclamation text-error-600 text-xl mb-2"></i>
+                <Zap className="h-6 w-6 text-error-600 mb-2" />
                 <span className="text-sm font-medium text-error-700">Emergency Ship</span>
               </Button>
             </div>

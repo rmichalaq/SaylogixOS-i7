@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Download, Filter, MapPin, Phone, Mail, Package, Truck } from "lucide-react";
+import { Download, Filter, MapPin, Phone, Mail, Package, Truck, Eye, Edit, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Order {
   id: number;
@@ -35,12 +35,12 @@ interface Order {
 
 export default function Orders() {
   const [statusFilter, setStatusFilter] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [page, setPage] = useState(1);
 
   const { data: ordersData, isLoading } = useQuery({
-    queryKey: ["/api/orders", { status: statusFilter, limit: 100, search: searchQuery }],
+    queryKey: ["/api/orders", { status: statusFilter, limit: 100 }],
     refetchInterval: 30000,
   });
 
@@ -111,7 +111,7 @@ export default function Orders() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <i className="fas fa-spinner fa-spin text-4xl text-primary-500 mb-4"></i>
+          <Package className="h-12 w-12 text-primary-500 mb-4 mx-auto animate-pulse" />
           <p className="text-secondary-500">Loading orders...</p>
         </div>
       </div>
@@ -120,87 +120,67 @@ export default function Orders() {
 
   return (
     <div className="space-y-6">
-      {/* Filters and Actions */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Input
-                placeholder="Search by order ID, customer, or AWB..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full sm:w-80"
-              />
-            </div>
-            
-            <div className="flex gap-2">
-              {orders.length > 0 && (
-                <Button variant="outline" size="sm">
-                  <i className="fas fa-download mr-2"></i>
-                  Export
-                </Button>
-              )}
-
-            </div>
-          </div>
-
-          {/* Status Tabs */}
-          <div className="mt-6 border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
-              {[
-                { key: 'all', label: 'All', count: orders.length },
-                { key: 'received', label: 'New', count: orders.filter(o => o.status === 'received').length },
-                { key: 'picking', label: 'Picking', count: orders.filter(o => o.status === 'picking').length },
-                { key: 'packed', label: 'Packed', count: orders.filter(o => o.status === 'packed').length },
-                { key: 'dispatched', label: 'Dispatched', count: orders.filter(o => o.status === 'dispatched').length },
-                { key: 'delivered', label: 'Delivered', count: orders.filter(o => o.status === 'delivered').length },
-                { key: 'returned', label: 'Returned', count: orders.filter(o => o.status === 'returned').length },
-                { key: 'exception', label: 'Issues', count: orders.filter(o => o.status === 'exception').length },
-              ].map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setStatusFilter(tab.key)}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+      {/* Status Tabs */}
+      <div className="border-b border-gray-200 bg-white">
+        <div className="flex items-center justify-between px-6 py-4">
+          <div className="-mb-px flex space-x-8">
+            {[
+              { key: 'all', label: 'All', count: orders.length },
+              { key: 'received', label: 'Fetched', count: orders.filter(o => o.status === 'received').length },
+              { key: 'picking', label: 'Picked', count: orders.filter(o => o.status === 'picking').length },
+              { key: 'packed', label: 'Packed', count: orders.filter(o => o.status === 'packed').length },
+              { key: 'dispatched', label: 'Dispatched', count: orders.filter(o => o.status === 'dispatched').length },
+              { key: 'delivered', label: 'Delivered', count: orders.filter(o => o.status === 'delivered').length },
+              { key: 'cancelled', label: 'Cancelled', count: orders.filter(o => o.status === 'cancelled').length },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setStatusFilter(tab.key)}
+                className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                  statusFilter === tab.key
+                    ? 'border-primary-500 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                {tab.label}
+                {tab.count > 0 && (
+                  <span className={`ml-1 py-0.5 px-2 rounded-full text-xs ${
                     statusFilter === tab.key
-                      ? 'border-primary-500 text-primary-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  {tab.label}
-                  {tab.count > 0 && (
-                    <span className={`ml-1 py-0.5 px-2 rounded-full text-xs ${
-                      statusFilter === tab.key
-                        ? 'bg-primary-100 text-primary-600'
-                        : 'bg-gray-100 text-gray-600'
-                    }`}>
-                      {tab.count}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </nav>
+                      ? 'bg-primary-100 text-primary-600'
+                      : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm">
+              <Filter className="h-4 w-4 mr-2" />
+              Filters
+            </Button>
+            {orders.length > 0 && (
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Orders Table */}
       <Card>
         <CardContent className="p-0">
           {orders.length === 0 ? (
             <div className="text-center py-12">
-              <i className="fas fa-inbox text-4xl text-secondary-300 mb-4"></i>
+              <Package className="h-16 w-16 text-secondary-300 mb-4 mx-auto" />
               <h3 className="text-lg font-medium text-secondary-900 mb-2">No Orders Found</h3>
               <p className="text-secondary-500">
                 {statusFilter !== 'all' 
                   ? `No orders found with status "${statusFilter}". Try switching to a different tab.`
                   : "Connect your Shopify store and sync orders to get started."
-                }
-              </p>
-            </div>
-          ) : (
-                {searchQuery || statusFilter 
-                  ? "Try adjusting your search or filter criteria"
-                  : "No orders have been created yet"
                 }
               </p>
             </div>
@@ -291,14 +271,21 @@ export default function Orders() {
                       
                       <TableCell>
                         <div className="flex space-x-2">
-                          <Button variant="ghost" size="sm">
-                            <i className="fas fa-eye"></i>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedOrder(order);
+                              setIsDrawerOpen(true);
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
                           </Button>
                           <Button variant="ghost" size="sm">
-                            <i className="fas fa-edit"></i>
+                            <Edit className="h-4 w-4" />
                           </Button>
                           <Button variant="ghost" size="sm">
-                            <i className="fas fa-truck"></i>
+                            <Truck className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
@@ -319,7 +306,7 @@ export default function Orders() {
             disabled={page === 1}
             onClick={() => setPage(page - 1)}
           >
-            <i className="fas fa-chevron-left mr-2"></i>
+            <ChevronLeft className="h-4 w-4 mr-2" />
             Previous
           </Button>
           
@@ -333,10 +320,114 @@ export default function Orders() {
             onClick={() => setPage(page + 1)}
           >
             Next
-            <i className="fas fa-chevron-right ml-2"></i>
+            <ChevronRight className="h-4 w-4 ml-2" />
           </Button>
         </div>
       )}
+
+      {/* Order Details Drawer */}
+      <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+        <SheetContent className="w-[500px] sm:w-[600px]">
+          <SheetHeader>
+            <SheetTitle>Order Details</SheetTitle>
+            <SheetDescription>
+              Complete order information and fulfillment status
+            </SheetDescription>
+          </SheetHeader>
+          
+          {selectedOrder && (
+            <div className="mt-6 space-y-6">
+              {/* Order Summary */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Order Summary</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Saylogix Number</p>
+                    <p className="font-medium">{selectedOrder.saylogixNumber}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Source Order</p>
+                    <p className="font-medium">{selectedOrder.sourceOrderNumber}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Channel</p>
+                    <p className="font-medium">{selectedOrder.sourceChannel}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Status</p>
+                    <Badge className={getStatusColor(selectedOrder.status)}>
+                      {selectedOrder.status}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              {/* Customer Info */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Customer Information</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-3">
+                    <Phone className="h-4 w-4 text-gray-400" />
+                    <div>
+                      <p className="font-medium">{selectedOrder.customerName}</p>
+                      <p className="text-sm text-gray-500">{selectedOrder.customerPhone}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <MapPin className="h-4 w-4 text-gray-400 mt-1" />
+                    <div>
+                      <p className="font-medium">Delivery Address</p>
+                      <p className="text-sm text-gray-500">{selectedOrder.city}, {selectedOrder.region}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Fulfillment & Courier */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Fulfillment & Courier</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Courier Service</p>
+                    <p className="font-medium">{selectedOrder.courierService || "Not assigned"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Priority</p>
+                    <Badge className={getPriorityColor(selectedOrder.priority)}>
+                      {selectedOrder.priority}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              {/* Order Amount */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Order Amount</h3>
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <span className="text-lg font-semibold">Total</span>
+                  <span className="text-lg font-bold text-primary-600">
+                    {formatCurrency(selectedOrder.totalAmount, selectedOrder.currency)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex space-x-3 pt-4 border-t">
+                <Button variant="outline" className="flex-1">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Order
+                </Button>
+                <Button variant="outline" className="flex-1">
+                  Change Status
+                </Button>
+                <Button variant="destructive" className="flex-1">
+                  Cancel Order
+                </Button>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

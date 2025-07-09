@@ -29,7 +29,18 @@ import {
   Layers,
   Zap,
   CheckSquare,
-  Target
+  Target,
+  Eye,
+  Edit,
+  ClipboardCheck,
+  CalendarX,
+  ArrowDown,
+  Hand,
+  TruckIcon,
+  BarChart,
+  Activity,
+  ArrowUpDown,
+  Plug
 } from "lucide-react";
 
 // Icon mapping function to convert FontAwesome class names to Lucide components
@@ -45,6 +56,7 @@ const getIconComponent = (iconClass: string) => {
     'fas fa-users': Users,
     'fas fa-file-alt': FileText,
     'fas fa-box': Box,
+    'fas fa-boxes': Package2,
     'fas fa-route': Route,
     'fas fa-search': Search,
     'fas fa-qrcode': QrCode,
@@ -57,6 +69,17 @@ const getIconComponent = (iconClass: string) => {
     'fas fa-bullseye': Target,
     'fas fa-package': Package2,
     'fas fa-search-location': Search,
+    'fas fa-eye': Eye,
+    'fas fa-edit': Edit,
+    'fas fa-clipboard-check': ClipboardCheck,
+    'fas fa-calendar-times': CalendarX,
+    'fas fa-arrow-down': ArrowDown,
+    'fas fa-hand-paper': Hand,
+    'fas fa-shipping-fast': TruckIcon,
+    'fas fa-chart-line': BarChart,
+    'fas fa-activity': Activity,
+    'fas fa-exchange-alt': ArrowUpDown,
+    'fas fa-plug': Plug,
   };
 
   const IconComponent = iconMap[iconClass] || Box;
