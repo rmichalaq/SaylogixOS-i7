@@ -299,7 +299,7 @@ export default function AddressVerify() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Internal Order ID</TableHead>
+                          <TableHead>Order ID</TableHead>
                           <TableHead>Customer</TableHead>
                           <TableHead className="text-center">NAS</TableHead>
                           <TableHead>Address</TableHead>
