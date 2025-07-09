@@ -2,7 +2,8 @@ import {
   users, orders, orderItems, inventory, events, addressVerifications,
   nasLookups, pickTasks, packTasks, manifests, manifestItems,
   routes, routeStops, webhookLogs, integrations, warehouseZones, 
-  staffRoles, toteCartTypes,
+  staffRoles, toteCartTypes, purchaseOrders, purchaseOrderItems,
+  goodsReceiptNotes, grnItems, putawayTasks, putawayItems,
   type User, type InsertUser, type Order, type InsertOrder,
   type OrderItem, type InsertOrderItem, type Inventory, type InsertInventory,
   type Event, type InsertEvent, type AddressVerification, type InsertAddressVerification,
@@ -11,7 +12,10 @@ import {
   type ManifestItem, type InsertManifestItem, type Route, type InsertRoute,
   type RouteStop, type InsertRouteStop, type WebhookLog, type InsertWebhookLog,
   type Integration, type InsertIntegration, type WarehouseZone, type InsertWarehouseZone,
-  type StaffRole, type InsertStaffRole, type ToteCartType, type InsertToteCartType
+  type StaffRole, type InsertStaffRole, type ToteCartType, type InsertToteCartType,
+  type PurchaseOrder, type InsertPurchaseOrder, type PurchaseOrderItem, type InsertPurchaseOrderItem,
+  type GoodsReceiptNote, type InsertGoodsReceiptNote, type GrnItem, type InsertGrnItem,
+  type PutawayTask, type InsertPutawayTask, type PutawayItem, type InsertPutawayItem
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, sql, count, sum } from "drizzle-orm";
@@ -97,6 +101,31 @@ export interface IStorage {
   
   // Maps and coordinates
   getOrdersForMapping(): Promise<Order[]>;
+  
+  // Inbound Processing
+  getPurchaseOrders(): Promise<PurchaseOrder[]>;
+  getPurchaseOrder(id: number): Promise<PurchaseOrder | undefined>;
+  createPurchaseOrder(po: InsertPurchaseOrder): Promise<PurchaseOrder>;
+  updatePurchaseOrder(id: number, updates: Partial<InsertPurchaseOrder>): Promise<void>;
+  
+  getPurchaseOrderItems(poId: number): Promise<PurchaseOrderItem[]>;
+  createPurchaseOrderItem(item: InsertPurchaseOrderItem): Promise<PurchaseOrderItem>;
+  
+  getGoodsReceiptNotes(): Promise<GoodsReceiptNote[]>;
+  createGoodsReceiptNote(grn: InsertGoodsReceiptNote): Promise<GoodsReceiptNote>;
+  updateGoodsReceiptNote(id: number, updates: Partial<InsertGoodsReceiptNote>): Promise<void>;
+  
+  getGrnItems(grnId: number): Promise<GrnItem[]>;
+  createGrnItem(item: InsertGrnItem): Promise<GrnItem>;
+  updateGrnItem(id: number, updates: Partial<InsertGrnItem>): Promise<void>;
+  
+  getPutawayTasks(): Promise<PutawayTask[]>;
+  createPutawayTask(task: InsertPutawayTask): Promise<PutawayTask>;
+  updatePutawayTask(id: number, updates: Partial<InsertPutawayTask>): Promise<void>;
+  
+  getPutawayItems(taskId: number): Promise<PutawayItem[]>;
+  createPutawayItem(item: InsertPutawayItem): Promise<PutawayItem>;
+  updatePutawayItem(id: number, updates: Partial<InsertPutawayItem>): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -422,6 +451,94 @@ export class DatabaseStorage implements IStorage {
         eq(orders.status, "dispatched")
       ))
       .orderBy(desc(orders.createdAt));
+  }
+
+  // Inbound Processing - Purchase Orders
+  async getPurchaseOrders(): Promise<PurchaseOrder[]> {
+    return await db.select().from(purchaseOrders).orderBy(desc(purchaseOrders.createdAt));
+  }
+
+  async getPurchaseOrder(id: number): Promise<PurchaseOrder | undefined> {
+    const [po] = await db.select().from(purchaseOrders).where(eq(purchaseOrders.id, id));
+    return po || undefined;
+  }
+
+  async createPurchaseOrder(po: InsertPurchaseOrder): Promise<PurchaseOrder> {
+    const [result] = await db.insert(purchaseOrders).values(po).returning();
+    return result;
+  }
+
+  async updatePurchaseOrder(id: number, updates: Partial<InsertPurchaseOrder>): Promise<void> {
+    await db.update(purchaseOrders)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(purchaseOrders.id, id));
+  }
+
+  async getPurchaseOrderItems(poId: number): Promise<PurchaseOrderItem[]> {
+    return await db.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.poId, poId));
+  }
+
+  async createPurchaseOrderItem(item: InsertPurchaseOrderItem): Promise<PurchaseOrderItem> {
+    const [result] = await db.insert(purchaseOrderItems).values(item).returning();
+    return result;
+  }
+
+  // Goods Receipt Notes
+  async getGoodsReceiptNotes(): Promise<GoodsReceiptNote[]> {
+    return await db.select().from(goodsReceiptNotes).orderBy(desc(goodsReceiptNotes.createdAt));
+  }
+
+  async createGoodsReceiptNote(grn: InsertGoodsReceiptNote): Promise<GoodsReceiptNote> {
+    const [result] = await db.insert(goodsReceiptNotes).values(grn).returning();
+    return result;
+  }
+
+  async updateGoodsReceiptNote(id: number, updates: Partial<InsertGoodsReceiptNote>): Promise<void> {
+    await db.update(goodsReceiptNotes)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(goodsReceiptNotes.id, id));
+  }
+
+  async getGrnItems(grnId: number): Promise<GrnItem[]> {
+    return await db.select().from(grnItems).where(eq(grnItems.grnId, grnId));
+  }
+
+  async createGrnItem(item: InsertGrnItem): Promise<GrnItem> {
+    const [result] = await db.insert(grnItems).values(item).returning();
+    return result;
+  }
+
+  async updateGrnItem(id: number, updates: Partial<InsertGrnItem>): Promise<void> {
+    await db.update(grnItems).set(updates).where(eq(grnItems.id, id));
+  }
+
+  // Putaway Tasks
+  async getPutawayTasks(): Promise<PutawayTask[]> {
+    return await db.select().from(putawayTasks).orderBy(desc(putawayTasks.createdAt));
+  }
+
+  async createPutawayTask(task: InsertPutawayTask): Promise<PutawayTask> {
+    const [result] = await db.insert(putawayTasks).values(task).returning();
+    return result;
+  }
+
+  async updatePutawayTask(id: number, updates: Partial<InsertPutawayTask>): Promise<void> {
+    await db.update(putawayTasks)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(putawayTasks.id, id));
+  }
+
+  async getPutawayItems(taskId: number): Promise<PutawayItem[]> {
+    return await db.select().from(putawayItems).where(eq(putawayItems.putawayTaskId, taskId));
+  }
+
+  async createPutawayItem(item: InsertPutawayItem): Promise<PutawayItem> {
+    const [result] = await db.insert(putawayItems).values(item).returning();
+    return result;
+  }
+
+  async updatePutawayItem(id: number, updates: Partial<InsertPutawayItem>): Promise<void> {
+    await db.update(putawayItems).set(updates).where(eq(putawayItems.id, id));
   }
 }
 

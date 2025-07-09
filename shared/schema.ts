@@ -387,6 +387,95 @@ export const integrations = pgTable("integrations", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Purchase Orders
+export const purchaseOrders = pgTable("purchase_orders", {
+  id: serial("id").primaryKey(),
+  poNumber: varchar("po_number", { length: 100 }).notNull().unique(),
+  supplier: text("supplier").notNull(),
+  eta: timestamp("eta"),
+  status: varchar("status", { length: 50 }).default("pending"),
+  asnReceived: boolean("asn_received").default(false),
+  asnNumbers: jsonb("asn_numbers"), // Array of airway bill numbers
+  gateEntry: boolean("gate_entry").default(false),
+  gateEntryTime: timestamp("gate_entry_time"),
+  dockAssignment: varchar("dock_assignment", { length: 20 }),
+  unloaded: boolean("unloaded").default(false),
+  unloadingComments: text("unloading_comments"),
+  unloadingTime: timestamp("unloading_time"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Purchase Order Items
+export const purchaseOrderItems = pgTable("purchase_order_items", {
+  id: serial("id").primaryKey(),
+  poId: integer("po_id").notNull(),
+  sku: varchar("sku", { length: 100 }).notNull(),
+  description: text("description").notNull(),
+  expectedQuantity: integer("expected_quantity").notNull(),
+  receivedQuantity: integer("received_quantity").default(0),
+  unitCost: decimal("unit_cost", { precision: 10, scale: 2 }),
+  totalCost: decimal("total_cost", { precision: 10, scale: 2 }),
+});
+
+// Goods Receipt Notes
+export const goodsReceiptNotes = pgTable("goods_receipt_notes", {
+  id: serial("id").primaryKey(),
+  grnNumber: varchar("grn_number", { length: 100 }).notNull().unique(),
+  poId: integer("po_id").notNull(),
+  poNumber: varchar("po_number", { length: 100 }).notNull(),
+  supplier: text("supplier").notNull(),
+  status: varchar("status", { length: 50 }).default("pending"),
+  processedBy: varchar("processed_by", { length: 100 }),
+  processingStarted: timestamp("processing_started"),
+  processingCompleted: timestamp("processing_completed"),
+  discrepancyNotes: text("discrepancy_notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// GRN Items
+export const grnItems = pgTable("grn_items", {
+  id: serial("id").primaryKey(),
+  grnId: integer("grn_id").notNull(),
+  sku: varchar("sku", { length: 100 }).notNull(),
+  description: text("description").notNull(),
+  expectedQuantity: integer("expected_quantity").notNull(),
+  receivedQuantity: integer("received_quantity").notNull(),
+  discrepancy: text("discrepancy"),
+  binLocation: varchar("bin_location", { length: 20 }),
+  scanStatus: varchar("scan_status", { length: 20 }).default("pending"),
+});
+
+// Putaway Tasks
+export const putawayTasks = pgTable("putaway_tasks", {
+  id: serial("id").primaryKey(),
+  grnId: integer("grn_id").notNull(),
+  grnNumber: varchar("grn_number", { length: 100 }).notNull(),
+  status: varchar("status", { length: 50 }).default("staged"),
+  assignedTo: varchar("assigned_to", { length: 100 }),
+  assignedAt: timestamp("assigned_at"),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  cartId: varchar("cart_id", { length: 50 }),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Putaway Items
+export const putawayItems = pgTable("putaway_items", {
+  id: serial("id").primaryKey(),
+  putawayTaskId: integer("putaway_task_id").notNull(),
+  sku: varchar("sku", { length: 100 }).notNull(),
+  description: text("description").notNull(),
+  quantity: integer("quantity").notNull(),
+  binLocation: varchar("bin_location", { length: 20 }),
+  scanStatus: varchar("scan_status", { length: 20 }).default("pending"),
+  scannedAt: timestamp("scanned_at"),
+  placedAt: timestamp("placed_at"),
+});
+
 // Settings Tables
 export const warehouseZones = pgTable("warehouse_zones", {
   id: serial("id").primaryKey(),
@@ -438,6 +527,81 @@ export const insertToteCartTypeSchema = createInsertSchema(toteCartTypes).omit({
   createdAt: true,
 });
 
+// Inbound schemas
+export const insertPurchaseOrderSchema = createInsertSchema(purchaseOrders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPurchaseOrderItemSchema = createInsertSchema(purchaseOrderItems).omit({
+  id: true,
+});
+
+export const insertGoodsReceiptNoteSchema = createInsertSchema(goodsReceiptNotes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertGrnItemSchema = createInsertSchema(grnItems).omit({
+  id: true,
+});
+
+export const insertPutawayTaskSchema = createInsertSchema(putawayTasks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPutawayItemSchema = createInsertSchema(putawayItems).omit({
+  id: true,
+});
+
+// Inbound relations
+export const purchaseOrdersRelations = relations(purchaseOrders, ({ many }) => ({
+  items: many(purchaseOrderItems),
+  grns: many(goodsReceiptNotes),
+}));
+
+export const purchaseOrderItemsRelations = relations(purchaseOrderItems, ({ one }) => ({
+  purchaseOrder: one(purchaseOrders, {
+    fields: [purchaseOrderItems.poId],
+    references: [purchaseOrders.id],
+  }),
+}));
+
+export const goodsReceiptNotesRelations = relations(goodsReceiptNotes, ({ one, many }) => ({
+  purchaseOrder: one(purchaseOrders, {
+    fields: [goodsReceiptNotes.poId],
+    references: [purchaseOrders.id],
+  }),
+  items: many(grnItems),
+  putawayTasks: many(putawayTasks),
+}));
+
+export const grnItemsRelations = relations(grnItems, ({ one }) => ({
+  grn: one(goodsReceiptNotes, {
+    fields: [grnItems.grnId],
+    references: [goodsReceiptNotes.id],
+  }),
+}));
+
+export const putawayTasksRelations = relations(putawayTasks, ({ one, many }) => ({
+  grn: one(goodsReceiptNotes, {
+    fields: [putawayTasks.grnId],
+    references: [goodsReceiptNotes.id],
+  }),
+  items: many(putawayItems),
+}));
+
+export const putawayItemsRelations = relations(putawayItems, ({ one }) => ({
+  putawayTask: one(putawayTasks, {
+    fields: [putawayItems.putawayTaskId],
+    references: [putawayTasks.id],
+  }),
+}));
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -475,3 +639,17 @@ export type StaffRole = typeof staffRoles.$inferSelect;
 export type InsertStaffRole = z.infer<typeof insertStaffRoleSchema>;
 export type ToteCartType = typeof toteCartTypes.$inferSelect;
 export type InsertToteCartType = z.infer<typeof insertToteCartTypeSchema>;
+
+// Inbound types
+export type PurchaseOrder = typeof purchaseOrders.$inferSelect;
+export type InsertPurchaseOrder = z.infer<typeof insertPurchaseOrderSchema>;
+export type PurchaseOrderItem = typeof purchaseOrderItems.$inferSelect;
+export type InsertPurchaseOrderItem = z.infer<typeof insertPurchaseOrderItemSchema>;
+export type GoodsReceiptNote = typeof goodsReceiptNotes.$inferSelect;
+export type InsertGoodsReceiptNote = z.infer<typeof insertGoodsReceiptNoteSchema>;
+export type GrnItem = typeof grnItems.$inferSelect;
+export type InsertGrnItem = z.infer<typeof insertGrnItemSchema>;
+export type PutawayTask = typeof putawayTasks.$inferSelect;
+export type InsertPutawayTask = z.infer<typeof insertPutawayTaskSchema>;
+export type PutawayItem = typeof putawayItems.$inferSelect;
+export type InsertPutawayItem = z.infer<typeof insertPutawayItemSchema>;

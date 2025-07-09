@@ -1,322 +1,289 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
+import { 
+  Package, 
+  Truck, 
+  ClipboardList, 
+  MapPin, 
+  Clock, 
+  CheckCircle, 
+  XCircle, 
+  Loader2, 
+  Plus,
+  FileText,
+  Building,
+  ShoppingCart
+} from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 
-interface InboundShipment {
+interface PurchaseOrder {
   id: number;
-  referenceNumber: string;
+  poNumber: string;
   supplier: string;
-  status: string;
-  expectedDate: string;
-  receivedDate?: string;
-  dockNumber?: string;
-  gateNumber?: string;
-  totalItems: number;
-  receivedItems: number;
-  qcStatus?: string;
-  grnNumber?: string;
+  eta: string;
+  status: 'pending' | 'asn_received' | 'gate_entry' | 'unloaded';
+  asnReceived: boolean;
+  gateEntry: boolean;
+  unloaded: boolean;
+  dockAssignment?: string;
+  items: POItem[];
+}
+
+interface POItem {
+  id: number;
+  sku: string;
+  description: string;
+  expectedQuantity: number;
+  receivedQuantity?: number;
+}
+
+interface GRN {
+  id: number;
+  grnNumber: string;
+  poNumber: string;
+  supplier: string;
+  status: 'pending' | 'processing' | 'completed';
+  createdAt: string;
+  items: GRNItem[];
+}
+
+interface GRNItem {
+  id: number;
+  sku: string;
+  description: string;
+  expectedQuantity: number;
+  receivedQuantity: number;
+  discrepancy?: string;
+}
+
+interface PutawayTask {
+  id: number;
+  grnNumber: string;
+  status: 'staged' | 'in_process' | 'completed';
+  assignedTo?: string;
+  items: PutawayItem[];
   createdAt: string;
 }
 
-interface InboundItem {
+interface PutawayItem {
   id: number;
   sku: string;
-  productName: string;
-  expectedQuantity: number;
-  receivedQuantity: number;
-  qcStatus: string;
+  description: string;
+  quantity: number;
   binLocation?: string;
+  scanStatus: 'pending' | 'scanned' | 'placed';
 }
 
 export default function Inbound() {
-  const [activeTab, setActiveTab] = useState("shipments");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedShipment, setSelectedShipment] = useState<InboundShipment | null>(null);
+  const [activeTab, setActiveTab] = useState('purchase-orders');
+  const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null);
+  const [selectedGRN, setSelectedGRN] = useState<GRN | null>(null);
+  const [selectedPutaway, setSelectedPutaway] = useState<PutawayTask | null>(null);
+  const [asnNumbers, setAsnNumbers] = useState<string[]>(['']);
+  const [dockAssignment, setDockAssignment] = useState('');
+  const [unloadingComments, setUnloadingComments] = useState('');
+  const [grnFilter, setGrnFilter] = useState('pending');
+  const [putawayFilter, setPutawayFilter] = useState('staged');
+  
+  const queryClient = useQueryClient();
 
-  const { data: inboundShipments = [], isLoading } = useQuery({
-    queryKey: ["/api/inbound/shipments", { status: statusFilter }],
-    refetchInterval: 30000,
+  // Fetch Purchase Orders
+  const { data: purchaseOrders, isLoading: poLoading } = useQuery<PurchaseOrder[]>({
+    queryKey: ['/api/inbound/purchase-orders'],
+    refetchInterval: 5000,
   });
 
-  const { data: inboundItems = [] } = useQuery({
-    queryKey: ["/api/inbound/items", selectedShipment?.id],
-    enabled: !!selectedShipment,
+  // Fetch GRNs
+  const { data: grns, isLoading: grnLoading } = useQuery<GRN[]>({
+    queryKey: ['/api/inbound/grns'],
+    refetchInterval: 5000,
   });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "announced":
-        return "bg-primary-100 text-primary-800 border-primary-200";
-      case "arrived":
-        return "bg-warning-100 text-warning-800 border-warning-200";
-      case "unloading":
-        return "bg-warning-100 text-warning-800 border-warning-200";
-      case "qc_in_progress":
-        return "bg-warning-100 text-warning-800 border-warning-200";
-      case "qc_completed":
-        return "bg-success-100 text-success-800 border-success-200";
-      case "completed":
-        return "bg-success-100 text-success-800 border-success-200";
-      case "exception":
-        return "bg-error-100 text-error-800 border-error-200";
-      default:
-        return "bg-secondary-100 text-secondary-800 border-secondary-200";
+  // Fetch Putaway Tasks
+  const { data: putawayTasks, isLoading: putawayLoading } = useQuery<PutawayTask[]>({
+    queryKey: ['/api/inbound/putaway'],
+    refetchInterval: 5000,
+  });
+
+  // Mutations
+  const updatePOMutation = useMutation({
+    mutationFn: (data: { id: number; updates: Partial<PurchaseOrder> }) =>
+      apiRequest(`/api/inbound/purchase-orders/${data.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data.updates),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/inbound/purchase-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/inbound/grns'] });
+    },
+  });
+
+  const updateGRNMutation = useMutation({
+    mutationFn: (data: { id: number; updates: Partial<GRN> }) =>
+      apiRequest(`/api/inbound/grns/${data.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data.updates),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/inbound/grns'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/inbound/putaway'] });
+    },
+  });
+
+  const updatePutawayMutation = useMutation({
+    mutationFn: (data: { id: number; updates: Partial<PutawayTask> }) =>
+      apiRequest(`/api/inbound/putaway/${data.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data.updates),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/inbound/putaway'] });
+    },
+  });
+
+  // Handle PO Actions
+  const handleASNSave = () => {
+    if (!selectedPO) return;
+    const validASNs = asnNumbers.filter(asn => asn.trim());
+    updatePOMutation.mutate({
+      id: selectedPO.id,
+      updates: { asnReceived: true, asnNumbers: validASNs }
+    });
+  };
+
+  const handleGateEntry = (checked: boolean) => {
+    if (!selectedPO) return;
+    updatePOMutation.mutate({
+      id: selectedPO.id,
+      updates: { gateEntry: checked }
+    });
+  };
+
+  const handleDockAssignment = () => {
+    if (!selectedPO) return;
+    updatePOMutation.mutate({
+      id: selectedPO.id,
+      updates: { dockAssignment }
+    });
+  };
+
+  const handleUnloadingConfirmation = (checked: boolean) => {
+    if (!selectedPO) return;
+    updatePOMutation.mutate({
+      id: selectedPO.id,
+      updates: { 
+        unloaded: checked,
+        unloadingComments: checked ? unloadingComments : undefined
+      }
+    });
+  };
+
+  const addASNField = () => {
+    setAsnNumbers([...asnNumbers, '']);
+  };
+
+  const updateASNField = (index: number, value: string) => {
+    const newASNs = [...asnNumbers];
+    newASNs[index] = value;
+    setAsnNumbers(newASNs);
+  };
+
+  const removeASNField = (index: number) => {
+    if (asnNumbers.length > 1) {
+      setAsnNumbers(asnNumbers.filter((_, i) => i !== index));
     }
   };
 
-  const getQCStatusColor = (status: string) => {
-    switch (status) {
-      case "passed":
-        return "bg-success-100 text-success-800 border-success-200";
-      case "failed":
-        return "bg-error-100 text-error-800 border-error-200";
-      case "pending":
-        return "bg-warning-100 text-warning-800 border-warning-200";
-      default:
-        return "bg-secondary-100 text-secondary-800 border-secondary-200";
-    }
+  const getStatusBadge = (po: PurchaseOrder) => {
+    if (po.unloaded) return <Badge className="bg-green-100 text-green-800">Unloaded ✅</Badge>;
+    if (po.gateEntry) return <Badge className="bg-blue-100 text-blue-800">Gate Entry ⏳</Badge>;
+    if (po.asnReceived) return <Badge className="bg-yellow-100 text-yellow-800">ASN ✅</Badge>;
+    return <Badge variant="outline">Pending</Badge>;
   };
 
-  const handleStartUnloading = async (shipmentId: number) => {
-    try {
-      // TODO: Implement start unloading API call
-      console.log("Starting unloading for shipment:", shipmentId);
-    } catch (error) {
-      console.error("Start unloading error:", error);
-    }
-  };
-
-  const handleCompleteQC = async (shipmentId: number) => {
-    try {
-      // TODO: Implement complete QC API call
-      console.log("Completing QC for shipment:", shipmentId);
-    } catch (error) {
-      console.error("Complete QC error:", error);
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <i className="fas fa-spinner fa-spin text-4xl text-primary-500 mb-4"></i>
-          <p className="text-secondary-500">Loading inbound shipments...</p>
-        </div>
-      </div>
-    );
-  }
+  const filteredGRNs = grns?.filter(grn => grn.status === grnFilter) || [];
+  const filteredPutaways = putawayTasks?.filter(task => task.status === putawayFilter) || [];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <i className="fas fa-arrow-down text-primary-500"></i>
-              <span>Inbound Management</span>
-            </div>
-            <Button>
-              <i className="fas fa-plus mr-2"></i>
-              Create Shipment
-            </Button>
-          </CardTitle>
-        </CardHeader>
-      </Card>
+    <div className="p-6 max-w-7xl mx-auto">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold mb-2">Inbound Processing</h1>
+        <p className="text-gray-600">
+          Manage purchase orders, goods receipt notes, and putaway operations
+        </p>
+      </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="shipments">
-            <i className="fas fa-truck mr-2"></i>
-            Shipments
+          <TabsTrigger value="purchase-orders" className="flex items-center gap-2">
+            <ShoppingCart className="h-4 w-4" />
+            Purchase Orders
           </TabsTrigger>
-          <TabsTrigger value="receiving">
-            <i className="fas fa-clipboard-list mr-2"></i>
-            Receiving
+          <TabsTrigger value="grn" className="flex items-center gap-2">
+            <ClipboardList className="h-4 w-4" />
+            GRN
           </TabsTrigger>
-          <TabsTrigger value="putaway">
-            <i className="fas fa-arrows-alt mr-2"></i>
+          <TabsTrigger value="putaway" className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
             Putaway
           </TabsTrigger>
         </TabsList>
 
-        {/* Shipments Tab */}
-        <TabsContent value="shipments" className="space-y-6">
-          {/* Filters */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex space-x-4">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="announced">Announced</SelectItem>
-                    <SelectItem value="arrived">Arrived</SelectItem>
-                    <SelectItem value="unloading">Unloading</SelectItem>
-                    <SelectItem value="qc_in_progress">QC In Progress</SelectItem>
-                    <SelectItem value="qc_completed">QC Completed</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="exception">Exception</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button variant="outline" onClick={() => setStatusFilter("")}>
-                  <i className="fas fa-undo mr-2"></i>
-                  Clear
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Shipments Table */}
+        {/* Purchase Orders Tab */}
+        <TabsContent value="purchase-orders" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Inbound Shipments ({inboundShipments.length})</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Truck className="h-5 w-5" />
+                Purchase Orders Pending Processing
+              </CardTitle>
+              <CardDescription>
+                Manage incoming shipments through the complete inbound flow
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              {inboundShipments.length === 0 ? (
-                <div className="text-center py-12">
-                  <i className="fas fa-truck text-4xl text-secondary-300 mb-4"></i>
-                  <h3 className="text-lg font-medium text-secondary-900 mb-2">No Inbound Shipments</h3>
-                  <p className="text-secondary-500">
-                    {statusFilter 
-                      ? "No shipments match the selected status filter"
-                      : "No inbound shipments have been created yet"
-                    }
-                  </p>
+              {poLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Shipment Details</TableHead>
+                      <TableHead>PO Number</TableHead>
                       <TableHead>Supplier</TableHead>
-                      <TableHead>Schedule</TableHead>
-                      <TableHead>Progress</TableHead>
-                      <TableHead>Location</TableHead>
+                      <TableHead>ETA</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {inboundShipments.map((shipment: InboundShipment) => (
-                      <TableRow 
-                        key={shipment.id}
-                        className={selectedShipment?.id === shipment.id ? "bg-primary-50" : ""}
-                      >
+                    {purchaseOrders?.map((po) => (
+                      <TableRow key={po.id}>
+                        <TableCell className="font-medium">{po.poNumber}</TableCell>
+                        <TableCell>{po.supplier}</TableCell>
+                        <TableCell>{new Date(po.eta).toLocaleDateString()}</TableCell>
+                        <TableCell>{getStatusBadge(po)}</TableCell>
                         <TableCell>
-                          <div>
-                            <div className="font-medium text-secondary-900">
-                              {shipment.referenceNumber}
-                            </div>
-                            {shipment.grnNumber && (
-                              <div className="text-sm text-secondary-500">
-                                GRN: {shipment.grnNumber}
-                              </div>
-                            )}
-                            <div className="text-xs text-secondary-400">
-                              Created: {new Date(shipment.createdAt).toLocaleDateString()}
-                            </div>
-                          </div>
-                        </TableCell>
-                        
-                        <TableCell>
-                          <div className="text-sm text-secondary-900">
-                            {shipment.supplier}
-                          </div>
-                        </TableCell>
-                        
-                        <TableCell>
-                          <div>
-                            <div className="text-sm text-secondary-900">
-                              Expected: {new Date(shipment.expectedDate).toLocaleDateString()}
-                            </div>
-                            {shipment.receivedDate && (
-                              <div className="text-sm text-success-600">
-                                Received: {new Date(shipment.receivedDate).toLocaleDateString()}
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        
-                        <TableCell>
-                          <div>
-                            <div className="text-sm text-secondary-900">
-                              {shipment.receivedItems} / {shipment.totalItems} items
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                              <div 
-                                className="bg-primary-500 h-2 rounded-full"
-                                style={{ 
-                                  width: `${(shipment.receivedItems / shipment.totalItems) * 100}%` 
-                                }}
-                              ></div>
-                            </div>
-                          </div>
-                        </TableCell>
-                        
-                        <TableCell>
-                          <div>
-                            {shipment.dockNumber && (
-                              <div className="text-sm text-secondary-900">
-                                Dock: {shipment.dockNumber}
-                              </div>
-                            )}
-                            {shipment.gateNumber && (
-                              <div className="text-xs text-secondary-500">
-                                Gate: {shipment.gateNumber}
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        
-                        <TableCell>
-                          <Badge className={getStatusColor(shipment.status)}>
-                            {shipment.status.replace('_', ' ')}
-                          </Badge>
-                          {shipment.qcStatus && (
-                            <Badge className={`${getQCStatusColor(shipment.qcStatus)} mt-1`}>
-                              QC: {shipment.qcStatus}
-                            </Badge>
-                          )}
-                        </TableCell>
-                        
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => setSelectedShipment(shipment)}
-                            >
-                              <i className="fas fa-eye"></i>
-                            </Button>
-                            {shipment.status === "arrived" && (
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => handleStartUnloading(shipment.id)}
-                              >
-                                <i className="fas fa-play"></i>
-                              </Button>
-                            )}
-                            {shipment.status === "qc_in_progress" && (
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => handleCompleteQC(shipment.id)}
-                              >
-                                <i className="fas fa-check"></i>
-                              </Button>
-                            )}
-                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => setSelectedPO(po)}
+                            variant="outline"
+                          >
+                            <FileText className="h-4 w-4 mr-2" />
+                            Process
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -325,115 +292,430 @@ export default function Inbound() {
               )}
             </CardContent>
           </Card>
-
-          {/* Shipment Details */}
-          {selectedShipment && (
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  Shipment Details: {selectedShipment.referenceNumber}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {inboundItems.length === 0 ? (
-                  <div className="text-center py-8">
-                    <i className="fas fa-box text-4xl text-secondary-300 mb-4"></i>
-                    <p className="text-secondary-500">Loading shipment items...</p>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Product</TableHead>
-                        <TableHead>Expected Qty</TableHead>
-                        <TableHead>Received Qty</TableHead>
-                        <TableHead>QC Status</TableHead>
-                        <TableHead>Bin Location</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {inboundItems.map((item: InboundItem) => (
-                        <TableRow key={item.id}>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium text-secondary-900">
-                                {item.sku}
-                              </div>
-                              <div className="text-sm text-secondary-500">
-                                {item.productName}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>{item.expectedQuantity}</TableCell>
-                          <TableCell>
-                            <span className={
-                              item.receivedQuantity === item.expectedQuantity 
-                                ? "text-success-600 font-medium" 
-                                : "text-warning-600 font-medium"
-                            }>
-                              {item.receivedQuantity}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={getQCStatusColor(item.qcStatus)}>
-                              {item.qcStatus}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {item.binLocation || (
-                              <span className="text-secondary-400 text-sm">Pending</span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          )}
         </TabsContent>
 
-        {/* Receiving Tab */}
-        <TabsContent value="receiving" className="space-y-6">
+        {/* GRN Tab */}
+        <TabsContent value="grn" className="space-y-4">
+          <div className="flex gap-2 mb-4">
+            <Button
+              variant={grnFilter === 'pending' ? 'default' : 'outline'}
+              onClick={() => setGrnFilter('pending')}
+            >
+              Pending
+            </Button>
+            <Button
+              variant={grnFilter === 'processing' ? 'default' : 'outline'}
+              onClick={() => setGrnFilter('processing')}
+            >
+              Processing
+            </Button>
+            <Button
+              variant={grnFilter === 'completed' ? 'default' : 'outline'}
+              onClick={() => setGrnFilter('completed')}
+            >
+              Completed
+            </Button>
+          </div>
+
           <Card>
             <CardHeader>
-              <CardTitle>Receiving Workstation</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <ClipboardList className="h-5 w-5" />
+                Goods Receipt Notes - {grnFilter.charAt(0).toUpperCase() + grnFilter.slice(1)}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12">
-                <i className="fas fa-clipboard-list text-4xl text-secondary-300 mb-4"></i>
-                <h3 className="text-lg font-medium text-secondary-900 mb-2">Receiving Interface</h3>
-                <p className="text-secondary-500 mb-4">
-                  Scan and receive incoming items
-                </p>
-                <Button>
-                  <i className="fas fa-qrcode mr-2"></i>
-                  Start Receiving
-                </Button>
-              </div>
+              {grnLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : filteredGRNs.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No {grnFilter} GRNs found
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>GRN Number</TableHead>
+                      <TableHead>PO Number</TableHead>
+                      <TableHead>Supplier</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredGRNs.map((grn) => (
+                      <TableRow key={grn.id}>
+                        <TableCell className="font-medium">{grn.grnNumber}</TableCell>
+                        <TableCell>{grn.poNumber}</TableCell>
+                        <TableCell>{grn.supplier}</TableCell>
+                        <TableCell>{new Date(grn.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            onClick={() => setSelectedGRN(grn)}
+                            variant="outline"
+                          >
+                            {grn.status === 'pending' ? 'Start' : 'View'}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
         {/* Putaway Tab */}
-        <TabsContent value="putaway" className="space-y-6">
+        <TabsContent value="putaway" className="space-y-4">
+          <div className="flex gap-2 mb-4">
+            <Button
+              variant={putawayFilter === 'staged' ? 'default' : 'outline'}
+              onClick={() => setPutawayFilter('staged')}
+            >
+              Staged
+            </Button>
+            <Button
+              variant={putawayFilter === 'in_process' ? 'default' : 'outline'}
+              onClick={() => setPutawayFilter('in_process')}
+            >
+              In Process
+            </Button>
+            <Button
+              variant={putawayFilter === 'completed' ? 'default' : 'outline'}
+              onClick={() => setPutawayFilter('completed')}
+            >
+              Completed
+            </Button>
+          </div>
+
           <Card>
             <CardHeader>
-              <CardTitle>Putaway Tasks</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Putaway Tasks - {putawayFilter.charAt(0).toUpperCase() + putawayFilter.slice(1)}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12">
-                <i className="fas fa-arrows-alt text-4xl text-secondary-300 mb-4"></i>
-                <h3 className="text-lg font-medium text-secondary-900 mb-2">Putaway Management</h3>
-                <p className="text-secondary-500">
-                  Manage items movement to storage locations
-                </p>
-              </div>
+              {putawayLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : filteredPutaways.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No {putawayFilter} putaway tasks found
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>GRN Number</TableHead>
+                      <TableHead>Assigned To</TableHead>
+                      <TableHead>Items</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredPutaways.map((task) => (
+                      <TableRow key={task.id}>
+                        <TableCell className="font-medium">{task.grnNumber}</TableCell>
+                        <TableCell>{task.assignedTo || 'Unassigned'}</TableCell>
+                        <TableCell>{task.items.length} items</TableCell>
+                        <TableCell>{new Date(task.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            onClick={() => setSelectedPutaway(task)}
+                            variant="outline"
+                          >
+                            {task.status === 'staged' ? 'Start' : 'View'}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* PO Detail Dialog */}
+      <Dialog open={!!selectedPO} onOpenChange={() => setSelectedPO(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Inbound Flow - {selectedPO?.poNumber}</DialogTitle>
+            <DialogDescription>
+              Process this purchase order through the complete inbound workflow
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedPO && (
+            <div className="space-y-6">
+              {/* ASN Panel */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  <h4 className="font-medium">ASN (Advanced Shipping Notice)</h4>
+                  {selectedPO.asnReceived && <CheckCircle className="h-4 w-4 text-green-600" />}
+                </div>
+                {!selectedPO.asnReceived ? (
+                  <div className="space-y-2">
+                    {asnNumbers.map((asn, index) => (
+                      <div key={index} className="flex gap-2">
+                        <Input
+                          placeholder="Enter Airway Bill Number"
+                          value={asn}
+                          onChange={(e) => updateASNField(index, e.target.value)}
+                        />
+                        {index === asnNumbers.length - 1 && (
+                          <Button size="sm" variant="outline" onClick={addASNField}>
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {asnNumbers.length > 1 && (
+                          <Button size="sm" variant="outline" onClick={() => removeASNField(index)}>
+                            <XCircle className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                    <Button onClick={handleASNSave} disabled={updatePOMutation.isPending}>
+                      Save ASN
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-sm text-green-600">ASN received and logged</div>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* Gate Entry */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Building className="h-4 w-4" />
+                  <h4 className="font-medium">Gate Entry</h4>
+                  {selectedPO.gateEntry && <CheckCircle className="h-4 w-4 text-green-600" />}
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="gate-entry"
+                    checked={selectedPO.gateEntry}
+                    onCheckedChange={handleGateEntry}
+                    disabled={selectedPO.gateEntry}
+                  />
+                  <label htmlFor="gate-entry" className="text-sm">
+                    Mark arrival at gate
+                  </label>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Dock Assignment */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  <h4 className="font-medium">Dock Assignment (Optional)</h4>
+                </div>
+                <div className="flex gap-2">
+                  <Select value={dockAssignment} onValueChange={setDockAssignment}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Select dock" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="dock-a">Dock A</SelectItem>
+                      <SelectItem value="dock-b">Dock B</SelectItem>
+                      <SelectItem value="dock-c">Dock C</SelectItem>
+                      <SelectItem value="dock-d">Dock D</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button onClick={handleDockAssignment} variant="outline">
+                    Assign
+                  </Button>
+                  <Button variant="outline">Skip</Button>
+                </div>
+                {selectedPO.dockAssignment && (
+                  <div className="text-sm text-green-600">
+                    Assigned to: {selectedPO.dockAssignment}
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* Unloading Confirmation */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Truck className="h-4 w-4" />
+                  <h4 className="font-medium">Unloading Confirmation</h4>
+                  {selectedPO.unloaded && <CheckCircle className="h-4 w-4 text-green-600" />}
+                </div>
+                {!selectedPO.unloaded ? (
+                  <div className="space-y-2">
+                    <Textarea
+                      placeholder="Optional comments (pass/fail visual check)"
+                      value={unloadingComments}
+                      onChange={(e) => setUnloadingComments(e.target.value)}
+                    />
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="unloading"
+                        onCheckedChange={handleUnloadingConfirmation}
+                      />
+                      <label htmlFor="unloading" className="text-sm">
+                        Confirm unloading completed
+                      </label>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-sm text-green-600">
+                    Unloading confirmed - GRN created
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedPO(null)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* GRN Detail Dialog */}
+      <Dialog open={!!selectedGRN} onOpenChange={() => setSelectedGRN(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>GRN Details - {selectedGRN?.grnNumber}</DialogTitle>
+            <DialogDescription>
+              Scan and confirm quantities, log any discrepancies
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedGRN && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <strong>PO Number:</strong> {selectedGRN.poNumber}
+                </div>
+                <div>
+                  <strong>Supplier:</strong> {selectedGRN.supplier}
+                </div>
+              </div>
+
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>SKU</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Expected</TableHead>
+                    <TableHead>Received</TableHead>
+                    <TableHead>Discrepancy</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {selectedGRN.items.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.sku}</TableCell>
+                      <TableCell>{item.description}</TableCell>
+                      <TableCell>{item.expectedQuantity}</TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          defaultValue={item.receivedQuantity}
+                          className="w-20"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          placeholder="Notes"
+                          defaultValue={item.discrepancy}
+                          className="w-32"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedGRN(null)}>
+              Cancel
+            </Button>
+            <Button>Save & Complete GRN</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Putaway Detail Dialog */}
+      <Dialog open={!!selectedPutaway} onOpenChange={() => setSelectedPutaway(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Putaway Task - {selectedPutaway?.grnNumber}</DialogTitle>
+            <DialogDescription>
+              Scan cart and confirm bin placements
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedPutaway && (
+            <div className="space-y-4">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>SKU</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Quantity</TableHead>
+                    <TableHead>Bin Location</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {selectedPutaway.items.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.sku}</TableCell>
+                      <TableCell>{item.description}</TableCell>
+                      <TableCell>{item.quantity}</TableCell>
+                      <TableCell>
+                        <Input
+                          placeholder="Scan bin location"
+                          defaultValue={item.binLocation}
+                          className="w-32"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={
+                          item.scanStatus === 'placed' ? 'default' :
+                          item.scanStatus === 'scanned' ? 'secondary' : 'outline'
+                        }>
+                          {item.scanStatus}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedPutaway(null)}>
+              Cancel
+            </Button>
+            <Button>Complete Putaway</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

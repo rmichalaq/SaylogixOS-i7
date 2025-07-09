@@ -1,0 +1,89 @@
+---
+# 📦 SaylogixOS – Inbound Processing Screen Redesign Prompt
+
+## 🎯 Goal
+Redesign the **Inbound Processing** screens in SaylogixOS for operational clarity, single-task flow, and optional action flexibility. Use this markdown to guide the Replit build. 
+
+---
+
+## 🧱 Main Tabs Structure (UI Navigation)
+
+### 1. **Purchase Orders**
+- Shows list of POs pending processing.
+- Fields per PO row:
+  - PO Number
+  - Supplier
+  - ETA
+  - Status: (ASN ✅, Gate ⏳, Unloaded ❌)
+- Click PO opens the **Inbound Flow Panel**.
+
+### 2. **GRN**
+- Filter Tabs: `Pending`, `Processing`, `Completed`
+- Shows GRNs linked to completed inbound POs.
+- Open GRN → scan and confirm quantities, log discrepancies.
+
+### 3. **Putaway**
+- Filter Tabs: `Staged`, `In Process`, `Completed`
+- Operators pick tasks, scan cart, and confirm placements.
+
+---
+
+## 🧭 Inbound Flow Logic (Inside Purchase Order Detail View)
+
+1. **ASN Panel (Optional)**
+   - Add 1 or more Airway Bill numbers (multi-entry field).
+   - Save button logs ASN with timestamp.
+
+2. **Gate Entry Checkbox**
+   - Clicking logs arrival time.
+   - Read-only once set.
+
+3. **Dock Assignment (Optional)**
+   - Dropdown or skip button.
+   - Auto-assign logic can be built later.
+
+4. **Unloading Confirmation**
+   - Tick box with optional comment (pass/fail visual check).
+   - Once set → PO is moved to GRN queue.
+
+---
+
+## 🔄 Workflow Transitions
+- If unloading is completed → create new GRN under `GRN > Pending`
+- Once GRN is completed → auto-generate staged putaway task
+- Putaway completion closes the inbound lifecycle
+
+---
+
+## 🪄 Mermaid Diagram – Full Inbound Flow
+```mermaid
+flowchart TD
+    PO[PO Created] --> ASN[Optional ASN Received]
+    ASN --> Gate[Gate Entry Marked]
+    Gate --> Dock[Dock Assigned (Optional)]
+    Dock --> Unloading[Unloading Confirmed]
+    Unloading --> GRN[GRN Created → Pending Tab]
+    GRN --> GRN_Processing[Processing Scan/Confirm]
+    GRN_Processing --> GRN_Done[GRN Completed → Generate Putaway]
+    GRN_Done --> Putaway[Putaway Staged]
+    Putaway --> Putaway_Process[Scan + Place in Bin]
+    Putaway_Process --> Complete[Putaway Completed → Inbound Closed]
+```
+
+---
+
+## 🔧 Replit Tasks
+1. Build new `Inbound.vue` (or `Inbound.tsx`) screen with 3 main tabs
+2. Add conditional logic panel when PO is clicked (step-based)
+3. GRN and Putaway views should behave like status filters
+4. Mermaid chart can be included in Help/Docs tab for reference
+5. Optional: add event hooks for `gate.entry.marked`, `unloading.done`, `grn.completed`, `putaway.completed`
+
+---
+
+## 📁 Backend Notes
+- Each action should log timestamps for traceability
+- Use `po_id`, `grn_id`, `putaway_id` to link lifecycle steps
+- Actions should trigger `event bus` messages for downstream modules
+
+---

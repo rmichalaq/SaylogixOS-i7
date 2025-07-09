@@ -913,25 +913,175 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Inbound Shipments API
-  app.get("/api/inbound/shipments", async (req, res) => {
+  // Inbound Processing API
+  
+  // Purchase Orders
+  app.get("/api/inbound/purchase-orders", async (req, res) => {
     try {
-      // For now, return empty array since we don't have inbound shipments table yet
-      // This will be properly implemented when the inbound module is expanded
-      res.json([]);
+      const orders = await storage.getPurchaseOrders();
+      
+      // Attach items to each PO
+      const ordersWithItems = await Promise.all(
+        orders.map(async (po) => ({
+          ...po,
+          items: await storage.getPurchaseOrderItems(po.id)
+        }))
+      );
+      
+      res.json(ordersWithItems);
     } catch (error) {
-      console.error("Failed to get inbound shipments:", error);
+      console.error("Failed to get purchase orders:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
 
-  app.get("/api/inbound/items", async (req, res) => {
+  app.post("/api/inbound/purchase-orders", async (req, res) => {
     try {
-      // For now, return empty array since we don't have inbound items table yet
-      // This will be properly implemented when the inbound module is expanded
-      res.json([]);
+      const po = await storage.createPurchaseOrder(req.body);
+      res.json(po);
     } catch (error) {
-      console.error("Failed to get inbound items:", error);
+      console.error("Failed to create purchase order:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.patch("/api/inbound/purchase-orders/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      
+      // Handle special updates with timestamps
+      if (updates.gateEntry && !updates.gateEntryTime) {
+        updates.gateEntryTime = new Date();
+      }
+      if (updates.unloaded && !updates.unloadingTime) {
+        updates.unloadingTime = new Date();
+      }
+      
+      await storage.updatePurchaseOrder(id, updates);
+      
+      // If unloading is confirmed, create GRN
+      if (updates.unloaded) {
+        const po = await storage.getPurchaseOrder(id);
+        if (po) {
+          const grnNumber = `GRN-${po.poNumber}-${Date.now()}`;
+          await storage.createGoodsReceiptNote({
+            grnNumber,
+            poId: po.id,
+            poNumber: po.poNumber,
+            supplier: po.supplier,
+            status: 'pending'
+          });
+          
+          eventBus.emit("EV020", { 
+            type: "grn_created", 
+            poId: po.id, 
+            grnNumber,
+            source: "inbound_processing" 
+          });
+        }
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to update purchase order:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Goods Receipt Notes
+  app.get("/api/inbound/grns", async (req, res) => {
+    try {
+      const grns = await storage.getGoodsReceiptNotes();
+      
+      // Attach items to each GRN
+      const grnsWithItems = await Promise.all(
+        grns.map(async (grn) => ({
+          ...grn,
+          items: await storage.getGrnItems(grn.id)
+        }))
+      );
+      
+      res.json(grnsWithItems);
+    } catch (error) {
+      console.error("Failed to get GRNs:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.patch("/api/inbound/grns/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      
+      if (updates.status === 'completed') {
+        updates.processingCompleted = new Date();
+        
+        // Create putaway task when GRN is completed
+        const grn = await storage.getGoodsReceiptNotes().then(grns => grns.find(g => g.id === id));
+        if (grn) {
+          await storage.createPutawayTask({
+            grnId: grn.id,
+            grnNumber: grn.grnNumber,
+            status: 'staged'
+          });
+          
+          eventBus.emit("EV021", { 
+            type: "putaway_created", 
+            grnId: grn.id, 
+            grnNumber: grn.grnNumber,
+            source: "grn_completion" 
+          });
+        }
+      }
+      
+      await storage.updateGoodsReceiptNote(id, updates);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to update GRN:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Putaway Tasks
+  app.get("/api/inbound/putaway", async (req, res) => {
+    try {
+      const tasks = await storage.getPutawayTasks();
+      
+      // Attach items to each task
+      const tasksWithItems = await Promise.all(
+        tasks.map(async (task) => ({
+          ...task,
+          items: await storage.getPutawayItems(task.id)
+        }))
+      );
+      
+      res.json(tasksWithItems);
+    } catch (error) {
+      console.error("Failed to get putaway tasks:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.patch("/api/inbound/putaway/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      
+      if (updates.status === 'completed') {
+        updates.completedAt = new Date();
+        
+        eventBus.emit("EV022", { 
+          type: "putaway_completed", 
+          taskId: id,
+          source: "putaway_completion" 
+        });
+      }
+      
+      await storage.updatePutawayTask(id, updates);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to update putaway task:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
