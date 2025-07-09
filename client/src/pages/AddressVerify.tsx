@@ -267,6 +267,15 @@ export default function AddressVerify() {
         {/* Tab 1: Pending Verify NAS */}
         <TabsContent value="pending" className="space-y-4">
           <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Orders Awaiting NAS Verification
+              </CardTitle>
+              <CardDescription>
+                Orders fetched from marketplaces that require address verification
+              </CardDescription>
+            </CardHeader>
             <CardContent>
               {ordersLoading ? (
                 <div className="flex justify-center py-8">
