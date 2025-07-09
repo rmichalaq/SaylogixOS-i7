@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { 
   Package, 
@@ -88,6 +89,7 @@ interface PutawayItem {
 export default function Inbound() {
   const [activeTab, setActiveTab] = useState('purchase-orders');
   const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null);
+  const [isPODrawerOpen, setIsPODrawerOpen] = useState(false);
   const [selectedGRN, setSelectedGRN] = useState<GRN | null>(null);
   const [selectedPutaway, setSelectedPutaway] = useState<PutawayTask | null>(null);
   const [asnNumbers, setAsnNumbers] = useState<string[]>(['']);
@@ -214,6 +216,18 @@ export default function Inbound() {
 
   const filteredGRNs = grns?.filter(grn => grn.status === grnFilter) || [];
   const filteredPutaways = putawayTasks?.filter(task => task.status === putawayFilter) || [];
+  
+  // Filter out POs that have reached GRN stage unless explicitly showing all
+  const filteredPurchaseOrders = purchaseOrders?.filter(po => !po.unloaded) || [];
+
+  const handlePOClick = (po: PurchaseOrder) => {
+    setSelectedPO(po);
+    setIsPODrawerOpen(true);
+    // Reset form states
+    setAsnNumbers(['']);
+    setDockAssignment('');
+    setUnloadingComments('');
+  };
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -265,26 +279,20 @@ export default function Inbound() {
                       <TableHead>Supplier</TableHead>
                       <TableHead>ETA</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {purchaseOrders?.map((po) => (
-                      <TableRow key={po.id}>
-                        <TableCell className="font-medium">{po.poNumber}</TableCell>
+                    {filteredPurchaseOrders.map((po) => (
+                      <TableRow key={po.id} className="cursor-pointer hover:bg-gray-50">
+                        <TableCell 
+                          className="font-medium text-blue-600 hover:text-blue-800"
+                          onClick={() => handlePOClick(po)}
+                        >
+                          {po.poNumber}
+                        </TableCell>
                         <TableCell>{po.supplier}</TableCell>
                         <TableCell>{new Date(po.eta).toLocaleDateString()}</TableCell>
                         <TableCell>{getStatusBadge(po)}</TableCell>
-                        <TableCell>
-                          <Button
-                            size="sm"
-                            onClick={() => setSelectedPO(po)}
-                            variant="outline"
-                          >
-                            <FileText className="h-4 w-4 mr-2" />
-                            Process
-                          </Button>
-                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -445,18 +453,47 @@ export default function Inbound() {
         </TabsContent>
       </Tabs>
 
-      {/* PO Detail Dialog */}
-      <Dialog open={!!selectedPO} onOpenChange={() => setSelectedPO(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Inbound Flow - {selectedPO?.poNumber}</DialogTitle>
-            <DialogDescription>
-              Process this purchase order through the complete inbound workflow
-            </DialogDescription>
-          </DialogHeader>
+      {/* PO Detail Drawer */}
+      <Sheet open={isPODrawerOpen} onOpenChange={setIsPODrawerOpen}>
+        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Process PO - {selectedPO?.poNumber}</SheetTitle>
+          </SheetHeader>
 
           {selectedPO && (
-            <div className="space-y-6">
+            <div className="mt-6 space-y-6">
+              {/* PO Details Section */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-medium text-lg mb-3">Purchase Order Details</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-600">PO Number:</span>
+                    <p className="mt-1">{selectedPO.poNumber}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Supplier:</span>
+                    <p className="mt-1">{selectedPO.supplier}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">ETA:</span>
+                    <p className="mt-1">{new Date(selectedPO.eta).toLocaleDateString()}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Status:</span>
+                    <p className="mt-1">{getStatusBadge(selectedPO)}</p>
+                  </div>
+                  {selectedPO.dockAssignment && (
+                    <div>
+                      <span className="font-medium text-gray-600">Dock Assignment:</span>
+                      <p className="mt-1">{selectedPO.dockAssignment}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Process Actions */}
               {/* ASN Panel */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
@@ -575,21 +612,28 @@ export default function Inbound() {
                     </div>
                   </div>
                 ) : (
-                  <div className="text-sm text-green-600">
-                    Unloading confirmed - GRN created
+                  <div className="space-y-3">
+                    <div className="text-sm text-green-600">
+                      Unloading confirmed - Ready for GRN
+                    </div>
+                    <Button 
+                      onClick={() => {
+                        // Move to GRN - This would trigger GRN creation
+                        setIsPODrawerOpen(false);
+                        setSelectedPO(null);
+                      }}
+                      className="w-full"
+                    >
+                      <ClipboardList className="h-4 w-4 mr-2" />
+                      Move to GRN
+                    </Button>
                   </div>
                 )}
               </div>
             </div>
           )}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSelectedPO(null)}>
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       {/* GRN Detail Dialog */}
       <Dialog open={!!selectedGRN} onOpenChange={() => setSelectedGRN(null)}>
