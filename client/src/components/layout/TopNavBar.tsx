@@ -5,6 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useSidebar } from "@/context/SidebarContext";
 import { useScanner } from "@/hooks/useScanner";
+import { 
+  Menu,
+  Search,
+  QrCode,
+  Bell,
+  ChevronDown
+} from "lucide-react";
 
 export default function TopNavBar() {
   const [location] = useLocation();
@@ -59,7 +66,7 @@ export default function TopNavBar() {
           className="lg:hidden"
           onClick={toggleSidebar}
         >
-          <i className="fas fa-bars"></i>
+          <Menu className="h-4 w-4" />
         </Button>
         
         <div className="flex flex-col">
@@ -83,7 +90,7 @@ export default function TopNavBar() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-48 lg:w-80 pl-10 pr-4"
           />
-          <i className="fas fa-search absolute left-3 top-3 text-secondary-400"></i>
+          <Search className="h-4 w-4 absolute left-3 top-3 text-secondary-400" />
         </form>
 
         {/* Search icon for mobile */}
@@ -96,7 +103,7 @@ export default function TopNavBar() {
             console.log("Toggle mobile search");
           }}
         >
-          <i className="fas fa-search"></i>
+          <Search className="h-4 w-4" />
         </Button>
 
         {/* Scan Button */}
@@ -107,7 +114,7 @@ export default function TopNavBar() {
             }}
             className="flex items-center px-2 lg:px-4 py-2 bg-primary-500 text-white hover:bg-primary-600"
           >
-            <i className="fas fa-qrcode lg:mr-2"></i>
+            <QrCode className="h-4 w-4 lg:mr-2" />
             <span className="hidden lg:inline">Scan</span>
           </Button>
         )}
@@ -122,7 +129,7 @@ export default function TopNavBar() {
             console.log("Toggle notifications");
           }}
         >
-          <i className="fas fa-bell text-lg"></i>
+          <Bell className="h-5 w-5" />
           <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium z-10">
             3
           </span>
@@ -142,7 +149,7 @@ export default function TopNavBar() {
             <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center">
               <span className="text-white text-sm font-medium">SA</span>
             </div>
-            <i className="fas fa-chevron-down text-xs hidden lg:inline"></i>
+            <ChevronDown className="h-3 w-3 hidden lg:inline" />
           </Button>
         </div>
       </div>

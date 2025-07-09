@@ -4,6 +4,64 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/context/SidebarContext";
+import { 
+  Package, 
+  ChevronLeft, 
+  ChevronRight, 
+  ChevronDown, 
+  Home,
+  ShoppingCart,
+  MapPin,
+  Truck,
+  Package2,
+  Warehouse,
+  BarChart3,
+  Settings,
+  Users,
+  FileText,
+  Box,
+  Route,
+  Search,
+  QrCode,
+  Monitor,
+  Building,
+  UserCheck,
+  Layers,
+  Zap,
+  CheckSquare,
+  Target
+} from "lucide-react";
+
+// Icon mapping function to convert FontAwesome class names to Lucide components
+const getIconComponent = (iconClass: string) => {
+  const iconMap: Record<string, any> = {
+    'fas fa-home': Home,
+    'fas fa-shopping-cart': ShoppingCart,
+    'fas fa-map-marker-alt': MapPin,
+    'fas fa-truck': Truck,
+    'fas fa-warehouse': Warehouse,
+    'fas fa-chart-bar': BarChart3,
+    'fas fa-cog': Settings,
+    'fas fa-users': Users,
+    'fas fa-file-alt': FileText,
+    'fas fa-box': Box,
+    'fas fa-route': Route,
+    'fas fa-search': Search,
+    'fas fa-qrcode': QrCode,
+    'fas fa-desktop': Monitor,
+    'fas fa-building': Building,
+    'fas fa-user-check': UserCheck,
+    'fas fa-layer-group': Layers,
+    'fas fa-bolt': Zap,
+    'fas fa-check-square': CheckSquare,
+    'fas fa-bullseye': Target,
+    'fas fa-package': Package2,
+    'fas fa-search-location': Search,
+  };
+
+  const IconComponent = iconMap[iconClass] || Box;
+  return <IconComponent className="h-4 w-4" />;
+};
 
 export default function SidebarMenu() {
   const [location] = useLocation();
@@ -74,7 +132,7 @@ export default function SidebarMenu() {
         <div className="h-16 flex items-center px-4 border-b border-gray-200">
           <div className="flex items-center space-x-3 flex-1 min-w-0">
             <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center flex-shrink-0">
-              <i className="fas fa-cube text-white text-sm"></i>
+              <Package className="h-4 w-4 text-white" />
             </div>
             {!isCollapsed && (
               <span className="text-xl font-bold text-secondary-700 whitespace-nowrap overflow-hidden">
@@ -89,10 +147,11 @@ export default function SidebarMenu() {
             className="p-1 h-8 w-8 flex-shrink-0"
             title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            <i className={cn(
-              "fas transition-transform",
-              isCollapsed ? "fa-chevron-right" : "fa-chevron-left"
-            )}></i>
+            {isCollapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
           </Button>
         </div>
 
@@ -119,16 +178,18 @@ export default function SidebarMenu() {
                         title={isCollapsed ? screen.label : undefined}
                         onClick={() => toggleGroup(screen.path)}
                       >
-                        <i className={cn(screen.icon, "w-5 h-5 flex-shrink-0 text-current", isCollapsed ? "mx-auto" : "mr-3")}></i>
+                        <div className={cn("w-5 h-5 flex-shrink-0 text-current", isCollapsed ? "mx-auto" : "mr-3")}>
+                          {getIconComponent(screen.icon)}
+                        </div>
                         {!isCollapsed && (
                           <>
                             <span className="truncate">{screen.label}</span>
-                            <i 
+                            <ChevronRight 
                               className={cn(
-                                "fas fa-chevron-right w-3 h-3 ml-auto transition-transform flex-shrink-0 text-current",
+                                "w-3 h-3 ml-auto transition-transform flex-shrink-0 text-current",
                                 expandedGroups[screen.path] ? "rotate-90" : ""
                               )}
-                            ></i>
+                            />
                           </>
                         )}
                         
@@ -150,7 +211,9 @@ export default function SidebarMenu() {
                           )}
                           title={isCollapsed ? screen.label : undefined}
                         >
-                          <i className={cn(screen.icon, "w-5 h-5 flex-shrink-0 text-current", isCollapsed ? "mx-auto" : "mr-3")}></i>
+                          <div className={cn("w-5 h-5 flex-shrink-0 text-current", isCollapsed ? "mx-auto" : "mr-3")}>
+                            {getIconComponent(screen.icon)}
+                          </div>
                           {!isCollapsed && (
                             <span className="truncate">{screen.label}</span>
                           )}
@@ -178,7 +241,9 @@ export default function SidebarMenu() {
                                   : "text-secondary-500 hover:bg-gray-50"
                               )}
                             >
-                              <i className={cn(child.icon, "w-4 h-4 mr-3 flex-shrink-0 text-current")}></i>
+                              <div className="w-4 h-4 mr-3 flex-shrink-0 text-current">
+                                {getIconComponent(child.icon)}
+                              </div>
                               <span className="truncate">{child.label}</span>
                             </div>
                           </Link>
