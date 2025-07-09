@@ -480,7 +480,7 @@ export default function Inbound() {
                   </div>
                   <div>
                     <span className="font-medium text-gray-600">Status:</span>
-                    <p className="mt-1">{getStatusBadge(selectedPO)}</p>
+                    <div className="mt-1">{getStatusBadge(selectedPO)}</div>
                   </div>
                   {selectedPO.dockAssignment && (
                     <div>
