@@ -6,7 +6,7 @@ import TrackingPage from "@/pages/tracking/TrackingPage";
 import InventoryRedesigned from "@/pages/InventoryRedesigned";
 import InboundPage from "@/pages/Inbound";
 import PickingPage from "@/pages/picking/PickingPage";
-import PackingPage from "@/pages/packing/PackingPage";
+import PackingPage from "@/pages/Packing";
 import DispatchPage from "@/pages/dispatch/DispatchPage";
 import LastMilePage from "@/pages/lastmile/LastMilePage";
 import ReportsPage from "@/pages/reports/ReportsPage";

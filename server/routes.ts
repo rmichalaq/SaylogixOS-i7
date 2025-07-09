@@ -159,7 +159,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/orders", async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 50;
-      const orders = await storage.getRecentOrders(limit);
+      const status = req.query.status as string;
+      let orders = await storage.getRecentOrders(limit);
+      
+      // Filter by status if provided
+      if (status) {
+        orders = orders.filter(order => order.status === status);
+      }
+      
       res.json(orders);
     } catch (error) {
       console.error("Failed to get orders:", error);
@@ -214,6 +221,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       console.error("Failed to update order:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/orders/by-sku/:sku", async (req, res) => {
+    try {
+      const sku = req.params.sku;
+      const status = req.query.status as string;
+      
+      // Get all orders with requested status
+      let orders = await storage.getRecentOrders();
+      if (status) {
+        orders = orders.filter(order => order.status === status);
+      }
+      
+      // Find orders containing this SKU
+      const ordersWithSku = [];
+      for (const order of orders) {
+        const items = await storage.getOrderItems(order.id);
+        const hasSku = items.some(item => 
+          item.sku === sku || item.barcode === sku
+        );
+        if (hasSku) {
+          ordersWithSku.push(order);
+        }
+      }
+      
+      // Sort by created date (oldest first)
+      ordersWithSku.sort((a, b) => 
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+      
+      if (ordersWithSku.length === 0) {
+        return res.status(404).json({ error: "No orders found with this SKU" });
+      }
+      
+      res.json(ordersWithSku[0]); // Return oldest order
+    } catch (error) {
+      console.error("Failed to find order by SKU:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/orders/by-tote/:toteId", async (req, res) => {
+    try {
+      const toteId = req.params.toteId;
+      
+      // Find pick task with this tote
+      const pickTasks = await storage.getPickTasks();
+      const pickTask = pickTasks.find(task => task.toteId === toteId);
+      
+      if (!pickTask) {
+        return res.status(404).json({ error: "No order assigned to this tote" });
+      }
+      
+      const order = await storage.getOrder(pickTask.orderId);
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+      
+      res.json(order);
+    } catch (error) {
+      console.error("Failed to find order by tote:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -327,10 +397,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/pack-tasks", async (req, res) => {
     try {
       const orderId = req.query.orderId ? parseInt(req.query.orderId as string) : undefined;
-      const tasks = await storage.getPackTasks(orderId);
-      res.json(tasks);
+      const status = req.query.status as string;
+      let tasks = await storage.getPackTasks(orderId);
+      
+      // Filter by status if provided
+      if (status) {
+        tasks = tasks.filter(task => task.status === status);
+      }
+      
+      // Include order details with each task
+      const tasksWithOrders = await Promise.all(
+        tasks.map(async (task) => {
+          const order = await storage.getOrder(task.orderId);
+          return { ...task, order };
+        })
+      );
+      
+      res.json(tasksWithOrders);
     } catch (error) {
       console.error("Failed to get pack tasks:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/pack-tasks", async (req, res) => {
+    try {
+      const { orderId, status, packagingType, weight, toteId } = req.body;
+      
+      if (!orderId) {
+        return res.status(400).json({ error: "Order ID is required" });
+      }
+      
+      // Create pack task
+      const task = await storage.createPackTask({
+        orderId,
+        status: status || "in_progress",
+        packagingType,
+        weight,
+        toteId,
+        completedAt: status === "completed" ? new Date() : null,
+        completedBy: req.session?.user?.id || null,
+      });
+      
+      // Generate AWB if completed
+      if (status === "completed") {
+        const awbNumber = `AWB${Date.now()}`; // In production, use courier API
+        await storage.updatePackTask(task.id, { awbNumber });
+        
+        // Emit packing completed event
+        eventBus.emit("EV015", { 
+          type: "packing_completed", 
+          orderId, 
+          packTaskId: task.id,
+          awbNumber 
+        });
+      }
+      
+      res.status(201).json({ ...task, awbNumber: task.awbNumber || awbNumber });
+    } catch (error) {
+      console.error("Failed to create pack task:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/pack-tasks/:id/reprint", async (req, res) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      const task = await storage.getPackTasks().then(tasks => 
+        tasks.find(t => t.id === taskId)
+      );
+      
+      if (!task) {
+        return res.status(404).json({ error: "Pack task not found" });
+      }
+      
+      if (!task.awbNumber) {
+        return res.status(400).json({ error: "No AWB number available" });
+      }
+      
+      // In production, send to printer service
+      console.log(`Reprinting label for AWB: ${task.awbNumber}`);
+      
+      // Emit label reprint event
+      eventBus.emit("EV016", { 
+        type: "label_reprinted", 
+        orderId: task.orderId, 
+        packTaskId: task.id,
+        awbNumber: task.awbNumber,
+        userId: req.session?.user?.id 
+      });
+      
+      res.json({ success: true, message: "Label sent to printer" });
+    } catch (error) {
+      console.error("Failed to reprint label:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });

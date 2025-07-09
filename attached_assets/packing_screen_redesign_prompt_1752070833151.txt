@@ -1,0 +1,100 @@
+---
+# 📦 SaylogixOS – Packing Screen Redesign & Logic Spec
+
+## 🎯 Objective
+Redesign the **Packing Module UI and Logic** to support efficient packing operations, including support for both manual and scan-triggered flows, automatic AWB generation/printing, and historical reprint access.
+
+---
+
+## 🧱 Layout Overview: Three Main Tabs
+
+### 🔹 1. Packing Queue
+- List view of **orders ready for packing**.
+- Display per order:
+  - Order Number, Customer Name, Priority (low/normal/high/urgent), and Order Value
+- Clicking on an order loads a **packing panel** on the right:
+  - Select Packaging Type (dropdown)
+  - Input fields for weight
+  - `Complete Packing` button → triggers label generation and print
+  - `Print Label` button (optional)
+
+---
+
+### 🔹 2. Pack Orders (Auto-Scan Mode)
+
+#### 🔸 Scanner Input Field (universal)
+- Accepts either **SKU Barcode** or **Tote ID**
+- Behaviors:
+
+##### 🔹 If SKU Barcode is Scanned:
+- System searches unpacked single-SKU orders.
+- Picks the **oldest matching order**.
+- Loads order detail: list of expected items.
+- User scans the item again to **confirm** packing.
+- Once the last expected item is scanned:
+  - AWB is auto-generated.
+  - Label is printed **automatically**.
+  - Screen resets to next scan.
+
+##### 🔹 If Tote ID is Scanned:
+- System loads the full order mapped to the tote.
+- User scans **each item in tote** to confirm correctness.
+- When all expected SKUs are scanned:
+  - AWB is auto-generated.
+  - Label is printed **automatically**.
+  - Returns to scan field.
+  - Tote released into pool of totes used for picking.
+
+---
+
+### 🔹 3. Completed
+- List of all recently packed orders.
+- Clicking an order allows:
+  - View packed contents
+  - Reprint AWB label (manual trigger)
+
+---
+
+## 🔁 Functional Rules & Logic
+
+- SKU barcode scan triggers single-order search by oldest first
+- Tote scan links to pre-assigned order from picking
+- All items must be scanned individually to confirm
+- AWB generation and label printing is fully **automatic** upon scan completion
+- System resets scanner focus after each packing is finalized
+
+---
+
+## 🔧 Backend Requirements
+
+- API to match SKU → oldest unpacked order
+- API to fetch tote → assigned order and items
+- Event trigger for `packing.completed`
+- Auto-generate AWB using courier API upon last scan
+- Trigger printer service for label
+- Endpoint for reprinting AWB labels from completed tab
+
+---
+
+## 🖥️ Replit Tasks
+
+1. Build `Packing.vue` with tab layout: Packing Queue, Pack Orders, Completed
+2. Implement scan logic for SKU and Tote IDs
+3. Integrate auto-printing on final item scan
+4. Create visual component for packing drawer (used in Packing Queue tab)
+5. Completed tab must include manual reprint button
+6. Add scan focus reset after packing completes
+
+---
+
+## 📁 Event Model
+
+| Event Name         | Trigger                | Data Included                      |
+|--------------------|------------------------|------------------------------------|
+| packing.started     | On first scan in Pack Order  | order_id, sku_id, user_id            |
+| packing.confirmed   | On SKU match scan      | sku_id, quantity, location           |
+| packing.completed   | All items scanned      | order_id, AWB, timestamp             |
+| label.generated     | Post-packing complete  | order_id, courier, tracking_number  |
+| label.reprinted     | Manual reprint         | order_id, timestamp, user_id        |
+
+---
