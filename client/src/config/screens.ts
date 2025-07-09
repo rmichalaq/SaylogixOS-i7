@@ -62,41 +62,7 @@ export const screens: ScreenConfig[] = [
     label: "Inventory",
     menuGroup: "Warehouse",
     scan: { enabled: true, context: "sku" },
-    icon: "fas fa-boxes",
-    children: [
-      {
-        path: "/inventory/view",
-        component: InventoryRedesigned,
-        label: "View",
-        menuGroup: "Warehouse",
-        scan: { enabled: true, context: "sku" },
-        icon: "fas fa-eye"
-      },
-      {
-        path: "/inventory/adjust",
-        component: InventoryRedesigned,
-        label: "Adjust",
-        menuGroup: "Warehouse",
-        scan: { enabled: true, context: "sku" },
-        icon: "fas fa-edit"
-      },
-      {
-        path: "/inventory/cycle-count",
-        component: InventoryRedesigned,
-        label: "Cycle Count",
-        menuGroup: "Warehouse",
-        scan: { enabled: true, context: "bin" },
-        icon: "fas fa-clipboard-check"
-      },
-      {
-        path: "/inventory/expiry-report",
-        component: InventoryRedesigned,
-        label: "Expiry Report",
-        menuGroup: "Warehouse",
-        scan: { enabled: false },
-        icon: "fas fa-calendar-times"
-      }
-    ]
+    icon: "fas fa-boxes"
   },
   {
     path: "/inbound",
