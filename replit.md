@@ -147,6 +147,14 @@ Saylogix OS is a comprehensive fullstack logistics management system built as a 
 ## Changelog
 ```
 Changelog:
+- July 09, 2025. Refactored Integrations UI into Marketplace and Connected tabs
+  - Split single Integrations page into two focused tabs: Marketplace and Connected Integrations
+  - Marketplace tab: Fixed-size uniform cards for all integrations with configure/test buttons
+  - Connected Integrations tab: Shows only active integrations grouped by category
+  - Removed dynamic card resizing - all cards maintain consistent height/width
+  - Enhanced Shopify integration with comprehensive 4-tab modal (Credentials, SKUs, Orders, Logs)
+  - Added empty state with call-to-action when no integrations are connected
+  - Improved disconnect functionality and sync controls for active integrations
 - July 09, 2025. Major UI consistency improvements and visual bug fixes
   - Fixed all invisible navigation icons by replacing FontAwesome with Lucide React icons
   - Implemented consistent tabbed layout across all screens (Orders, Dashboard, etc.)

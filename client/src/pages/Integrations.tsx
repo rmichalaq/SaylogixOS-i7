@@ -99,7 +99,7 @@ interface ShopifyStore {
 }
 
 export default function Integrations() {
-  const [activeTab, setActiveTab] = useState("ecommerce");
+  const [activeTab, setActiveTab] = useState("marketplace");
   const [configDialogOpen, setConfigDialogOpen] = useState<string | null>(null);
   const [expandedShopify, setExpandedShopify] = useState(false);
   const [selectedStore, setSelectedStore] = useState<string | null>(null);
@@ -543,21 +543,15 @@ export default function Integrations() {
     );
   };
 
-  const renderShopifyCard = (config: any) => {
+  // Marketplace card - uniform layout for all integrations
+  const renderMarketplaceCard = (config: any) => {
     const integration = getIntegration(config.name);
-    const statusColor = getStatusColor(integration);
-    const statusIcon = getStatusIcon(integration);
-
+    
     return (
-      <Card key={config.name} className="h-full">
-        <CardHeader className="pb-3">
+      <Card key={config.name} className="h-48 flex flex-col">
+        <CardHeader className="pb-3 flex-shrink-0">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-lg">{config.title}</CardTitle>
-              <Badge variant={statusColor === "green" ? "default" : statusColor === "red" ? "destructive" : "secondary"}>
-                {statusIcon}
-              </Badge>
-            </div>
+            <CardTitle className="text-lg truncate">{config.title}</CardTitle>
             <Switch
               checked={integration?.isEnabled || false}
               onCheckedChange={(checked) =>
@@ -565,178 +559,10 @@ export default function Integrations() {
               }
             />
           </div>
-          <CardDescription>{config.description}</CardDescription>
+          <CardDescription className="line-clamp-2">{config.description}</CardDescription>
         </CardHeader>
         
-        <CardContent className="space-y-4">
-          {integration && (
-            <div className="text-sm space-y-1">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Connected Stores:</span>
-                <span className="font-medium">{mockShopifyStores.length}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Total Orders:</span>
-                <span className="font-medium">{shopifyOrders?.length || 0}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Synced SKUs:</span>
-                <span className="font-medium">{shopifySkus?.length || 0}</span>
-              </div>
-              {integration.lastSyncAt && (
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Last Sync:</span>
-                  <span className="font-medium text-xs">
-                    {new Date(integration.lastSyncAt).toLocaleString()}
-                  </span>
-                </div>
-              )}
-              {integration.lastError && (
-                <div className="text-xs text-red-600 mt-2 p-2 bg-red-50 rounded">
-                  {integration.lastError}
-                </div>
-              )}
-            </div>
-          )}
-          
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              className="flex-1"
-              onClick={() => setShopifyModalOpen(true)}
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Configure
-            </Button>
-
-            <Button
-              variant="outline"
-              onClick={async () => {
-                try {
-                  const response = await fetch(`/api/integrations/shopify/test`);
-                  const result = await response.json();
-                  if (result.success) {
-                    toast({ title: "Connection successful", description: result.message });
-                  } else {
-                    toast({ title: "Connection failed", description: result.message, variant: "destructive" });
-                  }
-                } catch (error) {
-                  toast({ title: "Test failed", variant: "destructive" });
-                }
-              }}
-              disabled={!integration?.isEnabled}
-            >
-              <TestTube className="h-4 w-4 mr-2" />
-              Test
-            </Button>
-          </div>
-
-          {/* Quick Actions */}
-          {integration?.isEnabled && (
-            <div className="flex gap-2">
-              <Button 
-                variant="outline"
-                size="sm"
-                className="flex-1"
-                onClick={async () => {
-                  try {
-                    const response = await fetch("/api/shopify/sync", {
-                      method: "POST",
-                    });
-                    const result = await response.json();
-                    toast({ title: "Sync started", description: result.message || "Syncing orders from Shopify" });
-                    queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-                    queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
-                  } catch (error) {
-                    toast({ title: "Sync failed", variant: "destructive" });
-                  }
-                }}
-              >
-                <Zap className="h-4 w-4 mr-2" />
-                Quick Sync
-              </Button>
-              <Button 
-                variant="outline"
-                size="sm"
-                className="flex-1"
-                onClick={() => {
-                  setShopifyModalOpen(true);
-                  setShopifyActiveTab("orders");
-                }}
-              >
-                <Package className="h-4 w-4 mr-2" />
-                View Orders
-              </Button>
-            </div>
-          )}
-        </CardContent>
-        
-        <ShopifyConfigModal />
-      </Card>
-    );
-  };
-
-  const renderIntegrationCard = (config: any) => {
-    // Use special Shopify card for Shopify integration
-    if (config.name === "shopify") {
-      return renderShopifyCard(config);
-    }
-
-    // Default card for other integrations
-    const integration = getIntegration(config.name);
-    const statusColor = getStatusColor(integration);
-    const statusIcon = getStatusIcon(integration);
-
-    return (
-      <Card key={config.name} className="h-full">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-lg">{config.title}</CardTitle>
-              <Badge variant={statusColor === "green" ? "default" : statusColor === "red" ? "destructive" : "secondary"}>
-                {statusIcon}
-              </Badge>
-            </div>
-            <Switch
-              checked={integration?.isEnabled || false}
-              onCheckedChange={(checked) =>
-                toggleIntegrationMutation.mutate({ name: config.name, enabled: checked })
-              }
-            />
-          </div>
-          <CardDescription>{config.description}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {integration && (
-            <div className="text-sm space-y-1">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Success Rate:</span>
-                <span className="font-medium">
-                  {integration.successCount + integration.failureCount > 0
-                    ? Math.round((integration.successCount / (integration.successCount + integration.failureCount)) * 100)
-                    : 0}%
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Failures:</span>
-                <span className="font-medium">{integration.failureCount}</span>
-              </div>
-              {integration.lastSyncAt && (
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Last Sync:</span>
-                  <span className="font-medium text-xs">
-                    {new Date(integration.lastSyncAt).toLocaleString()}
-                  </span>
-                </div>
-              )}
-              {integration.lastError && (
-                <div className="text-xs text-red-600 mt-2 p-2 bg-red-50 rounded">
-                  {integration.lastError}
-                </div>
-              )}
-            </div>
-          )}
-          
+        <CardContent className="flex-1 flex flex-col justify-end">
           <div className="flex gap-2">
             <Dialog open={configDialogOpen === config.name} onOpenChange={(open) => setConfigDialogOpen(open ? config.name : null)}>
               <DialogTrigger asChild>
@@ -781,13 +607,72 @@ export default function Integrations() {
               Test
             </Button>
           </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
+  // Connected integrations card - shows detailed info for active integrations
+  const renderConnectedCard = (config: any) => {
+    const integration = getIntegration(config.name);
+    if (!integration?.isEnabled) return null;
 
+    const statusColor = getStatusColor(integration);
+    const statusIcon = getStatusIcon(integration);
 
-          {/* Courier specific info */}
-          {(config.name === "aramex" || config.name === "fastlo") && integration?.isEnabled && integration?.config && (
-            <div className="space-y-2 p-3 bg-gray-50 rounded-lg">
-              <div className="text-sm">
+    return (
+      <Card key={config.name} className="h-auto">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-lg">{config.title}</CardTitle>
+              <Badge variant={statusColor === "green" ? "default" : statusColor === "red" ? "destructive" : "secondary"}>
+                {statusIcon}
+              </Badge>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => toggleIntegrationMutation.mutate({ name: config.name, enabled: false })}
+            >
+              Disconnect
+            </Button>
+          </div>
+          {config.name === "shopify" && integration?.config && (
+            <div className="text-sm text-gray-600">
+              {integration.config.storeName || integration.config.storeUrl || "Connected Store"}
+            </div>
+          )}
+        </CardHeader>
+        
+        <CardContent className="space-y-4">
+          <div className="text-sm space-y-1">
+            {integration.lastSyncAt && (
+              <div className="flex justify-between">
+                <span className="text-gray-600">Last Sync:</span>
+                <span className="font-medium text-xs">
+                  {new Date(integration.lastSyncAt).toLocaleString()}
+                </span>
+              </div>
+            )}
+            
+            {/* Shopify specific stats */}
+            {config.name === "shopify" && (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Total Orders:</span>
+                  <span className="font-medium">{shopifyOrders?.length || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Synced SKUs:</span>
+                  <span className="font-medium">{shopifySkus?.length || 0}</span>
+                </div>
+              </>
+            )}
+            
+            {/* Courier specific stats */}
+            {(config.name === "aramex" || config.name === "fastlo") && integration?.config && (
+              <>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Contract:</span>
                   <span className="font-medium">{integration.config.contractName || "Main Contract"}</span>
@@ -796,17 +681,124 @@ export default function Integrations() {
                   <span className="text-gray-600">Pickup Zone:</span>
                   <span className="font-medium">{integration.config.pickupZone || "Not set"}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Account:</span>
-                  <span className="font-medium text-gray-400">••••••••</span>
-                </div>
-              </div>
+              </>
+            )}
+
+            <div className="flex justify-between">
+              <span className="text-gray-600">Success Rate:</span>
+              <span className="font-medium">
+                {integration.successCount + integration.failureCount > 0
+                  ? Math.round((integration.successCount / (integration.successCount + integration.failureCount)) * 100)
+                  : 0}%
+              </span>
+            </div>
+          </div>
+
+          {integration.lastError && (
+            <div className="text-xs text-red-600 mt-2 p-2 bg-red-50 rounded">
+              {integration.lastError}
             </div>
           )}
+          
+          {/* Action buttons for connected integrations */}
+          <div className="flex gap-2">
+            {config.name === "shopify" && (
+              <>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => {
+                    setShopifyModalOpen(true);
+                    setShopifyActiveTab("orders");
+                  }}
+                >
+                  <Package className="h-4 w-4 mr-2" />
+                  View Orders
+                </Button>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => {
+                    setShopifyModalOpen(true);
+                    setShopifyActiveTab("skus");
+                  }}
+                >
+                  <Package className="h-4 w-4 mr-2" />
+                  View SKUs
+                </Button>
+              </>
+            )}
+            
+            <Button 
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                try {
+                  if (config.name === "shopify") {
+                    const response = await fetch("/api/shopify/sync", {
+                      method: "POST",
+                    });
+                    const result = await response.json();
+                    toast({ title: "Sync started", description: result.message || "Syncing orders from Shopify" });
+                    queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+                    queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+                  } else {
+                    toast({ title: "Sync not available", description: "Manual sync not supported for this integration" });
+                  }
+                } catch (error) {
+                  toast({ title: "Sync failed", variant: "destructive" });
+                }
+              }}
+            >
+              <Zap className="h-4 w-4 mr-2" />
+              Sync Now
+            </Button>
+          </div>
         </CardContent>
+        
+        {config.name === "shopify" && <ShopifyConfigModal />}
       </Card>
     );
   };
+
+  const renderIntegrationCard = (config: any) => {
+    // Use marketplace card for marketplace tab
+    if (activeTab === "marketplace") {
+      return renderMarketplaceCard(config);
+    }
+    
+    // Use connected card for connected tab
+    return renderConnectedCard(config);
+  };
+
+  // Helper to get all integrations for marketplace
+  const getAllIntegrations = () => {
+    return Object.values(integrationConfigs).flat();
+  };
+
+  // Helper to get connected integrations grouped by category
+  const getConnectedIntegrations = () => {
+    const connected: { [key: string]: any[] } = {};
+    
+    Object.entries(integrationConfigs).forEach(([category, configs]) => {
+      const connectedInCategory = configs.filter(config => {
+        const integration = getIntegration(config.name);
+        return integration?.isEnabled;
+      });
+      
+      if (connectedInCategory.length > 0) {
+        connected[category] = connectedInCategory;
+      }
+    });
+    
+    return connected;
+  };
+
+
+
+
 
   if (isLoading) {
     return <div className="p-6">Loading integrations...</div>;
@@ -816,38 +808,48 @@ export default function Integrations() {
     <div className="p-6">
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
-          <TabsTrigger value="ecommerce">
-            <span className="hidden sm:inline">E-Commerce</span>
-            <span className="sm:hidden">E-Com</span>
-          </TabsTrigger>
-          <TabsTrigger value="courier">Courier</TabsTrigger>
-          <TabsTrigger value="messaging">
-            <span className="hidden sm:inline">Messaging</span>
-            <span className="sm:hidden">Msg</span>
-          </TabsTrigger>
-          <TabsTrigger value="payments">
-            <span className="hidden sm:inline">Payments</span>
-            <span className="sm:hidden">Pay</span>
-          </TabsTrigger>
-          <TabsTrigger value="erp">ERP</TabsTrigger>
-          <TabsTrigger value="analytics">
-            <span className="hidden sm:inline">Analytics</span>
-            <span className="sm:hidden">Stats</span>
-          </TabsTrigger>
-          <TabsTrigger value="verification">
-            <span className="hidden sm:inline">Verification</span>
-            <span className="sm:hidden">Verify</span>
-          </TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
+          <TabsTrigger value="connected">Connected Integrations</TabsTrigger>
         </TabsList>
 
-        {Object.entries(integrationConfigs).map(([category, configs]) => (
-          <TabsContent key={category} value={category} className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {configs.map(renderIntegrationCard)}
+        <TabsContent value="marketplace" className="mt-6">
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold mb-2">Integration Marketplace</h3>
+            <p className="text-gray-600">Browse and configure available integrations for your logistics platform</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {getAllIntegrations().map(renderIntegrationCard)}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="connected" className="mt-6">
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold mb-2">Connected Integrations</h3>
+            <p className="text-gray-600">Manage your active integrations and view sync status</p>
+          </div>
+          
+          {Object.keys(getConnectedIntegrations()).length === 0 ? (
+            <div className="text-center py-12">
+              <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h4 className="text-lg font-medium text-gray-900 mb-2">No Connected Integrations</h4>
+              <p className="text-gray-600 mb-4">Configure integrations from the Marketplace to get started</p>
+              <Button onClick={() => setActiveTab("marketplace")}>
+                Browse Marketplace
+              </Button>
             </div>
-          </TabsContent>
-        ))}
+          ) : (
+            Object.entries(getConnectedIntegrations()).map(([category, configs]) => (
+              <div key={category} className="mb-8">
+                <h4 className="text-md font-medium mb-4 capitalize">{category.replace('_', ' ')}</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {configs.map(renderIntegrationCard)}
+                </div>
+              </div>
+            ))
+          )}
+        </TabsContent>
       </Tabs>
     </div>
   );
