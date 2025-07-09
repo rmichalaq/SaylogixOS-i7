@@ -24,7 +24,7 @@ export const orders = pgTable("orders", {
   customerName: text("customer_name").notNull(),
   customerPhone: varchar("customer_phone", { length: 20 }),
   customerEmail: text("customer_email"),
-  shippingAddress: jsonb("shipping_address").notNull(),
+  shippingAddress: jsonb("shipping_address"),
   billingAddress: jsonb("billing_address"),
   coordinates: jsonb("coordinates"), // {lat: number, lng: number}
   orderValue: decimal("order_value", { precision: 10, scale: 2 }),

@@ -255,14 +255,16 @@ export class ShopifyService {
         });
       }
 
-      // Create event with proper event ID
+      // Create event with proper event ID and type
       await storage.createEvent({
         eventId: `EV001-${Date.now()}`, // Generate unique event ID
+        eventType: "order_received", // Add required eventType field
         type: "order_received",
         entityType: "order", 
         entityId: order.id,
         data: { source: "shopify", shopifyOrderId: shopifyOrder.id },
         description: `Order ${internalOrderId} received from Shopify`,
+        status: "success",
       });
 
       console.log(`Successfully processed Shopify order: ${internalOrderId}`);

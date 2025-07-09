@@ -7,11 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Settings, TestTube, CheckCircle, XCircle, Clock, Zap } from "lucide-react";
+import { Settings, TestTube, CheckCircle, XCircle, Clock, Zap, Plus, ChevronDown, ChevronRight, Store, Package, FileText, Activity, AlertTriangle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Separator } from "@/components/ui/separator";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface Integration {
   id: number;
@@ -80,14 +83,61 @@ const integrationConfigs = {
   ]
 };
 
+interface ShopifyStore {
+  id: string;
+  name: string;
+  storeUrl: string;
+  isEnabled: boolean;
+  lastSync: string;
+  orderCount: number;
+  skuCount: number;
+  syncLogs: Array<{
+    timestamp: string;
+    status: 'success' | 'error';
+    message: string;
+  }>;
+}
+
 export default function Integrations() {
   const [activeTab, setActiveTab] = useState("ecommerce");
   const [configDialogOpen, setConfigDialogOpen] = useState<string | null>(null);
+  const [expandedShopify, setExpandedShopify] = useState(false);
+  const [selectedStore, setSelectedStore] = useState<string | null>(null);
+  const [shopifyModalOpen, setShopifyModalOpen] = useState(false);
+  const [shopifyActiveTab, setShopifyActiveTab] = useState("credentials");
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const { data: integrations = [], isLoading } = useQuery({
     queryKey: ["/api/integrations"],
+  });
+
+  // Mock Shopify stores data - in real app, this would come from API
+  const mockShopifyStores: ShopifyStore[] = [
+    {
+      id: "store-1",
+      name: "Main Store",
+      storeUrl: "saylogix-demo.myshopify.com",
+      isEnabled: true,
+      lastSync: "2025-07-09T08:00:00Z",
+      orderCount: 14,
+      skuCount: 156,
+      syncLogs: [
+        { timestamp: "2025-07-09T08:00:00Z", status: "success", message: "Synced 14 orders successfully" },
+        { timestamp: "2025-07-09T07:45:00Z", status: "success", message: "Inventory sync completed" },
+        { timestamp: "2025-07-09T07:30:00Z", status: "error", message: "Rate limit exceeded, retrying..." },
+      ]
+    }
+  ];
+
+  const { data: shopifyOrders } = useQuery({
+    queryKey: ["/api/orders"],
+    select: (data) => data?.filter((order: any) => order.sourceChannel === 'Shopify') || []
+  });
+
+  const { data: shopifySkus } = useQuery({
+    queryKey: ["/api/inventory"],
+    select: (data) => data?.filter((item: any) => item.source === 'Shopify') || []
   });
 
   const toggleIntegrationMutation = useMutation({
@@ -273,7 +323,366 @@ export default function Integrations() {
     );
   };
 
+  // Enhanced Shopify configuration modal
+  const ShopifyConfigModal = () => {
+    const form = useForm({
+      defaultValues: {
+        storeName: '',
+        storeUrl: '',
+        adminApiKey: '',
+        adminApiSecret: '',
+        accessToken: ''
+      }
+    });
+
+    return (
+      <Dialog open={shopifyModalOpen} onOpenChange={setShopifyModalOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Shopify Integration Management</DialogTitle>
+            <DialogDescription>
+              Manage your Shopify store connections, view synced data, and monitor sync status
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Tabs value={shopifyActiveTab} onValueChange={setShopifyActiveTab}>
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="credentials">Credentials</TabsTrigger>
+              <TabsTrigger value="skus">SKUs ({shopifySkus?.length || 0})</TabsTrigger>
+              <TabsTrigger value="orders">Orders ({shopifyOrders?.length || 0})</TabsTrigger>
+              <TabsTrigger value="logs">Sync Logs</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="credentials" className="space-y-4">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-lg font-medium">Connected Stores</h4>
+                  <Button size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Store
+                  </Button>
+                </div>
+                
+                {mockShopifyStores.map((store) => (
+                  <Card key={store.id} className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <Store className="h-5 w-5 text-blue-600" />
+                        <div>
+                          <h5 className="font-medium">{store.name}</h5>
+                          <p className="text-sm text-gray-500">{store.storeUrl}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant={store.isEnabled ? "default" : "secondary"}>
+                          {store.isEnabled ? "Active" : "Inactive"}
+                        </Badge>
+                        <Button variant="outline" size="sm">Edit</Button>
+                        <Switch checked={store.isEnabled} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-blue-600">{store.orderCount}</p>
+                        <p className="text-sm text-gray-500">Orders Synced</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-green-600">{store.skuCount}</p>
+                        <p className="text-sm text-gray-500">SKUs Synced</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-gray-600">Last Sync</p>
+                        <p className="text-sm text-gray-500">{new Date(store.lastSync).toLocaleString()}</p>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="skus" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-lg font-medium">Synced SKUs from Shopify</h4>
+                <Button variant="outline" size="sm">
+                  <Package className="h-4 w-4 mr-2" />
+                  Sync SKUs Now
+                </Button>
+              </div>
+              
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>SKU</TableHead>
+                    <TableHead>Product Name</TableHead>
+                    <TableHead>Stock</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {shopifySkus?.slice(0, 10).map((sku: any, index: number) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-medium">{sku.sku}</TableCell>
+                      <TableCell>{sku.name || "Product Name"}</TableCell>
+                      <TableCell>{sku.quantity || 0}</TableCell>
+                      <TableCell>${sku.price || "0.00"}</TableCell>
+                      <TableCell>
+                        <Badge variant="default">Synced</Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {(!shopifySkus || shopifySkus.length === 0) && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-gray-500 py-8">
+                        No SKUs found. Click "Sync SKUs Now" to fetch from Shopify.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TabsContent>
+
+            <TabsContent value="orders" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-lg font-medium">Recent Shopify Orders</h4>
+                <Button variant="outline" size="sm">
+                  <Zap className="h-4 w-4 mr-2" />
+                  Sync Orders Now
+                </Button>
+              </div>
+              
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Saylogix ID</TableHead>
+                    <TableHead>Shopify Order</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Address Status</TableHead>
+                    <TableHead>Total</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {shopifyOrders?.slice(0, 10).map((order: any) => (
+                    <TableRow key={order.id}>
+                      <TableCell className="font-medium">{order.saylogixNumber}</TableCell>
+                      <TableCell>{order.sourceOrderNumber}</TableCell>
+                      <TableCell>{order.customerName}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{order.status}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {order.city && order.region ? (
+                          <Badge variant="default">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Verified
+                          </Badge>
+                        ) : (
+                          <Badge variant="destructive">
+                            <AlertTriangle className="h-3 w-3 mr-1" />
+                            Not Verified
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>{order.totalAmount} {order.currency}</TableCell>
+                    </TableRow>
+                  ))}
+                  {(!shopifyOrders || shopifyOrders.length === 0) && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-gray-500 py-8">
+                        No orders found. All Shopify orders will appear here, including those with incomplete addresses.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TabsContent>
+
+            <TabsContent value="logs" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-lg font-medium">Sync Activity Log</h4>
+                <Button variant="outline" size="sm">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Export Logs
+                </Button>
+              </div>
+              
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Timestamp</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Message</TableHead>
+                    <TableHead>Store</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {mockShopifyStores[0]?.syncLogs.map((log, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
+                      <TableCell>
+                        <Badge variant={log.status === 'success' ? 'default' : 'destructive'}>
+                          {log.status === 'success' ? (
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                          ) : (
+                            <XCircle className="h-3 w-3 mr-1" />
+                          )}
+                          {log.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{log.message}</TableCell>
+                      <TableCell>Main Store</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
+  const renderShopifyCard = (config: any) => {
+    const integration = getIntegration(config.name);
+    const statusColor = getStatusColor(integration);
+    const statusIcon = getStatusIcon(integration);
+
+    return (
+      <Card key={config.name} className="h-full">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-lg">{config.title}</CardTitle>
+              <Badge variant={statusColor === "green" ? "default" : statusColor === "red" ? "destructive" : "secondary"}>
+                {statusIcon}
+              </Badge>
+            </div>
+            <Switch
+              checked={integration?.isEnabled || false}
+              onCheckedChange={(checked) =>
+                toggleIntegrationMutation.mutate({ name: config.name, enabled: checked })
+              }
+            />
+          </div>
+          <CardDescription>{config.description}</CardDescription>
+        </CardHeader>
+        
+        <CardContent className="space-y-4">
+          {integration && (
+            <div className="text-sm space-y-1">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Connected Stores:</span>
+                <span className="font-medium">{mockShopifyStores.length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Total Orders:</span>
+                <span className="font-medium">{shopifyOrders?.length || 0}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Synced SKUs:</span>
+                <span className="font-medium">{shopifySkus?.length || 0}</span>
+              </div>
+              {integration.lastSyncAt && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Last Sync:</span>
+                  <span className="font-medium text-xs">
+                    {new Date(integration.lastSyncAt).toLocaleString()}
+                  </span>
+                </div>
+              )}
+              {integration.lastError && (
+                <div className="text-xs text-red-600 mt-2 p-2 bg-red-50 rounded">
+                  {integration.lastError}
+                </div>
+              )}
+            </div>
+          )}
+          
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              className="flex-1"
+              onClick={() => setShopifyModalOpen(true)}
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Configure
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={async () => {
+                try {
+                  const response = await fetch(`/api/integrations/shopify/test`);
+                  const result = await response.json();
+                  if (result.success) {
+                    toast({ title: "Connection successful", description: result.message });
+                  } else {
+                    toast({ title: "Connection failed", description: result.message, variant: "destructive" });
+                  }
+                } catch (error) {
+                  toast({ title: "Test failed", variant: "destructive" });
+                }
+              }}
+              disabled={!integration?.isEnabled}
+            >
+              <TestTube className="h-4 w-4 mr-2" />
+              Test
+            </Button>
+          </div>
+
+          {/* Quick Actions */}
+          {integration?.isEnabled && (
+            <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={async () => {
+                  try {
+                    const response = await fetch("/api/shopify/sync", {
+                      method: "POST",
+                    });
+                    const result = await response.json();
+                    toast({ title: "Sync started", description: result.message || "Syncing orders from Shopify" });
+                    queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+                    queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+                  } catch (error) {
+                    toast({ title: "Sync failed", variant: "destructive" });
+                  }
+                }}
+              >
+                <Zap className="h-4 w-4 mr-2" />
+                Quick Sync
+              </Button>
+              <Button 
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={() => {
+                  setShopifyModalOpen(true);
+                  setShopifyActiveTab("orders");
+                }}
+              >
+                <Package className="h-4 w-4 mr-2" />
+                View Orders
+              </Button>
+            </div>
+          )}
+        </CardContent>
+        
+        <ShopifyConfigModal />
+      </Card>
+    );
+  };
+
   const renderIntegrationCard = (config: any) => {
+    // Use special Shopify card for Shopify integration
+    if (config.name === "shopify") {
+      return renderShopifyCard(config);
+    }
+
+    // Default card for other integrations
     const integration = getIntegration(config.name);
     const statusColor = getStatusColor(integration);
     const statusIcon = getStatusIcon(integration);
@@ -373,44 +782,7 @@ export default function Integrations() {
             </Button>
           </div>
 
-          {/* Shopify specific info */}
-          {config.name === "shopify" && integration?.isEnabled && integration?.config && (
-            <div className="space-y-2 p-3 bg-gray-50 rounded-lg">
-              <div className="text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Store:</span>
-                  <span className="font-medium">{integration.config.storeName || "Loading..."}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">API Key:</span>
-                  <span className="font-medium text-gray-400">••••••••</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Synced SKUs:</span>
-                  <span className="font-medium">{integration.config.syncedSkus || 0}</span>
-                </div>
-              </div>
-              <Button 
-                className="w-full" 
-                variant="outline"
-                size="sm"
-                onClick={async () => {
-                  try {
-                    const response = await fetch("/api/shopify/sync", {
-                      method: "POST",
-                    });
-                    const result = await response.json();
-                    toast({ title: "Sync started", description: result.message || "Syncing orders from Shopify" });
-                  } catch (error) {
-                    toast({ title: "Sync failed", variant: "destructive" });
-                  }
-                }}
-              >
-                <Zap className="h-4 w-4 mr-2" />
-                Sync Orders Now
-              </Button>
-            </div>
-          )}
+
 
           {/* Courier specific info */}
           {(config.name === "aramex" || config.name === "fastlo") && integration?.isEnabled && integration?.config && (
