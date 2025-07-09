@@ -218,7 +218,6 @@ export default function AddressVerify() {
           Verify Saudi Arabian National Address Shortcodes using SPL NAD with NAS fallback
         </p>
       </div>
-
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card>
@@ -254,7 +253,6 @@ export default function AddressVerify() {
           </CardContent>
         </Card>
       </div>
-
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="pending" className="flex items-center gap-2">
@@ -302,8 +300,8 @@ export default function AddressVerify() {
                       <TableHeader>
                         <TableRow>
                           <TableHead>Internal Order ID</TableHead>
-                          <TableHead>Customer Name</TableHead>
-                          <TableHead>NAS Shortcode</TableHead>
+                          <TableHead>Customer</TableHead>
+                          <TableHead className="text-center">NAS</TableHead>
                           <TableHead>Address</TableHead>
                           <TableHead>Action</TableHead>
                         </TableRow>
@@ -430,7 +428,7 @@ export default function AddressVerify() {
                         <TableRow>
                           <TableHead>Order ID</TableHead>
                           <TableHead>Customer</TableHead>
-                          <TableHead>NAS Shortcode</TableHead>
+                          <TableHead className="text-center">NAS</TableHead>
                           <TableHead>Full SPL Address</TableHead>
                           <TableHead>Timestamp</TableHead>
                         </TableRow>
