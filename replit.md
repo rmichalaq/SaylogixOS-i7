@@ -147,17 +147,17 @@ Saylogix OS is a comprehensive fullstack logistics management system built as a 
 ## Changelog
 ```
 Changelog:
-- July 09, 2025. Redesigned Order Detail Page with comprehensive structure and improved navigation
-  - Created new OrderDetail.tsx component with professional tabbed layout structure
-  - Added three main tabs: Item Details, Order Timeline, Timeline Log
-  - Implemented card-based layout for Order Details, Customer Info, Shipping Address sections
-  - Built comprehensive shipment details section with AWB, courier, and package information
-  - Added detailed SKU table with columns for product name, barcode, batch number, quantities, expiry, and costs
-  - Created visual order timeline component showing order progression with timestamps and icons
-  - Enhanced Orders table with dedicated Actions column (View Details and Edit buttons)
-  - Added proper navigation from Orders list to detailed Order view (/orders/:id route)
-  - Fixed API routes for order items and events to support detailed view requirements
-  - Maintained consistent design language with other redesigned modules
+- July 09, 2025. Redesigned Order Detail implementation integrated into side panel
+  - Removed separate Order Detail page navigation entry - only accessible through Orders list
+  - Integrated comprehensive Order Detail layout into existing side panel (slide-in drawer)
+  - Added three main tabs in drawer: Item Details, Order Timeline, Returns & Incidents
+  - Item Details tab includes: Order Details card, Customer Info, Shipping Address, Shipment Details, SKU table
+  - Order Timeline tab displays only actual historical events from database with timestamps and actors
+  - Timeline shows event icons based on type (placed, paid, picked, packed, dispatched, delivered, cancelled)
+  - Added Print AWB and More Actions buttons in drawer header area
+  - Fixed API routes for order items (/api/order-items/:orderId) and events (/api/events/:entityType/:entityId)
+  - Drawer dynamically loads order data based on selected order from list
+  - Maintained consistent card-based design language with other system modules
 - July 09, 2025. Completed comprehensive Inventory redesign and backend integration
   - Successfully redesigned "Inventory (WMS)" to "Inventory" with 4-section structure
   - Added View section: All Products (paginated table), Stock on Hand (location views)

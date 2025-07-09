@@ -11,7 +11,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { Download, Filter, MapPin, Phone, Mail, Package, Truck, Edit, X, RotateCcw, AlertTriangle, Eye } from "lucide-react";
+import { Download, Filter, MapPin, Phone, Mail, Package, Truck, Edit, X, RotateCcw, AlertTriangle, Eye, Printer, MoreHorizontal, Calendar, User, Clock, CheckCircle, XCircle, AlertCircle, FileText, RotateCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -51,6 +51,7 @@ export default function Orders() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [newStatus, setNewStatus] = useState("");
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [drawerTab, setDrawerTab] = useState("details");
   const [, setLocation] = useLocation();
 
   const { toast } = useToast();
@@ -59,6 +60,16 @@ export default function Orders() {
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["/api/orders"],
     refetchInterval: 30000,
+  });
+
+  const { data: orderItems = [] } = useQuery({
+    queryKey: ["/api/order-items", selectedOrder?.id],
+    enabled: !!selectedOrder,
+  });
+
+  const { data: orderEvents = [] } = useQuery({
+    queryKey: ["/api/events/order", selectedOrder?.id],
+    enabled: !!selectedOrder,
   });
 
   // Filter orders based on active tab
@@ -105,10 +116,7 @@ export default function Orders() {
   const handleOrderClick = (order: Order) => {
     setSelectedOrder(order);
     setIsDrawerOpen(true);
-  };
-
-  const handleViewDetails = (order: Order) => {
-    setLocation(`/orders/${order.id}`);
+    setDrawerTab("details"); // Reset to details tab when opening drawer
   };
 
   const formatCurrency = (amount: string, currency: string) => {
@@ -288,8 +296,9 @@ export default function Orders() {
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleViewDetails(order);
+                                handleOrderClick(order);
                               }}
+                              title="View Details"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -298,8 +307,12 @@ export default function Orders() {
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleOrderClick(order);
+                                setSelectedOrder(order);
+                                setIsEditMode(true);
+                                setIsDrawerOpen(true);
+                                setDrawerTab("details");
                               }}
+                              title="Edit Order"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -327,196 +340,278 @@ export default function Orders() {
 
       {/* Order Details Drawer */}
       <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-        <SheetContent className="w-[600px] sm:max-w-[600px] overflow-y-auto">
+        <SheetContent className="w-[800px] sm:max-w-[800px] overflow-hidden flex flex-col">
           {selectedOrder && (
             <>
-              <SheetHeader>
-                <SheetTitle className="flex items-center justify-between">
-                  <span>Order Details</span>
-                  <Badge className={getStatusColor(selectedOrder.status)}>
-                    {selectedOrder.status}
-                  </Badge>
-                </SheetTitle>
-                <SheetDescription>
-                  {selectedOrder.saylogixNumber} • #{selectedOrder.sourceOrderNumber}
-                  {selectedOrder.sourceChannelData?.shopifyOrderId && 
-                    ` • Order ${selectedOrder.sourceChannelData.shopifyOrderId}`
-                  }
-                </SheetDescription>
+              <SheetHeader className="border-b pb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <SheetTitle className="text-xl font-semibold">
+                      Order {selectedOrder.saylogixNumber}
+                    </SheetTitle>
+                    <SheetDescription className="mt-1">
+                      Shopify #{selectedOrder.sourceOrderNumber}
+                      {selectedOrder.sourceChannelData?.shopifyOrderId && 
+                        ` • ID: ${selectedOrder.sourceChannelData.shopifyOrderId}`
+                      }
+                    </SheetDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge className={getStatusColor(selectedOrder.status)}>
+                      {selectedOrder.status}
+                    </Badge>
+                    <Button variant="outline" size="sm">
+                      <Printer className="h-4 w-4 mr-2" />
+                      Print AWB
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               </SheetHeader>
 
-              <div className="space-y-6 mt-6">
-                {/* Order Summary */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-3 flex items-center">
-                    <Package className="h-5 w-5 mr-2" />
-                    Order Summary
-                  </h3>
-                  <div className="space-y-3 text-sm">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <span className="text-gray-500 block">Internal ID:</span>
-                        <p className="font-medium">{selectedOrder.saylogixNumber}</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-500 block">Shopify Order #:</span>
-                        <p className="font-medium">#{selectedOrder.sourceOrderNumber}</p>
-                      </div>
-                    </div>
-                    {selectedOrder.sourceChannelData?.shopifyOrderId && (
-                      <div>
-                        <span className="text-gray-500 block">Shopify Order ID:</span>
-                        <p className="font-medium">{selectedOrder.sourceChannelData.shopifyOrderId}</p>
-                      </div>
-                    )}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <span className="text-gray-500 block">Order Value:</span>
-                        <p className="font-medium">{formatCurrency(selectedOrder.orderValue, selectedOrder.currency)}</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-500 block">Created Time:</span>
-                        <p className="font-medium">{new Date(selectedOrder.createdAt).toLocaleString()}</p>
-                      </div>
-                    </div>
+              <div className="flex-1 overflow-hidden flex flex-col">
+                <Tabs value={drawerTab} onValueChange={setDrawerTab} className="flex-1 flex flex-col">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="details">Item Details</TabsTrigger>
+                    <TabsTrigger value="timeline">Order Timeline</TabsTrigger>
+                    <TabsTrigger value="incidents">Returns & Incidents</TabsTrigger>
+                  </TabsList>
+
+                  <div className="flex-1 overflow-y-auto">
+                    {/* Item Details Tab */}
+                    <TabsContent value="details" className="mt-6 space-y-6">
+                      {/* Order Details Card */}
+                      <Card>
+                        <CardContent className="p-6">
+                          <h3 className="text-lg font-semibold mb-4">Order Details</h3>
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="text-gray-500">Saylogix Number</span>
+                              <p className="font-medium">{selectedOrder.saylogixNumber}</p>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Source Order</span>
+                              <p className="font-medium">#{selectedOrder.sourceOrderNumber}</p>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Order Date</span>
+                              <p className="font-medium">{new Date(selectedOrder.createdAt).toLocaleDateString()}</p>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Total Value</span>
+                              <p className="font-medium">{formatCurrency(selectedOrder.orderValue, selectedOrder.currency)}</p>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Status</span>
+                              <Badge className={`${getStatusColor(selectedOrder.status)} mt-1`}>
+                                {selectedOrder.status}
+                              </Badge>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Priority</span>
+                              <p className="font-medium capitalize">{selectedOrder.priority}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Customer Info Card */}
+                      <Card>
+                        <CardContent className="p-6">
+                          <h3 className="text-lg font-semibold mb-4">Customer Information</h3>
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="text-gray-500">Name</span>
+                              <p className="font-medium">{selectedOrder.customerName}</p>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Phone</span>
+                              <p className="font-medium">{selectedOrder.customerPhone}</p>
+                            </div>
+                            <div className="col-span-2">
+                              <span className="text-gray-500">Email</span>
+                              <p className="font-medium">{selectedOrder.customerEmail || 'Not provided'}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Shipping Address Card */}
+                      <Card>
+                        <CardContent className="p-6">
+                          <h3 className="text-lg font-semibold mb-4">Shipping Address</h3>
+                          {selectedOrder.shippingAddress ? (
+                            <div className="text-sm space-y-1">
+                              <p className="font-medium">
+                                {selectedOrder.shippingAddress.firstName} {selectedOrder.shippingAddress.lastName}
+                              </p>
+                              <p>{selectedOrder.shippingAddress.address1}</p>
+                              {selectedOrder.shippingAddress.address2 && <p>{selectedOrder.shippingAddress.address2}</p>}
+                              <p>
+                                {selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.province} {selectedOrder.shippingAddress.zip}
+                              </p>
+                              <p>{selectedOrder.shippingAddress.country}</p>
+                              {selectedOrder.shippingAddress.phone && (
+                                <p className="text-gray-600 mt-2">Phone: {selectedOrder.shippingAddress.phone}</p>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="bg-yellow-50 p-4 rounded-md border border-yellow-200">
+                              <div className="flex items-center gap-2 text-yellow-800">
+                                <AlertTriangle className="h-4 w-4" />
+                                <span className="font-medium">Address Missing</span>
+                              </div>
+                              <p className="text-yellow-700 mt-1 text-sm">No delivery address provided with this order</p>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      {/* Shipment Details Card */}
+                      <Card>
+                        <CardContent className="p-6">
+                          <h3 className="text-lg font-semibold mb-4">Shipment Details</h3>
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="text-gray-500">AWB Number</span>
+                              <p className="font-medium">Not Generated</p>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Courier</span>
+                              <p className="font-medium">Not Assigned</p>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Weight (kg)</span>
+                              <p className="font-medium">-</p>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Dimensions</span>
+                              <p className="font-medium">-</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* SKU Details Table */}
+                      <Card>
+                        <CardContent className="p-6">
+                          <h3 className="text-lg font-semibold mb-4">SKU Details</h3>
+                          <div className="overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Product Name</TableHead>
+                                  <TableHead>SKU</TableHead>
+                                  <TableHead>Barcode</TableHead>
+                                  <TableHead>Batch No.</TableHead>
+                                  <TableHead>Qty</TableHead>
+                                  <TableHead>Unit Price</TableHead>
+                                  <TableHead>Total</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {orderItems.length > 0 ? (
+                                  orderItems.map((item: any) => (
+                                    <TableRow key={item.id}>
+                                      <TableCell className="font-medium">{item.productName}</TableCell>
+                                      <TableCell>{item.sku}</TableCell>
+                                      <TableCell>{item.barcode || '-'}</TableCell>
+                                      <TableCell>{item.batchNumber || '-'}</TableCell>
+                                      <TableCell>{item.quantity}</TableCell>
+                                      <TableCell>{formatCurrency(item.unitPrice, selectedOrder.currency)}</TableCell>
+                                      <TableCell>{formatCurrency(item.totalPrice, selectedOrder.currency)}</TableCell>
+                                    </TableRow>
+                                  ))
+                                ) : (
+                                  <TableRow>
+                                    <TableCell colSpan={7} className="text-center text-gray-500">
+                                      No items found
+                                    </TableCell>
+                                  </TableRow>
+                                )}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+
+                    {/* Order Timeline Tab */}
+                    <TabsContent value="timeline" className="mt-6">
+                      <Card>
+                        <CardContent className="p-6">
+                          <h3 className="text-lg font-semibold mb-4">Order Timeline</h3>
+                          {orderEvents.length > 0 ? (
+                            <div className="space-y-4">
+                              {orderEvents
+                                .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                                .map((event: any, index: number) => {
+                                  const getEventIcon = () => {
+                                    if (event.eventType.includes('placed')) return <Package className="h-5 w-5" />;
+                                    if (event.eventType.includes('paid')) return <CheckCircle className="h-5 w-5 text-green-600" />;
+                                    if (event.eventType.includes('picked')) return <Package className="h-5 w-5 text-blue-600" />;
+                                    if (event.eventType.includes('packed')) return <Package className="h-5 w-5 text-indigo-600" />;
+                                    if (event.eventType.includes('dispatched')) return <Truck className="h-5 w-5 text-purple-600" />;
+                                    if (event.eventType.includes('delivered')) return <CheckCircle className="h-5 w-5 text-green-700" />;
+                                    if (event.eventType.includes('cancelled')) return <XCircle className="h-5 w-5 text-red-600" />;
+                                    if (event.eventType.includes('failed')) return <AlertCircle className="h-5 w-5 text-red-600" />;
+                                    return <Clock className="h-5 w-5 text-gray-600" />;
+                                  };
+
+                                  return (
+                                    <div key={event.id} className="flex gap-4">
+                                      <div className="flex flex-col items-center">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
+                                          {getEventIcon()}
+                                        </div>
+                                        {index < orderEvents.length - 1 && (
+                                          <div className="h-full w-0.5 bg-gray-200 mt-2" />
+                                        )}
+                                      </div>
+                                      <div className="flex-1 pb-4">
+                                        <div className="flex items-center justify-between">
+                                          <h4 className="font-medium">{event.description || event.eventType}</h4>
+                                          <span className="text-sm text-gray-500">
+                                            {new Date(event.createdAt).toLocaleString()}
+                                          </span>
+                                        </div>
+                                        <div className="mt-1 text-sm text-gray-600">
+                                          <span className="flex items-center gap-1">
+                                            <User className="h-3 w-3" />
+                                            {event.actor || 'System'}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          ) : (
+                            <div className="text-center py-8 text-gray-500">
+                              <Clock className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                              <p>No timeline events recorded yet</p>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+
+                    {/* Returns & Incidents Tab */}
+                    <TabsContent value="incidents" className="mt-6">
+                      <Card>
+                        <CardContent className="p-6">
+                          <h3 className="text-lg font-semibold mb-4">Returns & Incidents</h3>
+                          <div className="text-center py-12 text-gray-500">
+                            <FileText className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                            <p>No returns or incidents recorded</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
                   </div>
-                </div>
-
-                {/* Customer Info */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-3 flex items-center">
-                    <Phone className="h-5 w-5 mr-2" />
-                    Customer Info
-                  </h3>
-                  <div className="space-y-3 text-sm">
-                    <div>
-                      <span className="text-gray-500 block">Name:</span>
-                      <span className="font-medium">{selectedOrder.customerName}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500 block">Phone:</span>
-                      <span className="font-medium">{selectedOrder.customerPhone}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500 block">Email:</span>
-                      <span className="font-medium">{selectedOrder.customerEmail || 'Not provided'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Delivery Address */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-3 flex items-center">
-                    <MapPin className="h-5 w-5 mr-2" />
-                    Delivery Address
-                  </h3>
-                  {selectedOrder.shippingAddress ? (
-                    <div className="text-sm bg-gray-50 p-3 rounded-md">
-                      <p className="font-medium">{selectedOrder.shippingAddress.firstName} {selectedOrder.shippingAddress.lastName}</p>
-                      <p>{selectedOrder.shippingAddress.address1}</p>
-                      {selectedOrder.shippingAddress.address2 && <p>{selectedOrder.shippingAddress.address2}</p>}
-                      <p>{selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.province}</p>
-                      <p>{selectedOrder.shippingAddress.country} {selectedOrder.shippingAddress.zip}</p>
-                      {selectedOrder.shippingAddress.phone && (
-                        <p className="text-gray-600">Phone: {selectedOrder.shippingAddress.phone}</p>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-sm bg-yellow-50 p-3 rounded-md border border-yellow-200">
-                      <div className="flex items-center gap-2 text-yellow-800">
-                        <AlertTriangle className="h-4 w-4" />
-                        <span className="font-medium">⚠️ Address Missing</span>
-                      </div>
-                      <p className="text-yellow-700 mt-1">No delivery address provided with this order</p>
-                    </div>
-                  )}
-                </div>
-
-                <Separator />
-
-                {/* Fulfillment & Courier */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-3 flex items-center">
-                    <Truck className="h-5 w-5 mr-2" />
-                    Fulfillment & Courier
-                  </h3>
-                  <div className="space-y-2 text-sm">
-                    <div>
-                      <span className="text-gray-500 block">Courier:</span>
-                      <span className="font-medium">Not assigned</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500 block">AWB:</span>
-                      <span className="font-medium">Not generated</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500 block">Current Status:</span>
-                      <Badge className={getStatusColor(selectedOrder.status)}>
-                        {selectedOrder.status}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Actions */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Actions</h3>
-                  <div className="flex flex-wrap gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setIsEditMode(!isEditMode)}
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit Order
-                    </Button>
-                    
-                    <Select value={newStatus} onValueChange={handleStatusChange}>
-                      <SelectTrigger className="w-[140px] h-8">
-                        <RotateCcw className="h-4 w-4 mr-2" />
-                        <SelectValue placeholder="Change Status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="fetched">Fetched</SelectItem>
-                        <SelectItem value="picked">Picked</SelectItem>
-                        <SelectItem value="packed">Packed</SelectItem>
-                        <SelectItem value="dispatched">Dispatched</SelectItem>
-                        <SelectItem value="delivered">Delivered</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-                      <DialogTrigger asChild>
-                        <Button variant="destructive" size="sm">
-                          <X className="h-4 w-4 mr-2" />
-                          Cancel Order
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Cancel Order</DialogTitle>
-                          <DialogDescription>
-                            Are you sure you want to cancel order {selectedOrder.saylogixNumber}? 
-                            This action cannot be undone.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter>
-                          <Button variant="outline" onClick={() => setShowCancelDialog(false)}>
-                            No, Keep Order
-                          </Button>
-                          <Button variant="destructive" onClick={handleCancelOrder}>
-                            Yes, Cancel Order
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </div>
+                </Tabs>
               </div>
             </>
           )}
