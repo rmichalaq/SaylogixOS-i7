@@ -35,7 +35,7 @@ export const screens: ScreenConfig[] = [
   {
     path: "/orders",
     component: OrdersPage,
-    label: "Orders (OMS)",
+    label: "Orders",
     menuGroup: "Fulfillment",
     scan: { enabled: false },
     icon: "fas fa-shopping-cart"

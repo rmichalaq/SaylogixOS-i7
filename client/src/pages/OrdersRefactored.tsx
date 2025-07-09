@@ -11,7 +11,10 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { Download, Filter, MapPin, Phone, Mail, Package, Truck, Edit, X, RotateCcw, AlertTriangle, Eye, Printer, MoreHorizontal, Calendar, User, Clock, CheckCircle, XCircle, AlertCircle, FileText, RotateCw } from "lucide-react";
+import { Download, Filter, MapPin, Phone, Mail, Package, Truck, Edit, X, RotateCcw, AlertTriangle, Eye, Printer, MoreHorizontal, Calendar, User, Clock, CheckCircle, XCircle, AlertCircle, FileText, RotateCw, Search, RefreshCw } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -44,14 +47,18 @@ interface Order {
 }
 
 export default function Orders() {
-  const [activeTab, setActiveTab] = useState("all");
+  const [mainTab, setMainTab] = useState("orders"); // Main tabs: orders, exceptions, returns
+  const [orderFilterTab, setOrderFilterTab] = useState("all"); // Order sub-tabs
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [newStatus, setNewStatus] = useState("");
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showReturnModal, setShowReturnModal] = useState(false);
   const [drawerTab, setDrawerTab] = useState("details");
+  const [returnReason, setReturnReason] = useState("");
+  const [returnNotes, setReturnNotes] = useState("");
   const [, setLocation] = useLocation();
 
   const { toast } = useToast();
@@ -72,16 +79,46 @@ export default function Orders() {
     enabled: !!selectedOrder,
   });
 
-  // Filter orders based on active tab
-  const filteredOrders = orders.filter((order: Order) => {
-    const matchesStatus = activeTab === "all" || order.status === activeTab;
-    const matchesSearch = !searchQuery || 
-      order.saylogixNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.sourceOrderNumber.includes(searchQuery);
-    
-    return matchesStatus && matchesSearch;
-  });
+  // Filter orders based on active tabs
+  const getFilteredOrders = () => {
+    if (mainTab === "orders") {
+      return orders.filter((order: Order) => {
+        const statusMap: { [key: string]: string } = {
+          new: "fetched",
+          picked: "picked",
+          packed: "packed",
+          "ready-to-ship": "packed", // Packed orders are ready to ship
+          dispatched: "dispatched",
+          delivered: "delivered",
+          cancelled: "cancelled",
+          all: "all"
+        };
+        
+        const targetStatus = statusMap[orderFilterTab] || orderFilterTab;
+        const matchesStatus = orderFilterTab === "all" || order.status === targetStatus;
+        const matchesSearch = !searchQuery || 
+          order.saylogixNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          order.sourceOrderNumber.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesStatus && matchesSearch;
+      });
+    } else if (mainTab === "exceptions") {
+      // Filter orders with exceptions (for now, show orders with missing addresses)
+      return orders.filter((order: Order) => {
+        const hasException = !order.shippingAddress || order.status === "failed";
+        const matchesSearch = !searchQuery || 
+          order.saylogixNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          order.customerName.toLowerCase().includes(searchQuery.toLowerCase());
+        return hasException && matchesSearch;
+      });
+    } else if (mainTab === "returns") {
+      // For now, returns will be empty until we implement returns functionality
+      return [];
+    }
+    return [];
+  };
+
+  const filteredOrders = getFilteredOrders();
 
   // Calculate status counts
   const statusCounts = {
@@ -179,54 +216,162 @@ export default function Orders() {
 
   return (
     <div className="space-y-6">
-      {/* Search and Actions */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-        <Input
-          placeholder="Search orders by number, customer, or source..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full sm:w-80"
-        />
-        
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <Filter className="h-4 w-4 mr-2" />
-            Filters
-          </Button>
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-        </div>
+      {/* Page Header */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Orders</h1>
+        <Button variant="outline" size="sm">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
       </div>
 
-      {/* Status Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
-          <TabsTrigger value="all" className="text-xs">
-            All ({statusCounts.all})
-          </TabsTrigger>
-          <TabsTrigger value="fetched" className="text-xs">
-            Fetched ({statusCounts.fetched})
-          </TabsTrigger>
-          <TabsTrigger value="picked" className="text-xs">
-            Picked ({statusCounts.picked})
-          </TabsTrigger>
-          <TabsTrigger value="packed" className="text-xs">
-            Packed ({statusCounts.packed})
-          </TabsTrigger>
-          <TabsTrigger value="dispatched" className="text-xs">
-            Dispatched ({statusCounts.dispatched})
-          </TabsTrigger>
-          <TabsTrigger value="delivered" className="text-xs">
-            Delivered ({statusCounts.delivered})
-          </TabsTrigger>
-          <TabsTrigger value="cancelled" className="text-xs">
-            Cancelled ({statusCounts.cancelled})
-          </TabsTrigger>
+      {/* Main Tabs */}
+      <Tabs value={mainTab} onValueChange={setMainTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3 max-w-[400px]">
+          <TabsTrigger value="orders">Orders</TabsTrigger>
+          <TabsTrigger value="exceptions">Exceptions</TabsTrigger>
+          <TabsTrigger value="returns">Returns</TabsTrigger>
         </TabsList>
 
-        <TabsContent value={activeTab} className="mt-6">
+        {/* Orders Tab */}
+        <TabsContent value="orders" className="mt-6 space-y-4">
+          {/* Search and Actions */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search orders by number, customer, or source..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm">
+                <Filter className="h-4 w-4 mr-2" />
+                Filters
+              </Button>
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            </div>
+          </div>
+
+          {/* Order Status Sub-tabs */}
+          <Tabs value={orderFilterTab} onValueChange={setOrderFilterTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-8">
+              <TabsTrigger value="new">New</TabsTrigger>
+              <TabsTrigger value="picked">Picked</TabsTrigger>
+              <TabsTrigger value="packed">Packed</TabsTrigger>
+              <TabsTrigger value="ready-to-ship">Ready to Ship</TabsTrigger>
+              <TabsTrigger value="dispatched">Dispatched</TabsTrigger>
+              <TabsTrigger value="delivered">Delivered</TabsTrigger>
+              <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+              <TabsTrigger value="all">All</TabsTrigger>
+            </TabsList>
+
+            <Card className="mt-4">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Order Details</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Value</TableHead>
+                        <TableHead>Courier</TableHead>
+                        <TableHead>Created</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredOrders.map((order: Order) => (
+                        <TableRow 
+                          key={order.id} 
+                          className="cursor-pointer hover:bg-gray-50"
+                          onClick={() => handleOrderClick(order)}
+                        >
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <div className="font-medium text-blue-600">
+                                  {order.saylogixNumber}
+                                </div>
+                                {!hasValidAddress(order) && (
+                                  <AlertTriangle className="h-4 w-4 text-yellow-500" title="Address Missing" />
+                                )}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                shopify: #{order.sourceOrderNumber}
+                              </div>
+                              {order.sourceChannelData?.shopifyOrderId && (
+                                <div className="text-xs text-gray-400">
+                                  Order: {order.sourceChannelData.shopifyOrderId}
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="font-medium">{order.customerName}</div>
+                              <div className="text-sm text-gray-500">{order.customerPhone}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColor(order.status)}>
+                              {order.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {formatCurrency(order.orderValue, order.currency)}
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-gray-400">-</span>
+                          </TableCell>
+                          <TableCell>
+                            {new Date(order.createdAt).toLocaleDateString()}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                
+                {filteredOrders.length === 0 && (
+                  <div className="text-center py-12">
+                    <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No orders found</h3>
+                    <p className="text-gray-500">
+                      {searchQuery ? "Try adjusting your search criteria" : "No orders match the current filter"}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </Tabs>
+        </TabsContent>
+
+        {/* Exceptions Tab */}
+        <TabsContent value="exceptions" className="mt-6 space-y-4">
+          <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search exceptions..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            
+            <Button variant="outline" size="sm">
+              <Filter className="h-4 w-4 mr-2" />
+              Filters
+            </Button>
+          </div>
+
           <Card>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
@@ -235,11 +380,10 @@ export default function Orders() {
                     <TableRow>
                       <TableHead>Order Details</TableHead>
                       <TableHead>Customer</TableHead>
+                      <TableHead>Exception Reason</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Value</TableHead>
-                      <TableHead>Courier</TableHead>
                       <TableHead>Created</TableHead>
-                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -251,28 +395,26 @@ export default function Orders() {
                       >
                         <TableCell>
                           <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <div className="font-medium text-blue-600">
-                                {order.saylogixNumber}
-                              </div>
-                              {!hasValidAddress(order) && (
-                                <AlertTriangle className="h-4 w-4 text-yellow-500" title="Address Missing" />
-                              )}
+                            <div className="font-medium text-blue-600">
+                              {order.saylogixNumber}
                             </div>
                             <div className="text-sm text-gray-500">
                               shopify: #{order.sourceOrderNumber}
                             </div>
-                            {order.sourceChannelData?.shopifyOrderId && (
-                              <div className="text-xs text-gray-400">
-                                Order: {order.sourceChannelData.shopifyOrderId}
-                              </div>
-                            )}
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">
                             <div className="font-medium">{order.customerName}</div>
                             <div className="text-sm text-gray-500">{order.customerPhone}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                            <span className="text-sm font-medium">
+                              {!order.shippingAddress ? "Missing Address" : "Processing Error"}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -284,39 +426,7 @@ export default function Orders() {
                           {formatCurrency(order.orderValue, order.currency)}
                         </TableCell>
                         <TableCell>
-                          <span className="text-gray-400">-</span>
-                        </TableCell>
-                        <TableCell>
                           {new Date(order.createdAt).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOrderClick(order);
-                              }}
-                              title="View Details"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedOrder(order);
-                                setIsEditMode(true);
-                                setIsDrawerOpen(true);
-                                setDrawerTab("details");
-                              }}
-                              title="Edit Order"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -326,13 +436,66 @@ export default function Orders() {
               
               {filteredOrders.length === 0 && (
                 <div className="text-center py-12">
-                  <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No orders found</h3>
-                  <p className="text-gray-500">
-                    {searchQuery ? "Try adjusting your search criteria" : "No orders match the current filter"}
-                  </p>
+                  <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No exceptions found</h3>
+                  <p className="text-gray-500">All orders are processing normally</p>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Returns Tab */}
+        <TabsContent value="returns" className="mt-6 space-y-4">
+          <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search returns by order ID, customer, or reason..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm">
+                <Filter className="h-4 w-4 mr-2" />
+                Filters
+              </Button>
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            </div>
+          </div>
+
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Return ID</TableHead>
+                      <TableHead>Original Order</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Return Reason</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Value</TableHead>
+                      <TableHead>Created</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {/* Returns will be empty for now */}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              <div className="text-center py-12">
+                <RotateCcw className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No returns found</h3>
+                <p className="text-gray-500">There are no return orders to display</p>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -364,9 +527,27 @@ export default function Orders() {
                       <Printer className="h-4 w-4 mr-2" />
                       Print AWB
                     </Button>
-                    <Button variant="outline" size="sm">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setIsEditMode(true)}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit Order
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setShowReturnModal(true)}>
+                          <RotateCcw className="h-4 w-4 mr-2" />
+                          Trigger Return
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setShowCancelDialog(true)} className="text-red-600">
+                          <X className="h-4 w-4 mr-2" />
+                          Cancel Order
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               </SheetHeader>
@@ -617,6 +798,68 @@ export default function Orders() {
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Return Modal */}
+      <Dialog open={showReturnModal} onOpenChange={setShowReturnModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Trigger Return</DialogTitle>
+            <DialogDescription>
+              Initiate a return for order {selectedOrder?.saylogixNumber}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="return-reason">Return Reason</Label>
+              <Select value={returnReason} onValueChange={setReturnReason}>
+                <SelectTrigger id="return-reason">
+                  <SelectValue placeholder="Select a reason" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="damaged">Damaged Product</SelectItem>
+                  <SelectItem value="wrong-item">Wrong Item Sent</SelectItem>
+                  <SelectItem value="not-as-described">Not as Described</SelectItem>
+                  <SelectItem value="quality-issue">Quality Issue</SelectItem>
+                  <SelectItem value="customer-changed-mind">Customer Changed Mind</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="return-notes">Additional Notes</Label>
+              <Textarea
+                id="return-notes"
+                placeholder="Enter any additional details about the return..."
+                value={returnNotes}
+                onChange={(e) => setReturnNotes(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowReturnModal(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                toast({
+                  title: "Return initiated",
+                  description: `Return request for order ${selectedOrder?.saylogixNumber} has been created.`,
+                });
+                setShowReturnModal(false);
+                setReturnReason("");
+                setReturnNotes("");
+              }}
+              disabled={!returnReason}
+            >
+              Initiate Return
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
