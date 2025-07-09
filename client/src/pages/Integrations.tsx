@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Settings, TestTube, CheckCircle, XCircle, Clock, Zap, Plus, ChevronDown, ChevronRight, Store, Package, FileText, Activity, AlertTriangle } from "lucide-react";
+import { Settings, TestTube, CheckCircle, XCircle, Clock, Zap, Plus, ChevronDown, ChevronRight, Store, Package, FileText, Activity, AlertTriangle, ShoppingCart, Truck, MessageSquare, CreditCard, Building2, BarChart3, MapPin, Box } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -31,55 +31,59 @@ interface Integration {
 
 const integrationConfigs = {
   ecommerce: [
-    { name: "shopify", title: "Shopify", description: "Connect your Shopify store", icon: "🛍️" },
-    { name: "salla", title: "Salla", description: "Saudi e-commerce platform", icon: "🏬" },
-    { name: "zid", title: "Zid", description: "MENA region e-commerce", icon: "🛒" },
-    { name: "woocommerce", title: "WooCommerce", description: "WordPress e-commerce", icon: "🌐" },
-    { name: "amazon", title: "Amazon", description: "Amazon marketplace", icon: "📦" },
-    { name: "magento", title: "Magento", description: "Enterprise e-commerce platform", icon: "🏪" },
-    { name: "bigcommerce", title: "BigCommerce", description: "Cloud-based e-commerce", icon: "☁️" },
-    { name: "ebay", title: "eBay", description: "Online auction marketplace", icon: "🔨" },
+    { name: "shopify", title: "Shopify", description: "Connect your Shopify store", logo: "https://cdn.worldvectorlogo.com/logos/shopify.svg" },
+    { name: "salla", title: "Salla", description: "Saudi e-commerce platform", logo: null },
+    { name: "zid", title: "Zid", description: "MENA region e-commerce", logo: null },
+    { name: "woocommerce", title: "WooCommerce", description: "WordPress e-commerce", logo: "https://cdn.worldvectorlogo.com/logos/woocommerce.svg" },
+    { name: "amazon", title: "Amazon", description: "Amazon marketplace", logo: "https://cdn.worldvectorlogo.com/logos/amazon-icon-1.svg" },
+    { name: "magento", title: "Magento", description: "Enterprise e-commerce platform", logo: "https://cdn.worldvectorlogo.com/logos/magento.svg" },
+    { name: "bigcommerce", title: "BigCommerce", description: "Cloud-based e-commerce", logo: "https://cdn.worldvectorlogo.com/logos/bigcommerce-icon.svg" },
+    { name: "ebay", title: "eBay", description: "Online auction marketplace", logo: "https://cdn.worldvectorlogo.com/logos/ebay-3.svg" },
   ],
   courier: [
-    { name: "aramex", title: "Aramex", description: "Regional shipping partner", icon: "📮" },
-    { name: "fastlo", title: "Fastlo", description: "Local delivery service", icon: "🚚" },
-    { name: "naqel", title: "Naqel", description: "Saudi postal service", icon: "📬" },
-    { name: "smsa", title: "SMSA", description: "Express delivery", icon: "⚡" },
-    { name: "dhl", title: "DHL", description: "International express delivery", icon: "✈️" },
-    { name: "fedex", title: "FedEx", description: "Global courier service", icon: "🌍" },
-    { name: "ups", title: "UPS", description: "United Parcel Service", icon: "📦" },
+    { name: "aramex", title: "Aramex", description: "Regional shipping partner", logo: "https://cdn.worldvectorlogo.com/logos/aramex-logo.svg" },
+    { name: "fastlo", title: "Fastlo", description: "Local delivery service", logo: null },
+    { name: "naqel", title: "Naqel", description: "Saudi postal service", logo: null },
+    { name: "smsa", title: "SMSA", description: "Express delivery", logo: null },
+    { name: "dhl", title: "DHL", description: "International express delivery", logo: "https://cdn.worldvectorlogo.com/logos/dhl-1.svg" },
+    { name: "fedex", title: "FedEx", description: "Global courier service", logo: "https://cdn.worldvectorlogo.com/logos/fedex-logo-2.svg" },
+    { name: "ups", title: "UPS", description: "United Parcel Service", logo: "https://cdn.worldvectorlogo.com/logos/ups.svg" },
   ],
   messaging: [
-    { name: "twilio_whatsapp", title: "Twilio WhatsApp", description: "WhatsApp messaging", icon: "💬" },
-    { name: "infobip", title: "Infobip", description: "Multi-channel messaging", icon: "📱" },
-    { name: "zenvia", title: "Zenvia", description: "Customer engagement", icon: "💬" },
-    { name: "whatsapp_business", title: "WhatsApp Business", description: "Direct WhatsApp API", icon: "💚" },
-    { name: "telegram", title: "Telegram Bot", description: "Telegram messaging", icon: "✈️" },
+    { name: "twilio_whatsapp", title: "Twilio WhatsApp", description: "WhatsApp messaging", logo: "https://cdn.worldvectorlogo.com/logos/twilio-2.svg" },
+    { name: "infobip", title: "Infobip", description: "Multi-channel messaging", logo: null },
+    { name: "zenvia", title: "Zenvia", description: "Customer engagement", logo: null },
+    { name: "whatsapp_business", title: "WhatsApp Business", description: "Direct WhatsApp API", logo: "https://cdn.worldvectorlogo.com/logos/whatsapp-icon.svg" },
+    { name: "telegram", title: "Telegram Bot", description: "Telegram messaging", logo: "https://cdn.worldvectorlogo.com/logos/telegram-1.svg" },
   ],
   payments: [
-    { name: "tabby", title: "Tabby", description: "Buy now, pay later", icon: "💳" },
-    { name: "tamara", title: "Tamara", description: "Flexible payments", icon: "💰" },
-    { name: "mada", title: "MADA", description: "Saudi payment network", icon: "🏦" },
-    { name: "stripe", title: "Stripe", description: "Global payment processor", icon: "💳" },
-    { name: "paypal", title: "PayPal", description: "Digital payment platform", icon: "🟦" },
+    { name: "tabby", title: "Tabby", description: "Buy now, pay later", logo: null },
+    { name: "tamara", title: "Tamara", description: "Flexible payments", logo: null },
+    { name: "mada", title: "MADA", description: "Saudi payment network", logo: null },
+    { name: "stripe", title: "Stripe", description: "Global payment processor", logo: "https://cdn.worldvectorlogo.com/logos/stripe-4.svg" },
+    { name: "paypal", title: "PayPal", description: "Digital payment platform", logo: "https://cdn.worldvectorlogo.com/logos/paypal-2.svg" },
   ],
   erp: [
-    { name: "sap", title: "SAP", description: "Enterprise resource planning", icon: "🏢" },
-    { name: "ms_dynamics", title: "MS Dynamics", description: "Microsoft business apps", icon: "🖥️" },
-    { name: "zoho", title: "Zoho", description: "Business software suite", icon: "⚡" },
-    { name: "oracle", title: "Oracle ERP", description: "Enterprise cloud applications", icon: "🔶" },
-    { name: "netsuite", title: "NetSuite", description: "Cloud business suite", icon: "☁️" },
+    { name: "sap", title: "SAP", description: "Enterprise resource planning", logo: "https://cdn.worldvectorlogo.com/logos/sap-2.svg" },
+    { name: "ms_dynamics", title: "MS Dynamics", description: "Microsoft business apps", logo: "https://cdn.worldvectorlogo.com/logos/dynamics-365-1.svg" },
+    { name: "zoho", title: "Zoho", description: "Business software suite", logo: "https://cdn.worldvectorlogo.com/logos/zoho-2.svg" },
+    { name: "oracle", title: "Oracle ERP", description: "Enterprise cloud applications", logo: "https://cdn.worldvectorlogo.com/logos/oracle-6.svg" },
+    { name: "netsuite", title: "NetSuite", description: "Cloud business suite", logo: "https://cdn.worldvectorlogo.com/logos/netsuite-1.svg" },
   ],
   analytics: [
-    { name: "ga4", title: "Google Analytics 4", description: "Web analytics", icon: "📊" },
-    { name: "mixpanel", title: "Mixpanel", description: "Product analytics", icon: "📈" },
-    { name: "powerbi", title: "Power BI", description: "Business intelligence", icon: "📊" },
-    { name: "tableau", title: "Tableau", description: "Data visualization platform", icon: "📊" },
-    { name: "amplitude", title: "Amplitude", description: "Digital analytics platform", icon: "📈" },
+    { name: "ga4", title: "Google Analytics 4", description: "Web analytics", logo: "https://cdn.worldvectorlogo.com/logos/google-analytics-4.svg" },
+    { name: "mixpanel", title: "Mixpanel", description: "Product analytics", logo: "https://cdn.worldvectorlogo.com/logos/mixpanel.svg" },
+    { name: "powerbi", title: "Power BI", description: "Business intelligence", logo: "https://cdn.worldvectorlogo.com/logos/microsoft-power-bi-2.svg" },
+    { name: "tableau", title: "Tableau", description: "Data visualization platform", logo: "https://cdn.worldvectorlogo.com/logos/tableau-software.svg" },
+    { name: "amplitude", title: "Amplitude", description: "Digital analytics platform", logo: null },
   ],
-  verification: [
-    { name: "spl", title: "SPL NAD", description: "Saudi National Address Database", icon: "📍" },
-    { name: "nas", title: "NAS API", description: "National Address Service", icon: "🗺️" },
+  maps: [
+    { name: "google_maps", title: "Google Maps", description: "Maps API for address verification", logo: "https://cdn.worldvectorlogo.com/logos/google-maps-2020-icon.svg" },
+    { name: "mapbox", title: "Mapbox", description: "Mapbox maps and geocoding", logo: "https://cdn.worldvectorlogo.com/logos/mapbox-2.svg" },
+  ],
+  other: [
+    { name: "spl", title: "SPL NAD", description: "Saudi National Address Database", logo: null },
+    { name: "nas", title: "NAS API", description: "National Address Service", logo: null },
   ]
 };
 
@@ -100,6 +104,8 @@ interface ShopifyStore {
 
 export default function Integrations() {
   const [activeTab, setActiveTab] = useState("marketplace");
+  const [marketplaceSubTab, setMarketplaceSubTab] = useState("ecommerce");
+  const [connectedSubTab, setConnectedSubTab] = useState("ecommerce");
   const [configDialogOpen, setConfigDialogOpen] = useState<string | null>(null);
   const [expandedShopify, setExpandedShopify] = useState(false);
   const [selectedStore, setSelectedStore] = useState<string | null>(null);
@@ -543,70 +549,69 @@ export default function Integrations() {
     );
   };
 
+  // Helper to get icon for a category
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'ecommerce': return <ShoppingCart className="h-4 w-4" />;
+      case 'courier': return <Truck className="h-4 w-4" />;
+      case 'messaging': return <MessageSquare className="h-4 w-4" />;
+      case 'payments': return <CreditCard className="h-4 w-4" />;
+      case 'erp': return <Building2 className="h-4 w-4" />;
+      case 'analytics': return <BarChart3 className="h-4 w-4" />;
+      case 'maps': return <MapPin className="h-4 w-4" />;
+      case 'other': return <Box className="h-4 w-4" />;
+      default: return <Box className="h-4 w-4" />;
+    }
+  };
+
   // Marketplace card - uniform layout for all integrations
   const renderMarketplaceCard = (config: any) => {
     const integration = getIntegration(config.name);
     
     return (
-      <Card key={config.name} className="h-48 flex flex-col">
+      <Card key={config.name} className="h-56 flex flex-col">
         <CardHeader className="pb-3 flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg truncate">{config.title}</CardTitle>
-            <Switch
-              checked={integration?.isEnabled || false}
-              onCheckedChange={(checked) =>
-                toggleIntegrationMutation.mutate({ name: config.name, enabled: checked })
-              }
-            />
+          <div className="flex items-center justify-between mb-2">
+            <div className="h-8 w-8 flex items-center justify-center">
+              {config.logo ? (
+                <img 
+                  src={config.logo} 
+                  alt={config.title} 
+                  className="h-8 w-8 object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
+                  }}
+                />
+              ) : null}
+              <Box className={`h-8 w-8 text-gray-400 fallback-icon ${config.logo ? 'hidden' : ''}`} />
+            </div>
           </div>
+          <CardTitle className="text-lg truncate">{config.title}</CardTitle>
           <CardDescription className="line-clamp-2">{config.description}</CardDescription>
         </CardHeader>
         
         <CardContent className="flex-1 flex flex-col justify-end">
-          <div className="flex gap-2">
-            <Dialog open={configDialogOpen === config.name} onOpenChange={(open) => setConfigDialogOpen(open ? config.name : null)}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="flex-1">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Configure
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Configure {config.title}</DialogTitle>
-                  <DialogDescription>
-                    Set up your {config.title} integration credentials and settings
-                  </DialogDescription>
-                </DialogHeader>
-                <ConfigForm 
-                  integrationName={config.name} 
-                  onClose={() => setConfigDialogOpen(null)} 
-                />
-              </DialogContent>
-            </Dialog>
-
-            <Button
-              variant="outline"
-              onClick={async () => {
-                try {
-                  const endpoint = config.name === "shopify" ? `/api/integrations/shopify/test` : `/api/integrations/${config.name}/test`;
-                  const response = await fetch(endpoint);
-                  const result = await response.json();
-                  if (result.success) {
-                    toast({ title: "Connection successful", description: result.message });
-                  } else {
-                    toast({ title: "Connection failed", description: result.message, variant: "destructive" });
-                  }
-                } catch (error) {
-                  toast({ title: "Test failed", variant: "destructive" });
-                }
-              }}
-              disabled={!integration?.isEnabled}
-            >
-              <TestTube className="h-4 w-4 mr-2" />
-              Test
-            </Button>
-          </div>
+          <Dialog open={configDialogOpen === config.name} onOpenChange={(open) => setConfigDialogOpen(open ? config.name : null)}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="w-full">
+                <Settings className="h-4 w-4 mr-2" />
+                Configure
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Configure {config.title}</DialogTitle>
+                <DialogDescription>
+                  Set up your {config.title} integration credentials and settings
+                </DialogDescription>
+              </DialogHeader>
+              <ConfigForm 
+                integrationName={config.name} 
+                onClose={() => setConfigDialogOpen(null)} 
+              />
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
     );
@@ -623,137 +628,194 @@ export default function Integrations() {
     return (
       <Card key={config.name} className="h-auto">
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-lg">{config.title}</CardTitle>
-              <Badge variant={statusColor === "green" ? "default" : statusColor === "red" ? "destructive" : "secondary"}>
-                {statusIcon}
-              </Badge>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="h-6 w-6 flex items-center justify-center flex-shrink-0">
+              {config.logo ? (
+                <img 
+                  src={config.logo} 
+                  alt={config.title} 
+                  className="h-6 w-6 object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
+                  }}
+                />
+              ) : null}
+              <Box className={`h-6 w-6 text-gray-400 fallback-icon ${config.logo ? 'hidden' : ''}`} />
             </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => toggleIntegrationMutation.mutate({ name: config.name, enabled: false })}
-            >
-              Disconnect
-            </Button>
+            <div className="flex-1">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-lg">{config.title}</CardTitle>
+                  <Badge variant={statusColor === "green" ? "default" : statusColor === "red" ? "destructive" : "secondary"}>
+                    {statusIcon}
+                  </Badge>
+                </div>
+              </div>
+              {config.name === "shopify" && integration?.config && (
+                <div className="text-sm text-gray-600">
+                  {integration.config.storeName || integration.config.storeUrl || "Connected Store"}
+                </div>
+              )}
+            </div>
           </div>
-          {config.name === "shopify" && integration?.config && (
-            <div className="text-sm text-gray-600">
-              {integration.config.storeName || integration.config.storeUrl || "Connected Store"}
-            </div>
-          )}
         </CardHeader>
         
         <CardContent className="space-y-4">
-          <div className="text-sm space-y-1">
-            {integration.lastSyncAt && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">Last Sync:</span>
-                <span className="font-medium text-xs">
-                  {new Date(integration.lastSyncAt).toLocaleString()}
-                </span>
-              </div>
-            )}
-            
+          <div className="grid grid-cols-2 gap-4 text-sm">
             {/* Shopify specific stats */}
             {config.name === "shopify" && (
               <>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Total Orders:</span>
-                  <span className="font-medium">{shopifyOrders?.length || 0}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Synced SKUs:</span>
-                  <span className="font-medium">{shopifySkus?.length || 0}</span>
-                </div>
-              </>
-            )}
-            
-            {/* Courier specific stats */}
-            {(config.name === "aramex" || config.name === "fastlo") && integration?.config && (
-              <>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Contract:</span>
-                  <span className="font-medium">{integration.config.contractName || "Main Contract"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Pickup Zone:</span>
-                  <span className="font-medium">{integration.config.pickupZone || "Not set"}</span>
-                </div>
-              </>
-            )}
-
-            <div className="flex justify-between">
-              <span className="text-gray-600">Success Rate:</span>
-              <span className="font-medium">
-                {integration.successCount + integration.failureCount > 0
-                  ? Math.round((integration.successCount / (integration.successCount + integration.failureCount)) * 100)
-                  : 0}%
-              </span>
-            </div>
-          </div>
-
-          {integration.lastError && (
-            <div className="text-xs text-red-600 mt-2 p-2 bg-red-50 rounded">
-              {integration.lastError}
-            </div>
-          )}
-          
-          {/* Action buttons for connected integrations */}
-          <div className="flex gap-2">
-            {config.name === "shopify" && (
-              <>
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
+                <Button
+                  variant="ghost"
+                  className="flex flex-col items-center justify-center h-16 hover:bg-gray-50"
                   onClick={() => {
                     setShopifyModalOpen(true);
                     setShopifyActiveTab("orders");
                   }}
                 >
-                  <Package className="h-4 w-4 mr-2" />
-                  View Orders
+                  <div className="text-2xl font-semibold">{shopifyOrders?.length || 0}</div>
+                  <div className="text-xs text-gray-600">Synced Orders</div>
                 </Button>
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
+                <Button
+                  variant="ghost"
+                  className="flex flex-col items-center justify-center h-16 hover:bg-gray-50"
                   onClick={() => {
                     setShopifyModalOpen(true);
                     setShopifyActiveTab("skus");
                   }}
                 >
-                  <Package className="h-4 w-4 mr-2" />
+                  <div className="text-2xl font-semibold">{shopifySkus?.length || 0}</div>
+                  <div className="text-xs text-gray-600">Synced SKUs</div>
+                </Button>
+              </>
+            )}
+            
+            {/* Default stats for other integrations */}
+            {config.name !== "shopify" && (
+              <>
+                <div className="flex flex-col items-center justify-center h-16 bg-gray-50 rounded">
+                  <div className="text-2xl font-semibold">0</div>
+                  <div className="text-xs text-gray-600">Processed</div>
+                </div>
+                <div className="flex flex-col items-center justify-center h-16 bg-gray-50 rounded">
+                  <div className="text-2xl font-semibold">0</div>
+                  <div className="text-xs text-gray-600">Pending</div>
+                </div>
+              </>
+            )}
+          </div>
+          
+          {/* Action buttons */}
+          <div className="flex gap-2">
+            <Dialog open={configDialogOpen === config.name} onOpenChange={(open) => setConfigDialogOpen(open ? config.name : null)}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="flex-1">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Configure
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Configure {config.title}</DialogTitle>
+                  <DialogDescription>
+                    Update your {config.title} integration credentials and settings
+                  </DialogDescription>
+                </DialogHeader>
+                <ConfigForm 
+                  integrationName={config.name} 
+                  onClose={() => setConfigDialogOpen(null)} 
+                />
+              </DialogContent>
+            </Dialog>
+
+            {config.name === "shopify" && (
+              <>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShopifyModalOpen(true);
+                    setShopifyActiveTab("orders");
+                  }}
+                >
+                  View Orders
+                </Button>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShopifyModalOpen(true);
+                    setShopifyActiveTab("skus");
+                  }}
+                >
                   View SKUs
                 </Button>
               </>
             )}
             
-            <Button 
+            <Button
               variant="outline"
               size="sm"
               onClick={async () => {
                 try {
-                  if (config.name === "shopify") {
-                    const response = await fetch("/api/shopify/sync", {
-                      method: "POST",
-                    });
-                    const result = await response.json();
-                    toast({ title: "Sync started", description: result.message || "Syncing orders from Shopify" });
-                    queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-                    queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+                  const endpoint = config.name === "shopify" ? `/api/integrations/shopify/test` : `/api/integrations/${config.name}/test`;
+                  const response = await fetch(endpoint);
+                  const result = await response.json();
+                  if (result.success) {
+                    toast({ title: "Connection successful", description: result.message });
                   } else {
-                    toast({ title: "Sync not available", description: "Manual sync not supported for this integration" });
+                    toast({ title: "Connection failed", description: result.message, variant: "destructive" });
                   }
                 } catch (error) {
-                  toast({ title: "Sync failed", variant: "destructive" });
+                  toast({ title: "Test failed", variant: "destructive" });
                 }
               }}
             >
-              <Zap className="h-4 w-4 mr-2" />
-              Sync Now
+              Test
+            </Button>
+          </div>
+
+          {/* Sync logs section */}
+          {config.name === "shopify" && integration?.isEnabled && (
+            <div className="border-t pt-3">
+              <Collapsible>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="w-full justify-between">
+                    <span className="text-sm font-medium">Sync Logs</span>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2">
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {mockShopifyStores[0]?.syncLogs.map((log, idx) => (
+                      <div key={idx} className="flex items-start gap-2 text-xs">
+                        <Badge variant={log.status === 'success' ? 'default' : 'destructive'} className="text-xs">
+                          {log.status}
+                        </Badge>
+                        <div className="flex-1">
+                          <div className="text-gray-600">{new Date(log.timestamp).toLocaleString()}</div>
+                          <div>{log.message}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
+          )}
+
+          <div className="flex justify-between items-center pt-2 border-t">
+            <div className="text-xs text-gray-600">
+              {integration.lastSyncAt && `Last sync: ${new Date(integration.lastSyncAt).toLocaleString()}`}
+            </div>
+            <Button 
+              variant="link" 
+              size="sm"
+              className="text-red-600 hover:text-red-700 p-0 h-auto"
+              onClick={() => toggleIntegrationMutation.mutate({ name: config.name, enabled: false })}
+            >
+              Disconnect
             </Button>
           </div>
         </CardContent>
@@ -819,9 +881,54 @@ export default function Integrations() {
             <p className="text-gray-600">Browse and configure available integrations for your logistics platform</p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {getAllIntegrations().map(renderIntegrationCard)}
-          </div>
+          <Tabs value={marketplaceSubTab} onValueChange={setMarketplaceSubTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-8">
+              <TabsTrigger value="ecommerce" className="flex items-center gap-1">
+                <ShoppingCart className="h-3 w-3" />
+                <span className="hidden sm:inline">E-Commerce</span>
+                <span className="sm:hidden">E-Com</span>
+              </TabsTrigger>
+              <TabsTrigger value="courier" className="flex items-center gap-1">
+                <Truck className="h-3 w-3" />
+                Courier
+              </TabsTrigger>
+              <TabsTrigger value="messaging" className="flex items-center gap-1">
+                <MessageSquare className="h-3 w-3" />
+                <span className="hidden sm:inline">Messaging</span>
+                <span className="sm:hidden">Msg</span>
+              </TabsTrigger>
+              <TabsTrigger value="payments" className="flex items-center gap-1">
+                <CreditCard className="h-3 w-3" />
+                <span className="hidden sm:inline">Payments</span>
+                <span className="sm:hidden">Pay</span>
+              </TabsTrigger>
+              <TabsTrigger value="erp" className="flex items-center gap-1">
+                <Building2 className="h-3 w-3" />
+                ERP
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="flex items-center gap-1">
+                <BarChart3 className="h-3 w-3" />
+                <span className="hidden sm:inline">Analytics</span>
+                <span className="sm:hidden">Stats</span>
+              </TabsTrigger>
+              <TabsTrigger value="maps" className="flex items-center gap-1">
+                <MapPin className="h-3 w-3" />
+                Maps
+              </TabsTrigger>
+              <TabsTrigger value="other" className="flex items-center gap-1">
+                <Box className="h-3 w-3" />
+                Other
+              </TabsTrigger>
+            </TabsList>
+
+            {Object.entries(integrationConfigs).map(([category, configs]) => (
+              <TabsContent key={category} value={category} className="mt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {configs.map(renderMarketplaceCard)}
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
         </TabsContent>
 
         <TabsContent value="connected" className="mt-6">
@@ -840,14 +947,80 @@ export default function Integrations() {
               </Button>
             </div>
           ) : (
-            Object.entries(getConnectedIntegrations()).map(([category, configs]) => (
-              <div key={category} className="mb-8">
-                <h4 className="text-md font-medium mb-4 capitalize">{category.replace('_', ' ')}</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {configs.map(renderIntegrationCard)}
-                </div>
-              </div>
-            ))
+            <Tabs value={connectedSubTab} onValueChange={setConnectedSubTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-8">
+                <TabsTrigger value="ecommerce" className="flex items-center gap-1">
+                  <ShoppingCart className="h-3 w-3" />
+                  <span className="hidden sm:inline">E-Commerce</span>
+                  <span className="sm:hidden">E-Com</span>
+                </TabsTrigger>
+                <TabsTrigger value="courier" className="flex items-center gap-1">
+                  <Truck className="h-3 w-3" />
+                  Courier
+                </TabsTrigger>
+                <TabsTrigger value="messaging" className="flex items-center gap-1">
+                  <MessageSquare className="h-3 w-3" />
+                  <span className="hidden sm:inline">Messaging</span>
+                  <span className="sm:hidden">Msg</span>
+                </TabsTrigger>
+                <TabsTrigger value="payments" className="flex items-center gap-1">
+                  <CreditCard className="h-3 w-3" />
+                  <span className="hidden sm:inline">Payments</span>
+                  <span className="sm:hidden">Pay</span>
+                </TabsTrigger>
+                <TabsTrigger value="erp" className="flex items-center gap-1">
+                  <Building2 className="h-3 w-3" />
+                  ERP
+                </TabsTrigger>
+                <TabsTrigger value="analytics" className="flex items-center gap-1">
+                  <BarChart3 className="h-3 w-3" />
+                  <span className="hidden sm:inline">Analytics</span>
+                  <span className="sm:hidden">Stats</span>
+                </TabsTrigger>
+                <TabsTrigger value="maps" className="flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  Maps
+                </TabsTrigger>
+                <TabsTrigger value="other" className="flex items-center gap-1">
+                  <Box className="h-3 w-3" />
+                  Other
+                </TabsTrigger>
+              </TabsList>
+
+              {Object.entries(integrationConfigs).map(([category, configs]) => {
+                const connectedInCategory = configs.filter(config => {
+                  const integration = getIntegration(config.name);
+                  return integration?.isEnabled;
+                });
+                
+                return (
+                  <TabsContent key={category} value={category} className="mt-6">
+                    {connectedInCategory.length === 0 ? (
+                      <div className="text-center py-8">
+                        <div className="flex justify-center mb-4">
+                          {getCategoryIcon(category)}
+                        </div>
+                        <p className="text-gray-600 mb-4">No {category} integrations connected</p>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            setActiveTab("marketplace");
+                            setMarketplaceSubTab(category);
+                          }}
+                        >
+                          Browse {category} integrations
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {connectedInCategory.map(renderConnectedCard)}
+                      </div>
+                    )}
+                  </TabsContent>
+                );
+              })}
+            </Tabs>
           )}
         </TabsContent>
       </Tabs>
