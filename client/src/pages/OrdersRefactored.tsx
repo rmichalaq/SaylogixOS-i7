@@ -373,15 +373,15 @@ export default function Orders() {
 
               <div className="flex-1 overflow-hidden flex flex-col">
                 <Tabs value={drawerTab} onValueChange={setDrawerTab} className="flex-1 flex flex-col">
-                  <TabsList className="grid w-full grid-cols-3">
+                  <TabsList className="grid w-full grid-cols-3 mb-4">
                     <TabsTrigger value="details">Item Details</TabsTrigger>
                     <TabsTrigger value="timeline">Order Timeline</TabsTrigger>
                     <TabsTrigger value="incidents">Returns & Incidents</TabsTrigger>
                   </TabsList>
 
-                  <div className="flex-1 overflow-y-auto">
+                  <div className="flex-1 overflow-y-auto px-1">
                     {/* Item Details Tab */}
-                    <TabsContent value="details" className="mt-6 space-y-6">
+                    <TabsContent value="details" className="mt-0 space-y-6 data-[state=active]:mt-0">
                       {/* Order Details Card */}
                       <Card>
                         <CardContent className="p-6">
@@ -539,7 +539,7 @@ export default function Orders() {
                     </TabsContent>
 
                     {/* Order Timeline Tab */}
-                    <TabsContent value="timeline" className="mt-6">
+                    <TabsContent value="timeline" className="mt-0 data-[state=active]:mt-0">
                       <Card>
                         <CardContent className="p-6">
                           <h3 className="text-lg font-semibold mb-4">Order Timeline</h3>
@@ -599,7 +599,7 @@ export default function Orders() {
                     </TabsContent>
 
                     {/* Returns & Incidents Tab */}
-                    <TabsContent value="incidents" className="mt-6">
+                    <TabsContent value="incidents" className="mt-0 data-[state=active]:mt-0">
                       <Card>
                         <CardContent className="p-6">
                           <h3 className="text-lg font-semibold mb-4">Returns & Incidents</h3>
