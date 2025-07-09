@@ -190,8 +190,29 @@ class ShopifyService {
         orderFetched: new Date()
       });
 
-      // Create order items
+      // Create order items and auto-create inventory if not exists
       for (const lineItem of shopifyOrder.line_items) {
+        // Check if inventory item exists for this SKU
+        if (lineItem.sku) {
+          const existingInventory = await storage.getInventoryBySku(lineItem.sku);
+          
+          if (!existingInventory) {
+            // Auto-create inventory item for new SKU
+            await storage.createInventory({
+              sku: lineItem.sku,
+              productName: lineItem.title,
+              category: lineItem.product_type || 'General',
+              availableQty: 0, // Initial stock to be updated via inbound processes
+              reservedQty: 0,
+              onHandQty: 0,
+              reorderLevel: 10,
+              status: 'active'
+            });
+            
+            console.log(`Auto-created inventory item for SKU: ${lineItem.sku}`);
+          }
+        }
+
         await storage.createOrderItem({
           orderId: order.id,
           sku: lineItem.sku,
@@ -279,6 +300,40 @@ class ShopifyService {
       console.error("Failed to handle Shopify webhook:", error);
       throw error;
     }
+  }
+
+  async fetchProducts(): Promise<any[]> {
+    console.log('Fetching products from Shopify...');
+    
+    const allProducts: any[] = [];
+    let page = 1;
+    const limit = 50;
+    
+    while (true) {
+      const response = await fetch(`${this.baseUrl}/products.json?limit=${limit}&page=${page}`, {
+        headers: {
+          'X-Shopify-Access-Token': this.accessToken,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch products: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      const products = data.products || [];
+      allProducts.push(...products);
+      
+      if (products.length < limit) {
+        break;
+      }
+      
+      page++;
+    }
+    
+    console.log(`Fetched ${allProducts.length} products from Shopify`);
+    return allProducts;
   }
 
   private async handleOrderCancellation(shopifyOrder: ShopifyOrder): Promise<void> {

@@ -84,10 +84,9 @@ export default function Orders() {
     if (mainTab === "orders") {
       return orders.filter((order: Order) => {
         const statusMap: { [key: string]: string } = {
-          new: "fetched",
+          fetched: "fetched",
           picked: "picked",
           packed: "packed",
-          "ready-to-ship": "packed", // Packed orders are ready to ship
           dispatched: "dispatched",
           delivered: "delivered",
           cancelled: "cancelled",
@@ -261,15 +260,14 @@ export default function Orders() {
 
           {/* Order Status Sub-tabs */}
           <Tabs value={orderFilterTab} onValueChange={setOrderFilterTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-8">
-              <TabsTrigger value="new">New</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-7">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="fetched">Fetched</TabsTrigger>
               <TabsTrigger value="picked">Picked</TabsTrigger>
               <TabsTrigger value="packed">Packed</TabsTrigger>
-              <TabsTrigger value="ready-to-ship">Ready to Ship</TabsTrigger>
               <TabsTrigger value="dispatched">Dispatched</TabsTrigger>
               <TabsTrigger value="delivered">Delivered</TabsTrigger>
               <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
-              <TabsTrigger value="all">All</TabsTrigger>
             </TabsList>
 
             <Card className="mt-4">

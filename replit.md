@@ -147,7 +147,8 @@ Saylogix OS is a comprehensive fullstack logistics management system built as a 
 ## Changelog
 ```
 Changelog:
-- July 09, 2025. Enhanced Purchase Orders interface with drawer-based workflow
+- July 09, 2025. UI consistency improvements and inventory sync enhancements
+  - Enhanced Purchase Orders interface with drawer-based workflow
   - Removed Actions column from Purchase Orders table for cleaner interface
   - Made PO Numbers clickable to open detailed processing drawer
   - Converted PO processing from modal dialog to slide-in drawer consistent with Orders section
@@ -155,6 +156,12 @@ Changelog:
   - Organized all processing actions in logical flow: ASN → Gate Entry → Dock Assignment → Unloading → Move to GRN
   - Filtered out completed POs (unloaded status) from main view to focus on active processing
   - Added "Move to GRN" button for completed POs to transition workflow
+  - Updated Orders status tabs to match actual order statuses (All, Fetched, Picked, Packed, Dispatched, Delivered, Cancelled)
+  - Implemented automatic inventory creation when syncing SKUs from Shopify
+  - Added sample inventory data with 10 products across multiple categories
+  - Enhanced Shopify service to fetch products and create inventory items for new SKUs
+  - Added API endpoint to fetch SKUs from Shopify for integration display
+  - Fixed HTML validation errors with badge components in drawers
 - July 09, 2025. Comprehensive Orders screen restructure with 3-tab layout
   - Renamed "Orders (OMS)" to simply "Orders" in sidebar and screen header
   - Restructured Orders screen into 3 main tabs: Orders, Exceptions, Returns
