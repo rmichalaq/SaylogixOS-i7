@@ -4,6 +4,7 @@ import {
   routes, routeStops, webhookLogs, integrations, warehouseZones, 
   staffRoles, toteCartTypes, purchaseOrders, purchaseOrderItems,
   goodsReceiptNotes, grnItems, putawayTasks, putawayItems,
+  inventoryAdjustments, cycleCountTasks, cycleCountItems, productExpiry,
   type User, type InsertUser, type Order, type InsertOrder,
   type OrderItem, type InsertOrderItem, type Inventory, type InsertInventory,
   type Event, type InsertEvent, type AddressVerification, type InsertAddressVerification,
@@ -15,7 +16,9 @@ import {
   type StaffRole, type InsertStaffRole, type ToteCartType, type InsertToteCartType,
   type PurchaseOrder, type InsertPurchaseOrder, type PurchaseOrderItem, type InsertPurchaseOrderItem,
   type GoodsReceiptNote, type InsertGoodsReceiptNote, type GrnItem, type InsertGrnItem,
-  type PutawayTask, type InsertPutawayTask, type PutawayItem, type InsertPutawayItem
+  type PutawayTask, type InsertPutawayTask, type PutawayItem, type InsertPutawayItem,
+  type InventoryAdjustment, type InsertInventoryAdjustment, type CycleCountTask, type InsertCycleCountTask,
+  type CycleCountItem, type InsertCycleCountItem, type ProductExpiry, type InsertProductExpiry
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, sql, count, sum } from "drizzle-orm";
@@ -126,6 +129,23 @@ export interface IStorage {
   getPutawayItems(taskId: number): Promise<PutawayItem[]>;
   createPutawayItem(item: InsertPutawayItem): Promise<PutawayItem>;
   updatePutawayItem(id: number, updates: Partial<InsertPutawayItem>): Promise<void>;
+  
+  // Inventory Management
+  getInventoryAdjustments(): Promise<InventoryAdjustment[]>;
+  createInventoryAdjustment(adjustment: InsertInventoryAdjustment): Promise<InventoryAdjustment>;
+  updateInventoryAdjustment(id: number, updates: Partial<InsertInventoryAdjustment>): Promise<void>;
+  
+  getCycleCountTasks(): Promise<CycleCountTask[]>;
+  createCycleCountTask(task: InsertCycleCountTask): Promise<CycleCountTask>;
+  updateCycleCountTask(id: number, updates: Partial<InsertCycleCountTask>): Promise<void>;
+  
+  getCycleCountItems(taskId: number): Promise<CycleCountItem[]>;
+  createCycleCountItem(item: InsertCycleCountItem): Promise<CycleCountItem>;
+  updateCycleCountItem(id: number, updates: Partial<InsertCycleCountItem>): Promise<void>;
+  
+  getProductExpiry(): Promise<ProductExpiry[]>;
+  createProductExpiry(expiry: InsertProductExpiry): Promise<ProductExpiry>;
+  updateProductExpiry(id: number, updates: Partial<InsertProductExpiry>): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -539,6 +559,79 @@ export class DatabaseStorage implements IStorage {
 
   async updatePutawayItem(id: number, updates: Partial<InsertPutawayItem>): Promise<void> {
     await db.update(putawayItems).set(updates).where(eq(putawayItems.id, id));
+  }
+
+  // Inventory Management
+  async getInventoryAdjustments(): Promise<InventoryAdjustment[]> {
+    return await db.select().from(inventoryAdjustments).orderBy(desc(inventoryAdjustments.createdAt));
+  }
+
+  async createInventoryAdjustment(adjustment: InsertInventoryAdjustment): Promise<InventoryAdjustment> {
+    // Generate adjustment number
+    const adjustmentNumber = `ADJ-${Date.now()}`;
+    
+    const adjustmentWithNumber = {
+      ...adjustment,
+      adjustmentNumber
+    };
+
+    const [result] = await db.insert(inventoryAdjustments).values(adjustmentWithNumber).returning();
+    return result;
+  }
+
+  async updateInventoryAdjustment(id: number, updates: Partial<InsertInventoryAdjustment>): Promise<void> {
+    await db.update(inventoryAdjustments).set(updates).where(eq(inventoryAdjustments.id, id));
+  }
+
+  // Cycle Count Tasks
+  async getCycleCountTasks(): Promise<CycleCountTask[]> {
+    return await db.select().from(cycleCountTasks).orderBy(desc(cycleCountTasks.createdAt));
+  }
+
+  async createCycleCountTask(task: InsertCycleCountTask): Promise<CycleCountTask> {
+    // Generate task number
+    const taskNumber = `CC-${Date.now()}`;
+    
+    const taskWithNumber = {
+      ...task,
+      taskNumber
+    };
+
+    const [result] = await db.insert(cycleCountTasks).values(taskWithNumber).returning();
+    return result;
+  }
+
+  async updateCycleCountTask(id: number, updates: Partial<InsertCycleCountTask>): Promise<void> {
+    await db.update(cycleCountTasks).set(updates).where(eq(cycleCountTasks.id, id));
+  }
+
+  async getCycleCountItems(taskId: number): Promise<CycleCountItem[]> {
+    return await db.select().from(cycleCountItems).where(eq(cycleCountItems.taskId, taskId));
+  }
+
+  async createCycleCountItem(item: InsertCycleCountItem): Promise<CycleCountItem> {
+    const [result] = await db.insert(cycleCountItems).values(item).returning();
+    return result;
+  }
+
+  async updateCycleCountItem(id: number, updates: Partial<InsertCycleCountItem>): Promise<void> {
+    await db.update(cycleCountItems).set(updates).where(eq(cycleCountItems.id, id));
+  }
+
+  // Product Expiry
+  async getProductExpiry(): Promise<ProductExpiry[]> {
+    return await db.select().from(productExpiry).orderBy(productExpiry.expiryDate);
+  }
+
+  async createProductExpiry(expiry: InsertProductExpiry): Promise<ProductExpiry> {
+    const [result] = await db.insert(productExpiry).values(expiry).returning();
+    return result;
+  }
+
+  async updateProductExpiry(id: number, updates: Partial<InsertProductExpiry>): Promise<void> {
+    await db.update(productExpiry)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(productExpiry.id, id));
   }
 }
 

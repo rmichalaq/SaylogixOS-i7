@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useScanner } from "@/hooks/useScanner";
+import { QrCode, Camera, Loader2 } from "lucide-react";
 
 interface ScanOverlayProps {
   context?: string;
@@ -101,7 +102,7 @@ export function ScanOverlay({ context: propContext }: ScanOverlayProps) {
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center">
-            <i className="fas fa-qrcode mr-2 text-primary-500"></i>
+            <QrCode className="mr-2 h-4 w-4 text-primary-500" />
             Scanner
           </DialogTitle>
         </DialogHeader>
@@ -110,7 +111,7 @@ export function ScanOverlay({ context: propContext }: ScanOverlayProps) {
           {/* Camera Preview Area */}
           <div className="bg-gray-100 rounded-lg h-64 flex items-center justify-center">
             <div className="text-center">
-              <i className="fas fa-camera text-4xl text-secondary-300 mb-4"></i>
+              <Camera className="mx-auto mb-4 h-12 w-12 text-secondary-300" />
               <p className="text-secondary-500">Camera view would appear here</p>
               <p className="text-sm text-secondary-400">
                 Scanning for: {getContextDisplayName(context)}
@@ -144,7 +145,7 @@ export function ScanOverlay({ context: propContext }: ScanOverlayProps) {
               >
                 {isProcessing ? (
                   <>
-                    <i className="fas fa-spinner fa-spin mr-2"></i>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Processing...
                   </>
                 ) : (

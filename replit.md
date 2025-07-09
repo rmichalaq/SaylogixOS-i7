@@ -147,6 +147,18 @@ Saylogix OS is a comprehensive fullstack logistics management system built as a 
 ## Changelog
 ```
 Changelog:
+- July 09, 2025. Completed comprehensive Inventory redesign and backend integration
+  - Successfully redesigned "Inventory (WMS)" to "Inventory" with 4-section structure
+  - Added View section: All Products (paginated table), Stock on Hand (location views)
+  - Added Adjust section: Create adjustment forms with approval workflow and history tracking
+  - Added Cycle Count section: Task creation, in-progress tracking, and completed count history
+  - Added Expiry Report section: Near-expiry alerts, expired products, and batch tracking
+  - Implemented complete backend: 6 new database tables with inventory adjustments, cycle counts, and expiry data
+  - Added comprehensive API routes with automatic adjustment number generation (ADJ-xxx, CC-xxx)
+  - Enhanced storage interface with proper CRUD operations for all inventory features
+  - Added sample data for testing: 3 inventory adjustments, 3 cycle count tasks, 4 expiry records
+  - Fixed ScanOverlay icons by replacing FontAwesome with Lucide React icons
+  - All inventory functionality now connected to database with real-time data processing
 - July 09, 2025. Enhanced Integrations UI with sub-tabs and improved data sync
   - Added sub-tabs to both Marketplace and Connected views for better categorization
   - Sub-tabs: E-Commerce, Courier, Messaging, Payments, ERP, Analytics, Maps, Other

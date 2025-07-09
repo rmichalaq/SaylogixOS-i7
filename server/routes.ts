@@ -1086,6 +1086,141 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Inventory Management API
+  
+  // Inventory Adjustments
+  app.get("/api/inventory/adjustments", async (req, res) => {
+    try {
+      const adjustments = await storage.getInventoryAdjustments();
+      res.json(adjustments);
+    } catch (error) {
+      console.error("Failed to get inventory adjustments:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/inventory/adjustments", async (req, res) => {
+    try {
+      // Calculate before/after quantities based on current inventory
+      const currentInventory = await storage.getInventoryBySku(req.body.sku);
+      const beforeQty = currentInventory?.availableQty || 0;
+      
+      let afterQty: number;
+      if (req.body.adjustmentType === "set") {
+        afterQty = req.body.adjustmentQty;
+      } else if (req.body.adjustmentType === "increase") {
+        afterQty = beforeQty + req.body.adjustmentQty;
+      } else {
+        afterQty = beforeQty - req.body.adjustmentQty;
+      }
+
+      const adjustmentData = {
+        ...req.body,
+        beforeQty,
+        afterQty
+      };
+
+      const adjustment = await storage.createInventoryAdjustment(adjustmentData);
+      res.json(adjustment);
+    } catch (error) {
+      console.error("Failed to create inventory adjustment:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.patch("/api/inventory/adjustments/:id/approve", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.updateInventoryAdjustment(id, {
+        status: "approved",
+        approvedBy: "System Admin",
+        approvedAt: new Date(),
+        appliedAt: new Date()
+      });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to approve adjustment:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.patch("/api/inventory/adjustments/:id/reject", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.updateInventoryAdjustment(id, {
+        status: "rejected",
+        approvedBy: "System Admin",
+        approvedAt: new Date()
+      });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to reject adjustment:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Cycle Count Tasks
+  app.get("/api/inventory/cycle-count", async (req, res) => {
+    try {
+      const tasks = await storage.getCycleCountTasks();
+      
+      // Attach items to each task
+      const tasksWithItems = await Promise.all(
+        tasks.map(async (task) => ({
+          ...task,
+          items: await storage.getCycleCountItems(task.id)
+        }))
+      );
+      
+      res.json(tasksWithItems);
+    } catch (error) {
+      console.error("Failed to get cycle count tasks:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/inventory/cycle-count", async (req, res) => {
+    try {
+      const task = await storage.createCycleCountTask(req.body);
+      res.json(task);
+    } catch (error) {
+      console.error("Failed to create cycle count task:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.patch("/api/inventory/cycle-count/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.updateCycleCountTask(id, req.body);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to update cycle count task:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Product Expiry
+  app.get("/api/inventory/expiry", async (req, res) => {
+    try {
+      const expiryData = await storage.getProductExpiry();
+      res.json(expiryData);
+    } catch (error) {
+      console.error("Failed to get product expiry data:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/inventory/expiry", async (req, res) => {
+    try {
+      const expiry = await storage.createProductExpiry(req.body);
+      res.json(expiry);
+    } catch (error) {
+      console.error("Failed to create product expiry:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // WebSocket setup for real-time updates

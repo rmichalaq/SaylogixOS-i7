@@ -653,3 +653,107 @@ export type PutawayTask = typeof putawayTasks.$inferSelect;
 export type InsertPutawayTask = z.infer<typeof insertPutawayTaskSchema>;
 export type PutawayItem = typeof putawayItems.$inferSelect;
 export type InsertPutawayItem = z.infer<typeof insertPutawayItemSchema>;
+
+// Inventory Adjustments
+export const inventoryAdjustments = pgTable("inventory_adjustments", {
+  id: serial("id").primaryKey(),
+  adjustmentNumber: varchar("adjustment_number", { length: 50 }).notNull().unique(),
+  sku: varchar("sku", { length: 100 }).notNull(),
+  binLocation: varchar("bin_location", { length: 20 }).notNull(),
+  adjustmentType: varchar("adjustment_type", { length: 20 }).notNull(), // 'increase', 'decrease', 'set'
+  reason: varchar("reason", { length: 100 }).notNull(),
+  reasonDetails: text("reason_details"),
+  beforeQty: integer("before_qty").notNull(),
+  adjustmentQty: integer("adjustment_qty").notNull(),
+  afterQty: integer("after_qty").notNull(),
+  status: varchar("status", { length: 20 }).default("pending"), // 'pending', 'approved', 'rejected'
+  requestedBy: varchar("requested_by", { length: 100 }).notNull(),
+  approvedBy: varchar("approved_by", { length: 100 }),
+  approvedAt: timestamp("approved_at"),
+  appliedAt: timestamp("applied_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Cycle Count Tasks
+export const cycleCountTasks = pgTable("cycle_count_tasks", {
+  id: serial("id").primaryKey(),
+  taskNumber: varchar("task_number", { length: 50 }).notNull().unique(),
+  countType: varchar("count_type", { length: 20 }).notNull(), // 'zone', 'sku', 'location', 'discrepancy'
+  criteria: jsonb("criteria"), // Zone, SKU list, location range, etc.
+  status: varchar("status", { length: 20 }).default("created"), // 'created', 'assigned', 'in_progress', 'completed', 'cancelled'
+  assignedTo: varchar("assigned_to", { length: 100 }),
+  expectedItemCount: integer("expected_item_count").default(0),
+  completedItemCount: integer("completed_item_count").default(0),
+  discrepancyCount: integer("discrepancy_count").default(0),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  dueDate: timestamp("due_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Cycle Count Items
+export const cycleCountItems = pgTable("cycle_count_items", {
+  id: serial("id").primaryKey(),
+  taskId: integer("task_id").notNull(),
+  sku: varchar("sku", { length: 100 }).notNull(),
+  binLocation: varchar("bin_location", { length: 20 }).notNull(),
+  systemQty: integer("system_qty").notNull(),
+  countedQty: integer("counted_qty"),
+  discrepancy: integer("discrepancy").default(0),
+  status: varchar("status", { length: 20 }).default("pending"), // 'pending', 'counted', 'verified'
+  countedBy: varchar("counted_by", { length: 100 }),
+  countedAt: timestamp("counted_at"),
+  notes: text("notes"),
+  adjustmentCreated: boolean("adjustment_created").default(false),
+});
+
+// Product Expiry
+export const productExpiry = pgTable("product_expiry", {
+  id: serial("id").primaryKey(),
+  sku: varchar("sku", { length: 100 }).notNull(),
+  batchNumber: varchar("batch_number", { length: 50 }).notNull(),
+  binLocation: varchar("bin_location", { length: 20 }).notNull(),
+  quantity: integer("quantity").notNull(),
+  expiryDate: timestamp("expiry_date").notNull(),
+  status: varchar("status", { length: 20 }).default("active"), // 'active', 'near_expiry', 'expired', 'disposed'
+  daysToExpiry: integer("days_to_expiry"),
+  alertLevel: varchar("alert_level", { length: 20 }), // 'green', 'yellow', 'red'
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Inventory Adjustments Schema
+export const insertInventoryAdjustmentSchema = createInsertSchema(inventoryAdjustments).omit({
+  id: true,
+  adjustmentNumber: true,
+  createdAt: true,
+});
+
+// Cycle Count Schemas
+export const insertCycleCountTaskSchema = createInsertSchema(cycleCountTasks).omit({
+  id: true,
+  taskNumber: true,
+  createdAt: true,
+});
+
+export const insertCycleCountItemSchema = createInsertSchema(cycleCountItems).omit({
+  id: true,
+});
+
+// Product Expiry Schema
+export const insertProductExpirySchema = createInsertSchema(productExpiry).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Inventory types
+export type InventoryAdjustment = typeof inventoryAdjustments.$inferSelect;
+export type InsertInventoryAdjustment = z.infer<typeof insertInventoryAdjustmentSchema>;
+export type CycleCountTask = typeof cycleCountTasks.$inferSelect;
+export type InsertCycleCountTask = z.infer<typeof insertCycleCountTaskSchema>;
+export type CycleCountItem = typeof cycleCountItems.$inferSelect;
+export type InsertCycleCountItem = z.infer<typeof insertCycleCountItemSchema>;
+export type ProductExpiry = typeof productExpiry.$inferSelect;
+export type InsertProductExpiry = z.infer<typeof insertProductExpirySchema>;

@@ -3,7 +3,7 @@ import OrdersPage from "@/pages/OrdersRefactored";
 import VerifyPage from "@/pages/AddressVerify";
 import TrackingPage from "@/pages/tracking/TrackingPage";
 
-import InventoryPage from "@/pages/inventory/InventoryPage";
+import InventoryRedesigned from "@/pages/InventoryRedesigned";
 import InboundPage from "@/pages/Inbound";
 import PickingPage from "@/pages/picking/PickingPage";
 import PackingPage from "@/pages/packing/PackingPage";
@@ -58,15 +58,15 @@ export const screens: ScreenConfig[] = [
   },
   {
     path: "/inventory",
-    component: InventoryPage,
-    label: "Inventory (WMS)",
+    component: InventoryRedesigned,
+    label: "Inventory",
     menuGroup: "Warehouse",
     scan: { enabled: true, context: "sku" },
     icon: "fas fa-boxes",
     children: [
       {
         path: "/inventory/view",
-        component: InventoryPage,
+        component: InventoryRedesigned,
         label: "View",
         menuGroup: "Warehouse",
         scan: { enabled: true, context: "sku" },
@@ -74,7 +74,7 @@ export const screens: ScreenConfig[] = [
       },
       {
         path: "/inventory/adjust",
-        component: InventoryPage,
+        component: InventoryRedesigned,
         label: "Adjust",
         menuGroup: "Warehouse",
         scan: { enabled: true, context: "sku" },
@@ -82,7 +82,7 @@ export const screens: ScreenConfig[] = [
       },
       {
         path: "/inventory/cycle-count",
-        component: InventoryPage,
+        component: InventoryRedesigned,
         label: "Cycle Count",
         menuGroup: "Warehouse",
         scan: { enabled: true, context: "bin" },
@@ -90,7 +90,7 @@ export const screens: ScreenConfig[] = [
       },
       {
         path: "/inventory/expiry-report",
-        component: InventoryPage,
+        component: InventoryRedesigned,
         label: "Expiry Report",
         menuGroup: "Warehouse",
         scan: { enabled: false },
