@@ -1,0 +1,65 @@
+---
+# 🛠️ SaylogixOS – Packing Screen Correction Prompt
+
+## 🎯 Objective
+Correct the current implementation of the Packing screen to match the logic and UI flow described in the redesign spec. This file serves as an incremental fix instruction for developers working in Replit.
+
+---
+
+## 🔧 Fix Instructions
+
+### 1. 🔁 Replace Existing Dashboard View
+- Remove the current dashboard-style view showing only **summary cards + queue**.
+- Implement a **three-tab layout** for Packing as follows:
+
+#### 🔹 Tab 1: Packing Queue
+- List of all orders ready to pack (already exists)
+- Clicking an order opens a **side drawer** with:
+  - Tote/Container Type (dropdown)
+  - Weight (kg)
+  - Dimensions (optional)
+  - `Complete Packing` button → triggers AWB generation + label printing
+  - Optional: `Print Label` button (manual trigger)
+
+#### 🔹 Tab 2: Pack Orders (Scanner Mode)
+- Add a **scanner input field** at the top
+- Logic:
+  - If **SKU barcode** is scanned:
+    - Find oldest single-order matching that SKU
+    - Load order, wait for item scan confirmation
+    - On correct scan: auto-generate & print AWB, reset input
+  - If **Tote ID** is scanned:
+    - Load order assigned to tote
+    - Prompt scan of each item in tote
+    - On completion: auto-generate & print AWB, reset input
+
+#### 🔹 Tab 3: Completed
+- List of orders packed today
+- Clicking an order shows packed SKUs + option to reprint AWB
+
+---
+
+## 📋 To-Dos
+
+1. **Implement tab switching layout**
+2. **Inject packing drawer component** on order click (Packing Queue tab)
+3. **Add full scanner logic** for Pack Orders tab (auto-label print required)
+4. **Create completed orders list** with AWB reprint option
+5. **Ensure ‘Start Packing’ button** is reconnected to flow logic
+
+---
+
+## 🧪 Testing Conditions
+
+- Scanning SKU for a single-SKU order triggers packing flow
+- Scanning tote matches pre-assigned tote/order map
+- Label auto-generates and prints without extra clicks
+- Completed orders are visible in tab 3
+- Reprint AWB functions correctly
+
+---
+
+## 🗂️ Related Spec
+Refer to `Packing Screen Redesign Prompt.md` for full logic + event model.
+
+---
