@@ -212,12 +212,7 @@ export default function AddressVerify() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Verify NAS</h1>
-        <p className="text-gray-600">
-          Verify Saudi Arabian National Address Shortcodes using SPL NAD with NAS fallback
-        </p>
-      </div>
+      
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card>
