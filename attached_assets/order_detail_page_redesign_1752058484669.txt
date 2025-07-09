@@ -1,0 +1,104 @@
+---
+# 📦 SaylogixOS – Order Detail Page Redesign Prompt
+
+## 🎯 Goal
+Redesign the **Order Detail Page** to improve clarity, traceability, and UI alignment with modern order tracking standards. This will include a structured layout, key metadata, a detailed order timeline, and integrated tabs.
+
+---
+
+## 🧱 Page Layout Structure (Screen Components)
+
+### 🔹 1. **Header Bar**
+- Order ID
+- Status badge (e.g., SHIPPED, DELIVERED)
+- Action buttons: `Actions`
+
+---
+
+### 🔹 2. **Section: Order Details (Basic)**
+- Order Source (e.g. Shopify, Zid)
+- Order ID / Internal ID etc
+- Created At timestamp
+- Number of Items
+- Ordered Quantity
+- Payment Status (e.g., Prepaid / COD)
+- Hub Name (e.g., SC01-KSA)
+- Shipping Method / Courier Name
+
+---
+
+### 🔹 3. **Section: Customer Details (Card)**
+- Name
+- Contact Number
+- Email
+
+---
+
+### 🔹 4. **Section: Shipping Address (Card)**
+- Recipient’s Name
+- Full Address (Street, City, Region, NAS)
+- Country
+- Phone Number
+- Email
+
+---
+
+### 🔹 5. **Section: Shipment Details (Card)**
+- AWB Number
+- Suggested & Actual Courier
+- Number of Packages
+- Total Weight
+- Delivery Status (Dropdown if needed)
+- Insurance Status
+
+---
+
+### 🔹 6. **Section: SKU Details (Table)**
+- Product Name / Image
+- Barcode
+- Batch Number
+- Ordered Quantity
+- Picked Quantity
+- Expiry Date (optional)
+- Total Cost per line
+
+---
+
+### 🔹 7. **Order Log → Rename to Order Timeline**
+- Visual list showing timestamps for each stage:
+  - Order Placed
+  - Payment Confirmed
+  - Picked
+  - Packed
+  - Dispatched
+  - Out for Delivery
+  - Delivered
+- Each step includes timestamp + icon
+- Add customer feedback block if available
+
+---
+
+## 🧭 Tabs Above Details (Optional Enhancements)
+- `Item Details`
+- `Order Timeline`
+- `Returns & Incidents`
+
+---
+
+## 🔧 Replit Build Tasks
+1. Create a `OrderDetail.vue` screen with clean layout based on above sections
+2. Use tab layout at top for toggling `Item Details`, `Timeline`, etc.
+3. Implement order timeline as a visual stepper component with timestamps
+4. Fetch and display customer/order metadata in card layout
+5. Ensure data structure supports multiple SKUs per order and shows their barcode + batch
+6. Connect timeline data to backend event logs (e.g., picked, packed, shipped)
+
+---
+
+## 📁 Backend Notes
+- Order timeline events should map to `event_id`, timestamp, actor (system/user)
+- Store tracking history for transparency
+- Order ID must link to source (Zid, Shopify, Noon, etc.)
+- Ensure SKU-level details include batch, barcode, and expiry (if available)
+
+---

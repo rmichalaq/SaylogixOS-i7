@@ -147,6 +147,17 @@ Saylogix OS is a comprehensive fullstack logistics management system built as a 
 ## Changelog
 ```
 Changelog:
+- July 09, 2025. Redesigned Order Detail Page with comprehensive structure and improved navigation
+  - Created new OrderDetail.tsx component with professional tabbed layout structure
+  - Added three main tabs: Item Details, Order Timeline, Timeline Log
+  - Implemented card-based layout for Order Details, Customer Info, Shipping Address sections
+  - Built comprehensive shipment details section with AWB, courier, and package information
+  - Added detailed SKU table with columns for product name, barcode, batch number, quantities, expiry, and costs
+  - Created visual order timeline component showing order progression with timestamps and icons
+  - Enhanced Orders table with dedicated Actions column (View Details and Edit buttons)
+  - Added proper navigation from Orders list to detailed Order view (/orders/:id route)
+  - Fixed API routes for order items and events to support detailed view requirements
+  - Maintained consistent design language with other redesigned modules
 - July 09, 2025. Completed comprehensive Inventory redesign and backend integration
   - Successfully redesigned "Inventory (WMS)" to "Inventory" with 4-section structure
   - Added View section: All Products (paginated table), Stock on Hand (location views)

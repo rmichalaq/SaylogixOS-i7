@@ -229,6 +229,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Alternative route for order items (for consistency)
+  app.get("/api/order-items/:orderId", async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      if (isNaN(orderId)) {
+        return res.status(400).json({ error: "Invalid order ID" });
+      }
+      
+      const items = await storage.getOrderItems(orderId);
+      res.json(items);
+    } catch (error) {
+      console.error("Failed to get order items:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Events API
+  app.get("/api/events/:entityType/:entityId", async (req, res) => {
+    try {
+      const { entityType, entityId } = req.params;
+      const id = parseInt(entityId);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid entity ID" });
+      }
+      
+      const events = await storage.getEvents(entityType, id);
+      res.json(events);
+    } catch (error) {
+      console.error("Failed to get events:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Inventory API
   app.get("/api/inventory", async (req, res) => {
     try {

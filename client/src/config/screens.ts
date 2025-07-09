@@ -1,5 +1,6 @@
 import Dashboard from "@/pages/Dashboard";
 import OrdersPage from "@/pages/OrdersRefactored";
+import OrderDetail from "@/pages/OrderDetail";
 import VerifyPage from "@/pages/AddressVerify";
 import TrackingPage from "@/pages/tracking/TrackingPage";
 
@@ -39,6 +40,14 @@ export const screens: ScreenConfig[] = [
     menuGroup: "Fulfillment",
     scan: { enabled: false },
     icon: "fas fa-shopping-cart"
+  },
+  {
+    path: "/orders/:id",
+    component: OrderDetail,
+    label: "Order Detail",
+    menuGroup: "Fulfillment",
+    scan: { enabled: false },
+    icon: "fas fa-file-alt"
   },
   {
     path: "/verify",
