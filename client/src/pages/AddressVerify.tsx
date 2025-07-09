@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, MapPin, CheckCircle, XCircle, Loader2, Clock } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Search, MapPin, CheckCircle, XCircle, Loader2, Clock, Database, Package } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface SPLAddressData {
@@ -42,6 +43,7 @@ interface VerificationStats {
 
 export default function AddressVerify() {
   const [nasCode, setNasCode] = useState('');
+  const [activeTab, setActiveTab] = useState('pending');
   const queryClient = useQueryClient();
 
   // Fetch verification stats
@@ -60,6 +62,12 @@ export default function AddressVerify() {
   const { data: orders, isLoading: ordersLoading } = useQuery({
     queryKey: ['/api/orders'],
     refetchInterval: 5000,
+  });
+
+  // Fetch verified orders
+  const { data: verifiedOrders, isLoading: verifiedLoading } = useQuery({
+    queryKey: ['/api/orders/verified'],
+    select: (data) => data?.filter((order: any) => order.addressVerified) || []
   });
 
   // SPL verification mutation
@@ -247,15 +255,107 @@ export default function AddressVerify() {
         </Card>
       </div>
 
-      <Tabs defaultValue="single" className="w-full">
-        <TabsList className="grid w-full grid-cols-1">
-          <TabsTrigger value="single">Single Verification</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="pending" className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            Pending Verify NAS
+          </TabsTrigger>
+          <TabsTrigger value="manual" className="flex items-center gap-2">
+            <Search className="h-4 w-4" />
+            Verify with NAS
+          </TabsTrigger>
+          <TabsTrigger value="verified" className="flex items-center gap-2">
+            <Database className="h-4 w-4" />
+            Verified NAS DB
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="single" className="space-y-4">
+        {/* Tab 1: Pending Verify NAS */}
+        <TabsContent value="pending" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>NAS Verification</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Orders Awaiting NAS Verification
+              </CardTitle>
+              <CardDescription>
+                Orders fetched from marketplaces that require address verification
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {ordersLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {orders && orders.filter((order: any) => {
+                    const nasCode = extractNasFromAddress(order.shippingAddress);
+                    return nasCode && !order.addressVerified;
+                  }).length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      No orders pending verification
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Internal Order ID</TableHead>
+                          <TableHead>Customer Name</TableHead>
+                          <TableHead>NAS Shortcode</TableHead>
+                          <TableHead>Address</TableHead>
+                          <TableHead>Action</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {orders?.filter((order: any) => {
+                          const nasCode = extractNasFromAddress(order.shippingAddress);
+                          return nasCode && !order.addressVerified;
+                        }).map((order: any) => {
+                          const nasCode = extractNasFromAddress(order.shippingAddress);
+                          return (
+                            <TableRow key={order.id}>
+                              <TableCell className="font-medium">{order.saylogixNumber}</TableCell>
+                              <TableCell>{order.customerName}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline">{nasCode}</Badge>
+                              </TableCell>
+                              <TableCell className="max-w-xs truncate">
+                                {typeof order.shippingAddress === 'string' 
+                                  ? order.shippingAddress 
+                                  : `${order.shippingAddress?.address1 || ''} ${order.shippingAddress?.city || ''}`}
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleOrderVerification(order.id)}
+                                  disabled={orderVerification.isPending}
+                                >
+                                  {orderVerification.isPending ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    'Verify'
+                                  )}
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab 2: Verify with NAS (Manual) */}
+        <TabsContent value="manual" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Manual NAS Verification</CardTitle>
               <CardDescription>
                 Enter a NAS shortcode to verify using SPL NAD (with NAS fallback)
               </CardDescription>
@@ -300,93 +400,77 @@ export default function AddressVerify() {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
 
-      {/* Orders with potential NAS codes */}
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            Orders Requiring NAS Verification
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {ordersLoading ? (
-            <div className="flex justify-center">
-              <Loader2 className="h-6 w-6 animate-spin" />
-            </div>
-          ) : orders && orders.length > 0 ? (
-            <div className="space-y-2">
-              {orders.map((order: any) => {
-                const nasCode = extractNasFromAddress(order.shippingAddress);
-                const needsVerification = nasCode && !order.addressVerified;
-                
-                if (!needsVerification) return null;
-                
-                return (
-                  <div key={order.id} className="flex items-center justify-between p-3 border rounded">
-                    <div>
-                      <div className="font-medium">{order.saylogixNumber}</div>
-                      <div className="text-sm text-gray-600">
-                        NAS: {nasCode} | Customer: {order.customerName}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {typeof order.shippingAddress === 'string' 
-                          ? order.shippingAddress 
-                          : `${order.shippingAddress?.address1 || ''} ${order.shippingAddress?.city || ''}`}
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      onClick={() => handleOrderVerification(order.id)}
-                      disabled={orderVerification.isPending}
-                    >
-                      {orderVerification.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        'Verify'
-                      )}
-                    </Button>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <CheckCircle className="h-12 w-12 text-green-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">All orders verified!</h3>
-              <p className="text-gray-500">No orders require NAS verification</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Pending Verifications */}
-      {pendingVerifications && pendingVerifications.length > 0 && (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Pending Verifications
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {pendingVerifications.map((verification: any) => (
-                <div key={verification.id} className="flex items-center justify-between p-2 border rounded">
-                  <div>
-                    <div className="font-medium">{verification.eventType}</div>
-                    <div className="text-sm text-gray-600">
-                      {new Date(verification.createdAt).toLocaleString()}
-                    </div>
-                  </div>
-                  <Badge variant="secondary">Pending</Badge>
+        {/* Tab 3: Verified NAS DB */}
+        <TabsContent value="verified" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                Verified Address Database
+              </CardTitle>
+              <CardDescription>
+                Previously verified orders with complete address information
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {ordersLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              ) : (
+                <div className="space-y-4">
+                  {orders && orders.filter((order: any) => order.addressVerified).length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      No verified addresses yet
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Order ID</TableHead>
+                          <TableHead>Customer</TableHead>
+                          <TableHead>NAS Shortcode</TableHead>
+                          <TableHead>Full SPL Address</TableHead>
+                          <TableHead>Timestamp</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {orders?.filter((order: any) => order.addressVerified).map((order: any) => {
+                          const nasCode = extractNasFromAddress(order.shippingAddress);
+                          return (
+                            <TableRow key={order.id}>
+                              <TableCell className="font-medium">{order.saylogixNumber}</TableCell>
+                              <TableCell>{order.customerName}</TableCell>
+                              <TableCell>
+                                <Badge variant="default">{nasCode || 'N/A'}</Badge>
+                              </TableCell>
+                              <TableCell className="max-w-md">
+                                <div className="text-sm">
+                                  {order.verifiedAddress || (
+                                    typeof order.shippingAddress === 'string' 
+                                      ? order.shippingAddress 
+                                      : `${order.shippingAddress?.address1 || ''} ${order.shippingAddress?.city || ''}`
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm text-gray-500">
+                                  {new Date(order.addressVerifiedAt || order.createdAt).toLocaleString()}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
