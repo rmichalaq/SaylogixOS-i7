@@ -560,7 +560,11 @@ export default function Inbound() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">2</div>
+            <div className="text-2xl font-bold text-orange-600">{grns?.filter(grn => {
+              const today = new Date().toDateString();
+              const grnDate = new Date(grn.createdAt).toDateString();
+              return today === grnDate;
+            }).length || 0}</div>
             <p className="text-xs text-gray-500 flex items-center mt-1">
               Items received
             </p>
