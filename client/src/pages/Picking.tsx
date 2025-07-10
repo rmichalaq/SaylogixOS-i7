@@ -4,9 +4,29 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { 
+  Package, 
+  Clock, 
+  CheckCircle2, 
+  AlertTriangle, 
+  Settings, 
+  ChevronDown, 
+  Plus, 
+  Users, 
+  FileText, 
+  MoreVertical,
+  ArrowUpDown,
+  Search,
+  PlayCircle,
+  MapPin,
+  User
+} from "lucide-react";
 
 interface PickingTask {
   id: number;
@@ -39,24 +59,34 @@ interface PickingBatch {
   createdAt: string;
 }
 
+// Types for sorting and filtering
+type SortConfig = {
+  key: string;
+  direction: 'asc' | 'desc' | null;
+};
+
+type ColumnFilters = {
+  [key: string]: string;
+};
+
 export default function Picking() {
-  const [activeTab, setActiveTab] = useState("tasks");
+  const [activeTab, setActiveTab] = useState("available");
   const [statusFilter, setStatusFilter] = useState("all");
   const [pickerFilter, setPickerFilter] = useState("all");
   const [selectedTask, setSelectedTask] = useState<PickingTask | null>(null);
 
   const { data: pickingTasks = [], isLoading } = useQuery({
-    queryKey: ["/api/picking/tasks", { status: statusFilter, picker: pickerFilter }],
-    refetchInterval: 15000, // Refresh every 15 seconds for real-time updates
+    queryKey: ["/api/pick-tasks", { status: statusFilter, picker: pickerFilter }],
+    refetchInterval: 5000, // Refresh every 5 seconds for real-time updates
   });
 
   const { data: pickingBatches = [] } = useQuery({
-    queryKey: ["/api/picking/batches"],
-    refetchInterval: 30000,
+    queryKey: ["/api/pick-batches"],
+    refetchInterval: 5000,
   });
 
   const { data: pickers = [] } = useQuery({
-    queryKey: ["/api/picking/pickers"],
+    queryKey: ["/api/pickers"],
   });
 
   const getStatusColor = (status: string) => {
@@ -131,430 +161,592 @@ export default function Picking() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <i className="fas fa-hand-paper text-primary-500"></i>
-              <span>Picking Management</span>
+      {/* KPI Cards - Match Inventory exact layout */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="relative overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">Pending Tasks</CardTitle>
+            <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
+              <Clock className="h-4 w-4 text-blue-600" />
             </div>
-            <div className="flex space-x-2">
-              <Button variant="outline">
-                <i className="fas fa-route mr-2"></i>
-                Optimize Routes
-              </Button>
-              <Button>
-                <i className="fas fa-plus mr-2"></i>
-                Create Batch
-              </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-900">
+              {pickingTasks.filter(t => t.status === 'pending').length}
             </div>
-          </CardTitle>
-        </CardHeader>
-      </Card>
+            <p className="text-xs text-gray-500 flex items-center mt-1">
+              Ready to pick
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="relative overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">In Progress</CardTitle>
+            <div className="h-8 w-8 rounded-lg bg-yellow-100 flex items-center justify-center">
+              <PlayCircle className="h-4 w-4 text-yellow-600" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-900">
+              {pickingTasks.filter(t => t.status === 'in_progress').length}
+            </div>
+            <p className="text-xs text-gray-500 flex items-center mt-1">
+              Being picked
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="relative overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">Completed Today</CardTitle>
+            <div className="h-8 w-8 rounded-lg bg-green-100 flex items-center justify-center">
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {pickingTasks.filter(t => t.status === 'completed').length}
+            </div>
+            <p className="text-xs text-gray-500 flex items-center mt-1">
+              <span className="text-green-600 text-xs font-medium">↗</span>
+              Successfully picked
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="relative overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">Exceptions</CardTitle>
+            <div className="h-8 w-8 rounded-lg bg-orange-100 flex items-center justify-center">
+              <AlertTriangle className="h-4 w-4 text-orange-600" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">
+              {pickingTasks.filter(t => t.status === 'exception').length}
+            </div>
+            <p className="text-xs text-gray-500 flex items-center mt-1">
+              Need attention
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="tasks">
-            <i className="fas fa-list mr-2"></i>
-            Picking Tasks
-          </TabsTrigger>
-          <TabsTrigger value="batches">
-            <i className="fas fa-layer-group mr-2"></i>
-            Picking Batches
-          </TabsTrigger>
-          <TabsTrigger value="performance">
-            <i className="fas fa-chart-line mr-2"></i>
-            Performance
-          </TabsTrigger>
-        </TabsList>
+      {/* Section Tabs - Match Inventory exact styling */}
+      <div className="flex items-center justify-between">
+        <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+          <button 
+            onClick={() => setActiveTab('available')}
+            className={`flex items-center space-x-2 px-3 py-1.5 text-sm font-medium ${activeTab === 'available' ? 'text-blue-600 bg-white rounded-md shadow-sm' : 'text-gray-500'}`}
+          >
+            <Package className="h-4 w-4" />
+            <span>Available to Pick ({pickingTasks.filter(t => t.status === 'pending').length})</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('in-progress')}
+            className={`flex items-center space-x-2 px-3 py-1.5 text-sm font-medium ${activeTab === 'in-progress' ? 'text-blue-600 bg-white rounded-md shadow-sm' : 'text-gray-500'}`}
+          >
+            <PlayCircle className="h-4 w-4" />
+            <span>In Progress ({pickingTasks.filter(t => t.status === 'in_progress').length})</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('completed')}
+            className={`flex items-center space-x-2 px-3 py-1.5 text-sm font-medium ${activeTab === 'completed' ? 'text-blue-600 bg-white rounded-md shadow-sm' : 'text-gray-500'}`}
+          >
+            <CheckCircle2 className="h-4 w-4" />
+            <span>Completed ({pickingTasks.filter(t => t.status === 'completed').length})</span>
+          </button>
+        </div>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="flex items-center space-x-2">
+              <Settings className="h-4 w-4" />
+              <span>Actions</span>
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem>
+              <PlayCircle className="h-4 w-4 mr-2" />
+              Start Manual Pick
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Package className="h-4 w-4 mr-2" />
+              Auto-generate Wave
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Users className="h-4 w-4 mr-2" />
+              Assign to Picker
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <FileText className="h-4 w-4 mr-2" />
+              Export Pick Plan
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
-        {/* Picking Tasks Tab */}
-        <TabsContent value="tasks" className="space-y-6">
-          {/* Filters */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="assigned">Assigned</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="exception">Exception</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                <Select value={pickerFilter} onValueChange={setPickerFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Filter by picker" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Pickers</SelectItem>
-                    {pickers.map((picker: any) => (
-                      <SelectItem key={picker.id} value={picker.id}>
-                        {picker.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                
-                <Button variant="outline" onClick={() => {
-                  setStatusFilter("");
-                  setPickerFilter("");
-                }}>
-                  <i className="fas fa-undo mr-2"></i>
-                  Clear Filters
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Tasks Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Picking Tasks ({pickingTasks.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {pickingTasks.length === 0 ? (
-                <div className="text-center py-12">
-                  <i className="fas fa-hand-paper text-4xl text-secondary-300 mb-4"></i>
-                  <h3 className="text-lg font-medium text-secondary-900 mb-2">No Picking Tasks</h3>
-                  <p className="text-secondary-500">
-                    {statusFilter || pickerFilter 
-                      ? "No tasks match the selected filters"
-                      : "No picking tasks available at the moment"
-                    }
-                  </p>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Task Details</TableHead>
-                      <TableHead>Product</TableHead>
-                      <TableHead>Quantity</TableHead>
-                      <TableHead>Location</TableHead>
-                      <TableHead>Priority</TableHead>
-                      <TableHead>Picker</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {pickingTasks.map((task: PickingTask) => (
-                      <TableRow 
-                        key={task.id}
-                        className={selectedTask?.id === task.id ? "bg-primary-50" : ""}
-                      >
-                        <TableCell>
-                          <div>
-                            <div className="font-medium text-secondary-900">
-                              Task #{task.id}
-                            </div>
-                            <div className="text-sm text-secondary-500">
-                              Order: {task.orderNumber}
-                            </div>
-                            <div className="text-xs text-secondary-400">
-                              Path: {task.pickPath}
-                            </div>
-                          </div>
-                        </TableCell>
-                        
-                        <TableCell>
-                          <div>
-                            <div className="font-medium text-secondary-900">
-                              {task.sku}
-                            </div>
-                            <div className="text-sm text-secondary-500">
-                              {task.productName}
-                            </div>
-                          </div>
-                        </TableCell>
-                        
-                        <TableCell>
-                          <div>
-                            <div className="text-sm text-secondary-900">
-                              Required: {task.quantity}
-                            </div>
-                            {task.pickedQuantity > 0 && (
-                              <div className="text-sm text-success-600">
-                                Picked: {task.pickedQuantity}
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        
-                        <TableCell>
-                          <div className="font-mono text-sm text-secondary-900">
-                            {task.binLocation}
-                          </div>
-                        </TableCell>
-                        
-                        <TableCell>
-                          <Badge className={getPriorityColor(task.priority)}>
-                            {task.priority}
-                          </Badge>
-                        </TableCell>
-                        
-                        <TableCell>
-                          <div className="text-sm text-secondary-600">
-                            {task.assignedPicker || "Unassigned"}
-                          </div>
-                        </TableCell>
-                        
-                        <TableCell>
-                          <Badge className={getStatusColor(task.status)}>
-                            {task.status.replace('_', ' ')}
-                          </Badge>
-                          {task.exceptionReason && (
-                            <div className="text-xs text-error-600 mt-1">
-                              {task.exceptionReason}
-                            </div>
-                          )}
-                        </TableCell>
-                        
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => setSelectedTask(task)}
-                            >
-                              <i className="fas fa-eye"></i>
-                            </Button>
-                            {task.status === "assigned" && (
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => handleStartPicking(task.id)}
-                              >
-                                <i className="fas fa-play"></i>
-                              </Button>
-                            )}
-                            {task.status === "in_progress" && (
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => handleCompletePicking(task.id, task.quantity)}
-                              >
-                                <i className="fas fa-check"></i>
-                              </Button>
-                            )}
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleReportException(task.id, "Item not found")}
-                            >
-                              <i className="fas fa-exclamation-triangle"></i>
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Task Details */}
-          {selectedTask && (
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  Task Details: #{selectedTask.id}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <h4 className="font-medium text-secondary-900 mb-2">Order Information</h4>
-                    <div className="space-y-2 text-sm">
-                      <div>Order: {selectedTask.orderNumber}</div>
-                      <div>Priority: <Badge className={getPriorityColor(selectedTask.priority)}>{selectedTask.priority}</Badge></div>
-                      <div>Created: {new Date(selectedTask.createdAt).toLocaleString()}</div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-medium text-secondary-900 mb-2">Product Information</h4>
-                    <div className="space-y-2 text-sm">
-                      <div>SKU: {selectedTask.sku}</div>
-                      <div>Product: {selectedTask.productName}</div>
-                      <div>Location: {selectedTask.binLocation}</div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-medium text-secondary-900 mb-2">Picking Information</h4>
-                    <div className="space-y-2 text-sm">
-                      <div>Required: {selectedTask.quantity}</div>
-                      <div>Picked: {selectedTask.pickedQuantity}</div>
-                      <div>Picker: {selectedTask.assignedPicker || "Unassigned"}</div>
-                      <div>Status: <Badge className={getStatusColor(selectedTask.status)}>{selectedTask.status}</Badge></div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        {/* Picking Batches Tab */}
-        <TabsContent value="batches" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Picking Batches ({pickingBatches.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {pickingBatches.length === 0 ? (
-                <div className="text-center py-12">
-                  <i className="fas fa-layer-group text-4xl text-secondary-300 mb-4"></i>
-                  <h3 className="text-lg font-medium text-secondary-900 mb-2">No Picking Batches</h3>
-                  <p className="text-secondary-500">Create batches to group picking tasks efficiently</p>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Batch Number</TableHead>
-                      <TableHead>Assigned Picker</TableHead>
-                      <TableHead>Progress</TableHead>
-                      <TableHead>Estimated Time</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {pickingBatches.map((batch: PickingBatch) => (
-                      <TableRow key={batch.id}>
-                        <TableCell className="font-medium">
-                          {batch.batchNumber}
-                        </TableCell>
-                        <TableCell>{batch.assignedPicker}</TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="text-sm text-secondary-900">
-                              {batch.completedTasks} / {batch.taskCount} tasks
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                              <div 
-                                className="bg-primary-500 h-2 rounded-full"
-                                style={{ 
-                                  width: `${(batch.completedTasks / batch.taskCount) * 100}%` 
-                                }}
-                              ></div>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>{batch.estimatedTime} min</TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(batch.status)}>
-                            {batch.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button variant="ghost" size="sm">
-                              <i className="fas fa-eye"></i>
-                            </Button>
-                            <Button variant="ghost" size="sm">
-                              <i className="fas fa-edit"></i>
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Performance Tab */}
-        <TabsContent value="performance" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-secondary-600">Tasks Completed</p>
-                    <p className="text-3xl font-bold text-secondary-900">127</p>
-                    <p className="text-sm text-success-600">↗ +15% today</p>
-                  </div>
-                  <div className="w-12 h-12 bg-success-100 rounded-lg flex items-center justify-center">
-                    <i className="fas fa-check text-success-600"></i>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-secondary-600">Avg Pick Time</p>
-                    <p className="text-3xl font-bold text-secondary-900">3.2</p>
-                    <p className="text-sm text-primary-600">minutes per item</p>
-                  </div>
-                  <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
-                    <i className="fas fa-clock text-primary-600"></i>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-secondary-600">Accuracy Rate</p>
-                    <p className="text-3xl font-bold text-secondary-900">98.5%</p>
-                    <p className="text-sm text-success-600">↗ +0.3% this week</p>
-                  </div>
-                  <div className="w-12 h-12 bg-success-100 rounded-lg flex items-center justify-center">
-                    <i className="fas fa-bullseye text-success-600"></i>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-secondary-600">Active Pickers</p>
-                    <p className="text-3xl font-bold text-secondary-900">8</p>
-                    <p className="text-sm text-secondary-600">out of 12 total</p>
-                  </div>
-                  <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
-                    <i className="fas fa-users text-primary-600"></i>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+      {/* Main Content Area - Match Inventory styling */}
+      <Card className="p-0 overflow-hidden">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">
+              {activeTab === 'available' && `Available to Pick (${pickingTasks.filter(t => t.status === 'pending').length})`}
+              {activeTab === 'in-progress' && `In Progress (${pickingTasks.filter(t => t.status === 'in_progress').length})`}
+              {activeTab === 'completed' && `Completed (${pickingTasks.filter(t => t.status === 'completed').length})`}
+            </h2>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Picker Performance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <i className="fas fa-chart-bar text-4xl text-secondary-300 mb-4"></i>
-                <h3 className="text-lg font-medium text-secondary-900 mb-2">Performance Analytics</h3>
-                <p className="text-secondary-500">Detailed picker performance metrics and analytics</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          {/* Content based on active tab */}
+          {activeTab === 'available' && <AvailablePicksTable pickingTasks={pickingTasks.filter(t => t.status === 'pending')} />}
+          {activeTab === 'in-progress' && <InProgressTable pickingTasks={pickingTasks.filter(t => t.status === 'in_progress')} />}
+          {activeTab === 'completed' && <CompletedTable pickingTasks={pickingTasks.filter(t => t.status === 'completed')} />}
+        </div>
+      </Card>
     </div>
   );
+}
+
+// Available Picks Table Component
+function AvailablePicksTable({ pickingTasks }: { pickingTasks: PickingTask[] }) {
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: "", direction: null });
+  const [columnFilters, setColumnFilters] = useState<ColumnFilters>({});
+
+  const handleSort = (column: string) => {
+    let direction: 'asc' | 'desc' | null = 'asc';
+    
+    if (sortConfig.key === column && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    } else if (sortConfig.key === column && sortConfig.direction === 'desc') {
+      direction = null;
+    }
+    
+    setSortConfig({ key: column, direction });
+  };
+
+  const handleColumnFilter = (column: string, value: string) => {
+    setColumnFilters(prev => ({
+      ...prev,
+      [column]: value
+    }));
+  };
+
+  const handleClearFilter = (column: string) => {
+    setColumnFilters(prev => {
+      const newFilters = { ...prev };
+      delete newFilters[column];
+      return newFilters;
+    });
+  };
+
+  const SortableHeader = ({ field, children }: { field: string; children: React.ReactNode }) => (
+    <TableHead className="cursor-pointer group">
+      <div className="flex items-center space-x-2">
+        <span onClick={() => handleSort(field)} className="select-none">
+          {children}
+        </span>
+        <div className="flex flex-col items-center">
+          <button
+            onClick={() => handleSort(field)}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <ArrowUpDown className="h-3 w-3" />
+          </button>
+          {sortConfig.key === field && (
+            <span className="text-xs text-blue-600 font-medium">
+              {sortConfig.direction === 'asc' ? '↑' : '↓'}
+            </span>
+          )}
+        </div>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="text-gray-400 hover:text-gray-600 transition-colors opacity-0 group-hover:opacity-100">
+              <MoreVertical className="h-3 w-3" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56" align="start">
+            <div className="space-y-2">
+              <Label htmlFor={`filter-${field}`} className="text-sm font-medium">
+                Filter {children}
+              </Label>
+              <Input
+                id={`filter-${field}`}
+                placeholder={`Search ${children}...`}
+                value={columnFilters[field] || ''}
+                onChange={(e) => handleColumnFilter(field, e.target.value)}
+                className="h-8"
+              />
+              {columnFilters[field] && (
+                <Button
+                  onClick={() => handleClearFilter(field)}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs"
+                >
+                  Clear filter
+                </Button>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    </TableHead>
+  );
+
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <SortableHeader field="orderNumber">Order ID</SortableHeader>
+            <SortableHeader field="sku">SKU</SortableHeader>
+            <SortableHeader field="binLocation">Bin Location</SortableHeader>
+            <SortableHeader field="quantity">Quantity</SortableHeader>
+            <SortableHeader field="priority">Priority</SortableHeader>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {pickingTasks.map((task) => (
+            <TableRow key={task.id} className="cursor-pointer hover:bg-gray-50">
+              <TableCell className="font-medium">{task.orderNumber}</TableCell>
+              <TableCell>
+                <div className="flex items-center">
+                  <Package className="h-4 w-4 text-gray-400 mr-2" />
+                  <div>
+                    <div className="font-medium">{task.sku}</div>
+                    <div className="text-sm text-gray-500">{task.productName}</div>
+                  </div>
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center">
+                  <MapPin className="h-4 w-4 text-gray-400 mr-2" />
+                  {task.binLocation}
+                </div>
+              </TableCell>
+              <TableCell>{task.quantity}</TableCell>
+              <TableCell>
+                <Badge className={getPriorityBadge(task.priority)}>
+                  {task.priority}
+                </Badge>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      
+      {pickingTasks.length === 0 && (
+        <div className="text-center py-12">
+          <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-500">No tasks available to pick</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// In Progress Table Component
+function InProgressTable({ pickingTasks }: { pickingTasks: PickingTask[] }) {
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: "", direction: null });
+  const [columnFilters, setColumnFilters] = useState<ColumnFilters>({});
+
+  const handleSort = (column: string) => {
+    let direction: 'asc' | 'desc' | null = 'asc';
+    
+    if (sortConfig.key === column && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    } else if (sortConfig.key === column && sortConfig.direction === 'desc') {
+      direction = null;
+    }
+    
+    setSortConfig({ key: column, direction });
+  };
+
+  const handleColumnFilter = (column: string, value: string) => {
+    setColumnFilters(prev => ({
+      ...prev,
+      [column]: value
+    }));
+  };
+
+  const handleClearFilter = (column: string) => {
+    setColumnFilters(prev => {
+      const newFilters = { ...prev };
+      delete newFilters[column];
+      return newFilters;
+    });
+  };
+
+  const SortableHeader = ({ field, children }: { field: string; children: React.ReactNode }) => (
+    <TableHead className="cursor-pointer group">
+      <div className="flex items-center space-x-2">
+        <span onClick={() => handleSort(field)} className="select-none">
+          {children}
+        </span>
+        <div className="flex flex-col items-center">
+          <button
+            onClick={() => handleSort(field)}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <ArrowUpDown className="h-3 w-3" />
+          </button>
+          {sortConfig.key === field && (
+            <span className="text-xs text-blue-600 font-medium">
+              {sortConfig.direction === 'asc' ? '↑' : '↓'}
+            </span>
+          )}
+        </div>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="text-gray-400 hover:text-gray-600 transition-colors opacity-0 group-hover:opacity-100">
+              <MoreVertical className="h-3 w-3" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56" align="start">
+            <div className="space-y-2">
+              <Label htmlFor={`filter-${field}`} className="text-sm font-medium">
+                Filter {children}
+              </Label>
+              <Input
+                id={`filter-${field}`}
+                placeholder={`Search ${children}...`}
+                value={columnFilters[field] || ''}
+                onChange={(e) => handleColumnFilter(field, e.target.value)}
+                className="h-8"
+              />
+              {columnFilters[field] && (
+                <Button
+                  onClick={() => handleClearFilter(field)}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs"
+                >
+                  Clear filter
+                </Button>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    </TableHead>
+  );
+
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <SortableHeader field="orderNumber">Order ID</SortableHeader>
+            <SortableHeader field="assignedPicker">Assigned Picker</SortableHeader>
+            <SortableHeader field="sku">SKU</SortableHeader>
+            <SortableHeader field="binLocation">Bin Location</SortableHeader>
+            <SortableHeader field="startedAt">Started At</SortableHeader>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {pickingTasks.map((task) => (
+            <TableRow key={task.id} className="cursor-pointer hover:bg-gray-50">
+              <TableCell className="font-medium">{task.orderNumber}</TableCell>
+              <TableCell>
+                <div className="flex items-center">
+                  <User className="h-4 w-4 text-gray-400 mr-2" />
+                  {task.assignedPicker || 'Unassigned'}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center">
+                  <Package className="h-4 w-4 text-gray-400 mr-2" />
+                  <div>
+                    <div className="font-medium">{task.sku}</div>
+                    <div className="text-sm text-gray-500">{task.productName}</div>
+                  </div>
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center">
+                  <MapPin className="h-4 w-4 text-gray-400 mr-2" />
+                  {task.binLocation}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center">
+                  <Clock className="h-4 w-4 text-gray-400 mr-2" />
+                  {task.startedAt ? new Date(task.startedAt).toLocaleTimeString() : 'Not started'}
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      
+      {pickingTasks.length === 0 && (
+        <div className="text-center py-12">
+          <PlayCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-500">No picks in progress</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Completed Table Component
+function CompletedTable({ pickingTasks }: { pickingTasks: PickingTask[] }) {
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: "", direction: null });
+  const [columnFilters, setColumnFilters] = useState<ColumnFilters>({});
+
+  const handleSort = (column: string) => {
+    let direction: 'asc' | 'desc' | null = 'asc';
+    
+    if (sortConfig.key === column && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    } else if (sortConfig.key === column && sortConfig.direction === 'desc') {
+      direction = null;
+    }
+    
+    setSortConfig({ key: column, direction });
+  };
+
+  const handleColumnFilter = (column: string, value: string) => {
+    setColumnFilters(prev => ({
+      ...prev,
+      [column]: value
+    }));
+  };
+
+  const handleClearFilter = (column: string) => {
+    setColumnFilters(prev => {
+      const newFilters = { ...prev };
+      delete newFilters[column];
+      return newFilters;
+    });
+  };
+
+  const SortableHeader = ({ field, children }: { field: string; children: React.ReactNode }) => (
+    <TableHead className="cursor-pointer group">
+      <div className="flex items-center space-x-2">
+        <span onClick={() => handleSort(field)} className="select-none">
+          {children}
+        </span>
+        <div className="flex flex-col items-center">
+          <button
+            onClick={() => handleSort(field)}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <ArrowUpDown className="h-3 w-3" />
+          </button>
+          {sortConfig.key === field && (
+            <span className="text-xs text-blue-600 font-medium">
+              {sortConfig.direction === 'asc' ? '↑' : '↓'}
+            </span>
+          )}
+        </div>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="text-gray-400 hover:text-gray-600 transition-colors opacity-0 group-hover:opacity-100">
+              <MoreVertical className="h-3 w-3" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56" align="start">
+            <div className="space-y-2">
+              <Label htmlFor={`filter-${field}`} className="text-sm font-medium">
+                Filter {children}
+              </Label>
+              <Input
+                id={`filter-${field}`}
+                placeholder={`Search ${children}...`}
+                value={columnFilters[field] || ''}
+                onChange={(e) => handleColumnFilter(field, e.target.value)}
+                className="h-8"
+              />
+              {columnFilters[field] && (
+                <Button
+                  onClick={() => handleClearFilter(field)}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs"
+                >
+                  Clear filter
+                </Button>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    </TableHead>
+  );
+
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <SortableHeader field="orderNumber">Order ID</SortableHeader>
+            <SortableHeader field="assignedPicker">Picker</SortableHeader>
+            <SortableHeader field="sku">SKU</SortableHeader>
+            <SortableHeader field="completedAt">Completed At</SortableHeader>
+            <SortableHeader field="pickedQuantity">Picked Qty</SortableHeader>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {pickingTasks.map((task) => (
+            <TableRow key={task.id} className="cursor-pointer hover:bg-gray-50">
+              <TableCell className="font-medium">{task.orderNumber}</TableCell>
+              <TableCell>
+                <div className="flex items-center">
+                  <User className="h-4 w-4 text-gray-400 mr-2" />
+                  {task.assignedPicker || 'Unassigned'}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center">
+                  <Package className="h-4 w-4 text-gray-400 mr-2" />
+                  <div>
+                    <div className="font-medium">{task.sku}</div>
+                    <div className="text-sm text-gray-500">{task.productName}</div>
+                  </div>
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center">
+                  <Clock className="h-4 w-4 text-gray-400 mr-2" />
+                  {task.completedAt ? new Date(task.completedAt).toLocaleTimeString() : 'Not completed'}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center">
+                  <CheckCircle2 className="h-4 w-4 text-green-400 mr-2" />
+                  {task.pickedQuantity} / {task.quantity}
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      
+      {pickingTasks.length === 0 && (
+        <div className="text-center py-12">
+          <CheckCircle2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-500">No completed picks today</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Helper function for priority badge styling
+function getPriorityBadge(priority: string) {
+  switch (priority) {
+    case 'urgent':
+      return 'bg-red-100 text-red-800';
+    case 'high':
+      return 'bg-orange-100 text-orange-800';
+    case 'normal':
+      return 'bg-blue-100 text-blue-800';
+    case 'low':
+      return 'bg-gray-100 text-gray-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
 }
