@@ -1661,6 +1661,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register admin seed routes
   registerSeedRoutes(app);
 
+  // TEST ENDPOINT - DO NOT USE IN PRODUCTION
+  // Test SPL product-specific endpoint
+  app.get("/api/test/spl-product-endpoint", async (_, res) => {
+    try {
+      const { runProductEndpointTest } = await import('./test/testSPLProductEndpoint.js');
+      const result = await runProductEndpointTest();
+      res.json({
+        message: "Test completed - check server logs for details",
+        summary: {
+          success: result.success,
+          statusCode: result.responseStatus,
+          duration: `${result.duration}ms`,
+          timestamp: result.timestamp
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ 
+        error: "Test failed", 
+        message: error.message 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // WebSocket setup for real-time updates
