@@ -377,117 +377,7 @@ function CreateOrderDrawer({ open, onOpenChange }: {
   );
 }
 
-// Sortable Column Header Component
-function SortableColumnHeader({ 
-  children, 
-  sortKey, 
-  sortConfig, 
-  onSort 
-}: {
-  children: React.ReactNode;
-  sortKey: string;
-  sortConfig: SortConfig;
-  onSort: (key: string) => void;
-}) {
-  const getSortIcon = () => {
-    if (sortConfig.key !== sortKey) {
-      return <ChevronDown className="h-4 w-4 text-gray-400" />;
-    }
-    return sortConfig.direction === 'asc' ? 
-      <ChevronUp className="h-4 w-4 text-blue-600" /> : 
-      <ChevronDown className="h-4 w-4 text-blue-600" />;
-  };
 
-  return (
-    <Button
-      variant="ghost"
-      onClick={() => onSort(sortKey)}
-      className="h-auto p-2 font-medium text-gray-500 hover:text-gray-900 justify-start w-full"
-    >
-      <span className="flex items-center justify-between w-full">
-        {children}
-        {getSortIcon()}
-      </span>
-    </Button>
-  );
-}
-
-// Filterable Column Header Component  
-function FilterableColumnHeader({
-  children,
-  filterKey,
-  columnFilters,
-  onFilterChange,
-  options = []
-}: {
-  children: React.ReactNode;
-  filterKey: string;
-  columnFilters: ColumnFilters;
-  onFilterChange: (key: string, value: string) => void;
-  options?: string[];
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-  const hasActiveFilter = columnFilters[filterKey] && columnFilters[filterKey] !== "";
-
-  return (
-    <div className="flex items-center justify-between w-full">
-      <span>{children}</span>
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
-        <PopoverTrigger asChild>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            className={`h-6 w-6 p-0 ml-1 ${hasActiveFilter ? 'text-blue-600' : 'text-gray-400'}`}
-          >
-            <Filter className="h-3 w-3" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-48 p-2" align="start">
-          <div className="space-y-2">
-            <Input
-              placeholder="Filter..."
-              value={columnFilters[filterKey] || ""}
-              onChange={(e) => onFilterChange(filterKey, e.target.value)}
-              className="h-8"
-            />
-            {options.length > 0 && (
-              <div className="space-y-1">
-                <div className="text-xs font-medium text-gray-500 px-1">Quick filters:</div>
-                {options.map((option) => (
-                  <Button
-                    key={option}
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      onFilterChange(filterKey, option);
-                      setIsOpen(false);
-                    }}
-                    className="w-full justify-start h-6 px-2 text-xs"
-                  >
-                    {option}
-                  </Button>
-                ))}
-              </div>
-            )}
-            {hasActiveFilter && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  onFilterChange(filterKey, "");
-                  setIsOpen(false);
-                }}
-                className="w-full justify-start h-6 px-2 text-xs text-red-600"
-              >
-                Clear filter
-              </Button>
-            )}
-          </div>
-        </PopoverContent>
-      </Popover>
-    </div>
-  );
-}
 
 interface Order {
   id: number;
@@ -782,6 +672,88 @@ function OrderDetailsDrawer({
   );
 }
 
+// Sortable Column Header Component
+function SortableColumnHeader({ 
+  column, 
+  label, 
+  className = "",
+  sortConfig,
+  columnFilters,
+  onSort,
+  onFilter,
+  onClearFilter
+}: { 
+  column: string; 
+  label: string; 
+  className?: string;
+  sortConfig: SortConfig;
+  columnFilters: ColumnFilters;
+  onSort: (column: string) => void;
+  onFilter: (column: string, value: string) => void;
+  onClearFilter: (column: string) => void;
+}) {
+  const getSortIcon = () => {
+    if (sortConfig.key !== column) return null;
+    return sortConfig.direction === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />;
+  };
+
+  const hasActiveFilter = columnFilters[column] && columnFilters[column].length > 0;
+
+  return (
+    <th className={`px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider ${className}`}>
+      <div className="flex items-center justify-between group">
+        <button
+          onClick={() => onSort(column)}
+          className="flex items-center space-x-1 hover:text-gray-700 transition-colors"
+        >
+          <span>{label}</span>
+          {getSortIcon()}
+        </button>
+        
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity ${
+                hasActiveFilter ? 'opacity-100 text-blue-600' : ''
+              }`}
+            >
+              <MoreHorizontal className="h-3 w-3" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-64 p-3" align="start">
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor={`filter-${column}`} className="text-sm font-medium">
+                  Filter {label}
+                </Label>
+                <Input
+                  id={`filter-${column}`}
+                  placeholder={`Search ${label.toLowerCase()}...`}
+                  value={columnFilters[column] || ''}
+                  onChange={(e) => onFilter(column, e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              {hasActiveFilter && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onClearFilter(column)}
+                  className="w-full"
+                >
+                  Clear Filter
+                </Button>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    </th>
+  );
+}
+
 // Main Orders Table Component
 function OrdersTable() {
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: "", direction: null });
@@ -794,42 +766,72 @@ function OrdersTable() {
     refetchInterval: 30000,
   });
 
-  const handleSort = (key: string) => {
-    let direction: 'asc' | 'desc' | null = 'asc';
-    
-    if (sortConfig.key === key) {
-      if (sortConfig.direction === 'asc') {
-        direction = 'desc';
-      } else if (sortConfig.direction === 'desc') {
-        direction = null;
-      }
+  // Helper function to get column values for sorting and filtering
+  const getColumnValue = (order: any, column: string) => {
+    switch (column) {
+      case 'orderDetails':
+        return order.saylogixNumber + ' ' + order.sourceOrderNumber;
+      case 'customer':
+        return order.customerName + ' ' + order.customerPhone;
+      case 'status':
+        return order.status || '';
+      case 'value':
+        return parseFloat(order.totalAmount) || 0;
+      case 'courier':
+        return order.courierService || '';
+      case 'created':
+        return new Date(order.createdAt).getTime();
+      default:
+        return '';
     }
-    
-    setSortConfig({ key, direction });
   };
 
-  const handleFilterChange = (key: string, value: string) => {
+  const handleSort = (column: string) => {
+    let direction: 'asc' | 'desc' | null = 'asc';
+    
+    if (sortConfig.key === column && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    } else if (sortConfig.key === column && sortConfig.direction === 'desc') {
+      direction = null;
+    }
+    
+    setSortConfig({ key: column, direction });
+  };
+
+  const handleColumnFilter = (column: string, value: string) => {
     setColumnFilters(prev => ({
       ...prev,
-      [key]: value
+      [column]: value
     }));
+  };
+
+  const handleClearFilter = (column: string) => {
+    setColumnFilters(prev => {
+      const newFilters = { ...prev };
+      delete newFilters[column];
+      return newFilters;
+    });
   };
 
   const sortedAndFilteredOrders = useMemo(() => {
     if (!orders) return [];
     
     let filteredOrders = orders.filter((order: Order) => {
-      return Object.entries(columnFilters).every(([key, value]) => {
-        if (!value) return true;
-        const orderValue = String(order[key as keyof Order] || '').toLowerCase();
-        return orderValue.includes(value.toLowerCase());
+      // Apply column filters
+      const matchesColumnFilters = Object.entries(columnFilters).every(([column, filterValue]) => {
+        if (!filterValue) return true;
+        const orderValue = getColumnValue(order, column).toString().toLowerCase();
+        return orderValue.includes(filterValue.toLowerCase());
       });
+      
+      return matchesColumnFilters;
     });
 
-    if (sortConfig.direction && sortConfig.key) {
+    // Apply sorting
+    if (sortConfig.key && sortConfig.direction) {
       filteredOrders.sort((a: Order, b: Order) => {
-        const aValue = a[sortConfig.key as keyof Order] || '';
-        const bValue = b[sortConfig.key as keyof Order] || '';
+        const aValue = getColumnValue(a, sortConfig.key);
+        const bValue = getColumnValue(b, sortConfig.key);
         
         if (aValue < bValue) {
           return sortConfig.direction === 'asc' ? -1 : 1;
@@ -915,69 +917,66 @@ function OrdersTable() {
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <SortableColumnHeader sortKey="saylogixNumber" sortConfig={sortConfig} onSort={handleSort}>
-                        Saylogix #
-                      </SortableColumnHeader>
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <FilterableColumnHeader 
-                        filterKey="customerName" 
-                        columnFilters={columnFilters} 
-                        onFilterChange={handleFilterChange}
-                      >
-                        Customer
-                      </FilterableColumnHeader>
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <FilterableColumnHeader 
-                        filterKey="status" 
-                        columnFilters={columnFilters} 
-                        onFilterChange={handleFilterChange}
-                        options={statusOptions}
-                      >
-                        Status
-                      </FilterableColumnHeader>
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <FilterableColumnHeader 
-                        filterKey="priority" 
-                        columnFilters={columnFilters} 
-                        onFilterChange={handleFilterChange}
-                        options={priorityOptions}
-                      >
-                        Priority
-                      </FilterableColumnHeader>
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <FilterableColumnHeader 
-                        filterKey="city" 
-                        columnFilters={columnFilters} 
-                        onFilterChange={handleFilterChange}
-                      >
-                        City
-                      </FilterableColumnHeader>
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <FilterableColumnHeader 
-                        filterKey="courierService" 
-                        columnFilters={columnFilters} 
-                        onFilterChange={handleFilterChange}
-                        options={courierOptions}
-                      >
-                        Courier
-                      </FilterableColumnHeader>
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <SortableColumnHeader sortKey="totalAmount" sortConfig={sortConfig} onSort={handleSort}>
-                        Amount
-                      </SortableColumnHeader>
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <SortableColumnHeader sortKey="createdAt" sortConfig={sortConfig} onSort={handleSort}>
-                        Created
-                      </SortableColumnHeader>
-                    </th>
+                    <SortableColumnHeader 
+                      column="orderDetails" 
+                      label="Order Details" 
+                      sortConfig={sortConfig} 
+                      columnFilters={columnFilters} 
+                      onSort={handleSort} 
+                      onFilter={handleColumnFilter} 
+                      onClearFilter={handleClearFilter} 
+                      className="text-left"
+                    />
+                    <SortableColumnHeader 
+                      column="customer" 
+                      label="Customer" 
+                      sortConfig={sortConfig} 
+                      columnFilters={columnFilters} 
+                      onSort={handleSort} 
+                      onFilter={handleColumnFilter} 
+                      onClearFilter={handleClearFilter} 
+                      className="text-left"
+                    />
+                    <SortableColumnHeader 
+                      column="status" 
+                      label="Status" 
+                      sortConfig={sortConfig} 
+                      columnFilters={columnFilters} 
+                      onSort={handleSort} 
+                      onFilter={handleColumnFilter} 
+                      onClearFilter={handleClearFilter} 
+                      className="text-left"
+                    />
+                    <SortableColumnHeader 
+                      column="value" 
+                      label="Value" 
+                      sortConfig={sortConfig} 
+                      columnFilters={columnFilters} 
+                      onSort={handleSort} 
+                      onFilter={handleColumnFilter} 
+                      onClearFilter={handleClearFilter} 
+                      className="text-right"
+                    />
+                    <SortableColumnHeader 
+                      column="courier" 
+                      label="Courier" 
+                      sortConfig={sortConfig} 
+                      columnFilters={columnFilters} 
+                      onSort={handleSort} 
+                      onFilter={handleColumnFilter} 
+                      onClearFilter={handleClearFilter} 
+                      className="text-left"
+                    />
+                    <SortableColumnHeader 
+                      column="created" 
+                      label="Created" 
+                      sortConfig={sortConfig} 
+                      columnFilters={columnFilters} 
+                      onSort={handleSort} 
+                      onFilter={handleColumnFilter} 
+                      onClearFilter={handleClearFilter} 
+                      className="text-left"
+                    />
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -988,36 +987,34 @@ function OrdersTable() {
                       onClick={() => handleRowClick(order)}
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="font-medium text-gray-900">{order.saylogixNumber}</div>
-                        <div className="text-sm text-gray-500">{order.sourceOrderNumber}</div>
+                        <div className="space-y-1">
+                          <div className="font-medium text-gray-900">{order.saylogixNumber}</div>
+                          <div className="text-sm text-gray-500">Shopify: #{order.sourceOrderNumber}</div>
+                          <div className="text-xs text-gray-400">ID: {order.id}</div>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="font-medium text-gray-900">{order.customerName}</div>
-                        <div className="text-sm text-gray-500">{order.customerPhone}</div>
+                        <div className="space-y-1">
+                          <div className="font-medium text-gray-900">{order.customerName}</div>
+                          <div className="text-sm text-gray-500">{order.customerPhone}</div>
+                          <div className="text-xs text-gray-400">{order.city}, {order.region}</div>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Badge className={`${getStatusColor(order.status)} border px-2 py-1`}>
                           {order.status}
                         </Badge>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge className={`${getPriorityColor(order.priority)} border px-2 py-1`}>
-                          {order.priority}
-                        </Badge>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-gray-900">{order.city}</div>
-                        <div className="text-sm text-gray-500">{order.region}</div>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <div className="font-medium text-gray-900">
+                          {parseFloat(order.totalAmount).toFixed(2)} {order.currency}
+                        </div>
+                        <div className="text-sm text-gray-500">{order.itemCount} items</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-gray-900">{order.courierService || 'Not assigned'}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <div className="font-medium text-gray-900">
-                          {parseFloat(order.totalAmount).toFixed(2)} {order.currency}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-gray-500">
                         {order.createdAt ? format(new Date(order.createdAt), 'MMM dd, yyyy') : '-'}
                       </td>
                     </tr>
