@@ -8,7 +8,7 @@ import InboundPage from "@/pages/Inbound";
 import PickingPage from "@/pages/Picking";
 import PackingPage from "@/pages/Packing";
 import DispatchPage from "@/pages/Dispatch";
-import LastMilePage from "@/pages/lastmile/LastMilePage";
+import LastMilePage from "@/pages/LastMile";
 import ReportsPage from "@/pages/reports/ReportsPage";
 import Settings from "@/pages/Settings";
 import Integrations from "@/pages/Integrations";
