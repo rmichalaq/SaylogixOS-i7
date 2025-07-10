@@ -79,7 +79,7 @@ export default function AddressVerify() {
     mutationFn: async (shortcode: string) => {
       const response = await apiRequest('/api/address/verify/spl', {
         method: 'POST',
-        body: { shortcode },
+        body: JSON.stringify({ shortcode }),
       });
       return response.data;
     },
@@ -94,7 +94,7 @@ export default function AddressVerify() {
     mutationFn: async (shortcode: string) => {
       const response = await apiRequest('/api/address/validate', {
         method: 'POST',
-        body: { shortcode },
+        body: JSON.stringify({ shortcode }),
       });
       return response.data;
     },
@@ -146,7 +146,7 @@ export default function AddressVerify() {
     mutationFn: async (nasCode: string) => {
       const response = await apiRequest('/api/address/verify/spl', {
         method: 'POST',
-        body: { shortcode: nasCode },
+        body: JSON.stringify({ shortcode: nasCode }),
       });
       return response.data;
     },
@@ -179,13 +179,13 @@ export default function AddressVerify() {
     try {
       await apiRequest(`/api/orders/${orderId}/verify`, {
         method: 'PATCH',
-        body: {
+        body: JSON.stringify({
           addressVerified: true,
           verifiedAddress: addressData.fullAddress,
           verifiedNAS: addressData.shortCode,
           coordinates: addressData.coordinates,
           verificationTimestamp: new Date().toISOString(),
-        },
+        }),
       });
     } catch (error) {
       console.error('Failed to update order with verified address:', error);
