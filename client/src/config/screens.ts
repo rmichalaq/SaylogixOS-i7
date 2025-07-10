@@ -162,9 +162,21 @@ export const getMenuGroups = (): Record<string, ScreenConfig[]> => {
     groups[screen.menuGroup].push(screen);
   }
 
-  // Sort screens within each group alphabetically
+  // Custom ordering for Warehouse group
+  if (groups["Warehouse"]) {
+    const warehouseOrder = ["Inbound", "Inventory", "Picking", "Packing", "Dispatch"];
+    groups["Warehouse"].sort((a, b) => {
+      const indexA = warehouseOrder.indexOf(a.label);
+      const indexB = warehouseOrder.indexOf(b.label);
+      return indexA - indexB;
+    });
+  }
+
+  // Sort other groups alphabetically (except Warehouse)
   for (const group in groups) {
-    groups[group].sort((a, b) => a.label.localeCompare(b.label));
+    if (group !== "Warehouse") {
+      groups[group].sort((a, b) => a.label.localeCompare(b.label));
+    }
   }
 
   return groups;
