@@ -1,0 +1,58 @@
+## Verify NAS - Drawer Enhancement
+
+### 🔄 Feature: Drawer for Order Verification
+
+Add interactive drawer behavior to the **Orders Awaiting NAS Verification** screen.
+
+---
+
+### 🧩 Functional Requirements
+
+#### 1. **Clickable Order Row**
+- Make each order row in the list clickable (except "Verify" button).
+- On click, open a drawer from the right.
+
+#### 2. **Drawer Contents**
+The drawer must display the following details:
+- **Order ID**
+- **Customer name and phone**
+- **NAS code (parsed from order)**
+- **Original Address (as submitted in order)**
+- **Map preview** (if Google Maps is connected)
+
+#### 3. **Verify Button Inside Drawer**
+- Button labeled `Verify with NAS`
+- On click:
+  - Run NAS API lookup.
+  - Store verified address result.
+  - Display verified full address (for confirmation).
+
+#### 4. **Post-Verification Behavior**
+- Store verified address in database.
+- Update order status to `Verified`.
+- Move order to `Verified NAS DB` tab.
+- Show success toast: `Address successfully verified and stored.`
+
+---
+
+### 💾 Database Updates
+- Store verified address in `verified_addresses` table with reference to order.
+- Include timestamp of verification.
+- Allow admin to export verified addresses later.
+
+---
+
+### ✅ Completion Criteria
+- [ ] Clicking order opens drawer with full address context.
+- [ ] Address successfully verified and saved.
+- [ ] Order disappears from Pending tab.
+- [ ] Verified tab shows updated record.
+
+---
+
+### 📌 Notes
+- Design style must match existing drawer interactions in Orders, Inventory, and Clients.
+- Drawer should be dismissible by clicking outside or via close button.
+- Ensure consistency across tabs and views.
+
+---

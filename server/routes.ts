@@ -213,6 +213,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update order with verified address
+  app.patch("/api/orders/:id/verify", async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const verificationData = req.body;
+      
+      // Update order with verified address data
+      await storage.updateOrder(orderId, {
+        addressVerified: verificationData.addressVerified,
+        verifiedAddress: verificationData.verifiedAddress,
+        verifiedNAS: verificationData.verifiedNAS,
+        coordinates: verificationData.coordinates,
+        addressVerifiedAt: verificationData.verificationTimestamp
+      });
+      
+      // Create event for address verification
+      await storage.createEvent({
+        entityType: 'order',
+        entityId: orderId,
+        eventType: 'order.address.verified',
+        description: `Order address verified with NAS code: ${verificationData.verifiedNAS}`,
+        status: 'completed'
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to update order verification:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   app.get("/api/orders/by-sku/:sku", async (req, res) => {
     try {
       const sku = req.params.sku;

@@ -7,8 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, MapPin, CheckCircle, XCircle, Loader2, Clock, Database, Package } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
+import { Search, MapPin, CheckCircle, XCircle, Loader2, Clock, Database, Package, X, User, Phone, Navigation } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface SPLAddressData {
   shortCode: string;
@@ -44,7 +47,11 @@ interface VerificationStats {
 export default function AddressVerify() {
   const [nasCode, setNasCode] = useState('');
   const [activeTab, setActiveTab] = useState('pending');
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [verificationResult, setVerificationResult] = useState<SPLAddressData | null>(null);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // Fetch verification stats
   const { data: stats, isLoading: statsLoading } = useQuery<VerificationStats>({
@@ -129,6 +136,63 @@ export default function AddressVerify() {
 
   const handleOrderVerification = (orderId: number) => {
     orderVerification.mutate(orderId);
+  };
+
+  const handleOrderClick = (order: any) => {
+    setSelectedOrder(order);
+    setVerificationResult(null);
+    setDrawerOpen(true);
+  };
+
+  // Drawer verification mutation
+  const drawerVerification = useMutation({
+    mutationFn: async (nasCode: string) => {
+      const response = await apiRequest('/api/address/verify/spl', {
+        method: 'POST',
+        body: { shortcode: nasCode },
+      });
+      return response.data;
+    },
+    onSuccess: (data: SPLAddressData) => {
+      setVerificationResult(data);
+      
+      // Update order with verified address
+      if (selectedOrder) {
+        updateOrderWithVerifiedAddress(selectedOrder.id, data);
+      }
+      
+      toast({
+        title: "Address successfully verified",
+        description: "The verified address has been stored and order updated.",
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['/api/address/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Verification failed",
+        description: error.message || "Unable to verify address with Saudi Post API",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateOrderWithVerifiedAddress = async (orderId: number, addressData: SPLAddressData) => {
+    try {
+      await apiRequest(`/api/orders/${orderId}/verify`, {
+        method: 'PATCH',
+        body: {
+          addressVerified: true,
+          verifiedAddress: addressData.fullAddress,
+          verifiedNAS: addressData.shortCode,
+          coordinates: addressData.coordinates,
+          verificationTimestamp: new Date().toISOString(),
+        },
+      });
+    } catch (error) {
+      console.error('Failed to update order with verified address:', error);
+    }
   };
 
   // Extract NAS codes from order addresses
@@ -308,7 +372,11 @@ export default function AddressVerify() {
                         }).map((order: any) => {
                           const nasCode = extractNasFromAddress(order.shippingAddress);
                           return (
-                            <TableRow key={order.id}>
+                            <TableRow 
+                              key={order.id} 
+                              className="cursor-pointer hover:bg-gray-50"
+                              onClick={() => handleOrderClick(order)}
+                            >
                               <TableCell className="font-medium">{order.saylogixNumber}</TableCell>
                               <TableCell>{order.customerName}</TableCell>
                               <TableCell>
@@ -319,7 +387,7 @@ export default function AddressVerify() {
                                   ? order.shippingAddress 
                                   : `${order.shippingAddress?.address1 || ''} ${order.shippingAddress?.city || ''}`}
                               </TableCell>
-                              <TableCell>
+                              <TableCell onClick={(e) => e.stopPropagation()}>
                                 <Button
                                   size="sm"
                                   onClick={() => handleOrderVerification(order.id)}
@@ -464,6 +532,177 @@ export default function AddressVerify() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Order Verification Drawer */}
+      <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <SheetContent className="w-[600px] sm:max-w-[600px]">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Order Verification Details
+            </SheetTitle>
+          </SheetHeader>
+          
+          {selectedOrder && (
+            <div className="mt-6 space-y-6">
+              {/* Order Information */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold">Order Information</h3>
+                  <Badge variant="outline">{selectedOrder.saylogixNumber}</Badge>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-gray-500" />
+                      <span className="font-medium">Customer:</span>
+                      <span>{selectedOrder.customerName}</span>
+                    </div>
+                    
+                    {selectedOrder.customerPhone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-gray-500" />
+                        <span className="font-medium">Phone:</span>
+                        <span>{selectedOrder.customerPhone}</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center gap-2">
+                      <Navigation className="h-4 w-4 text-gray-500" />
+                      <span className="font-medium">NAS Code:</span>
+                      <Badge variant="outline">
+                        {extractNasFromAddress(selectedOrder.shippingAddress)}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Original Address */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Original Address</h3>
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <p className="text-sm">
+                    {typeof selectedOrder.shippingAddress === 'string' 
+                      ? selectedOrder.shippingAddress 
+                      : `${selectedOrder.shippingAddress?.address1 || ''} ${selectedOrder.shippingAddress?.address2 || ''} ${selectedOrder.shippingAddress?.city || ''} ${selectedOrder.shippingAddress?.zip || ''}`}
+                  </p>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Verification Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Address Verification</h3>
+                
+                {!verificationResult ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                      Click the button below to verify the address using the Saudi Post National Address API.
+                    </p>
+                    
+                    <Button 
+                      onClick={() => {
+                        const nasCode = extractNasFromAddress(selectedOrder.shippingAddress);
+                        if (nasCode) {
+                          drawerVerification.mutate(nasCode);
+                        }
+                      }}
+                      disabled={drawerVerification.isPending}
+                      className="w-full"
+                    >
+                      {drawerVerification.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Verifying with Saudi Post API...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Verify with NAS
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-center gap-2 mb-3">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <h4 className="font-semibold text-green-800">Address Successfully Verified</h4>
+                      </div>
+                      
+                      <div className="space-y-2 text-sm">
+                        <div><strong>NAS Code:</strong> {verificationResult.shortCode}</div>
+                        <div><strong>Full Address:</strong> {verificationResult.fullAddress}</div>
+                        <div><strong>Postal Code:</strong> {verificationResult.postalCode}</div>
+                        {verificationResult.additionalCode && (
+                          <div><strong>Additional Code:</strong> {verificationResult.additionalCode}</div>
+                        )}
+                        {verificationResult.coordinates.lat && verificationResult.coordinates.lng && (
+                          <div><strong>Coordinates:</strong> {verificationResult.coordinates.lat}, {verificationResult.coordinates.lng}</div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={() => setDrawerOpen(false)}
+                        variant="outline"
+                        className="flex-1"
+                      >
+                        Close
+                      </Button>
+                      <Button 
+                        onClick={() => {
+                          setDrawerOpen(false);
+                          setSelectedOrder(null);
+                          setVerificationResult(null);
+                        }}
+                        className="flex-1"
+                      >
+                        Verify Another Order
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {drawerVerification.error && (
+                  <Alert>
+                    <XCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      {drawerVerification.error.message || 'Failed to verify address with Saudi Post API'}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+
+              {/* Map Preview Placeholder */}
+              {verificationResult?.coordinates.lat && verificationResult?.coordinates.lng && (
+                <>
+                  <Separator />
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Location Preview</h3>
+                    <div className="p-8 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg text-center">
+                      <MapPin className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-600">
+                        Map preview would be displayed here
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Coordinates: {verificationResult.coordinates.lat}, {verificationResult.coordinates.lng}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
