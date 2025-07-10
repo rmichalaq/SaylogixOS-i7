@@ -190,7 +190,12 @@ export const routes = pgTable("routes", {
   driverName: varchar("driver_name", { length: 100 }),
   vehicleNumber: varchar("vehicle_number", { length: 20 }),
   totalStops: integer("total_stops").default(0),
+  completedStops: integer("completed_stops").default(0),
   status: varchar("status", { length: 20 }).default("planned"),
+  zone: varchar("zone", { length: 100 }),
+  lastScan: timestamp("last_scan"),
+  estimatedDuration: integer("estimated_duration"), // in hours
+  actualDuration: integer("actual_duration"), // in minutes
   startedAt: timestamp("started_at"),
   completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").defaultNow(),

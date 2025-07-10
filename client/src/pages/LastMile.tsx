@@ -23,7 +23,9 @@ import {
   AlertTriangle,
   Target,
   Calendar,
-  Search
+  Search,
+  Map,
+  List
 } from "lucide-react";
 
 interface DeliveryRoute {
@@ -65,6 +67,7 @@ type ColumnFilters = {
 export default function LastMile() {
   const [activeTab, setActiveTab] = useState("pickup");
   const [selectedRoute, setSelectedRoute] = useState<DeliveryRoute | null>(null);
+  const [viewMode, setViewMode] = useState<'table' | 'map'>('table');
 
   const { data: routes = [], isLoading } = useQuery({
     queryKey: ["/api/routes"],
@@ -186,7 +189,8 @@ export default function LastMile() {
 
       {/* Section Tabs - Match Inventory exact styling */}
       <div className="flex items-center justify-between">
-        <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+        <div className="flex items-center space-x-4">
+          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
           <button 
             onClick={() => setActiveTab('pickup')}
             className={`flex items-center space-x-2 px-3 py-1.5 text-sm font-medium ${activeTab === 'pickup' ? 'text-blue-600 bg-white rounded-md shadow-sm' : 'text-gray-500'}`}
@@ -215,6 +219,25 @@ export default function LastMile() {
             <AlertTriangle className="h-4 w-4" />
             <span>Exceptions ({routes.filter((r: DeliveryRoute) => r.status === 'exception').length})</span>
           </button>
+          </div>
+          
+          {/* View Mode Toggle */}
+          <div className="flex items-center space-x-1 bg-gray-100 p-1 rounded-lg">
+            <button 
+              onClick={() => setViewMode('table')}
+              className={`flex items-center space-x-1 px-2 py-1 text-sm font-medium ${viewMode === 'table' ? 'text-blue-600 bg-white rounded shadow-sm' : 'text-gray-500'}`}
+            >
+              <List className="h-4 w-4" />
+              <span>Table</span>
+            </button>
+            <button 
+              onClick={() => setViewMode('map')}
+              className={`flex items-center space-x-1 px-2 py-1 text-sm font-medium ${viewMode === 'map' ? 'text-blue-600 bg-white rounded shadow-sm' : 'text-gray-500'}`}
+            >
+              <Map className="h-4 w-4" />
+              <span>Map</span>
+            </button>
+          </div>
         </div>
         
         <DropdownMenu>
@@ -262,11 +285,22 @@ export default function LastMile() {
             </h2>
           </div>
 
-          {/* Content based on active tab */}
-          {activeTab === 'pickup' && <PickupOverviewTable pickupLocations={pickupLocations} />}
-          {activeTab === 'active' && <ActiveRoutesTable routes={routes.filter((r: DeliveryRoute) => r.status === 'in_progress')} onSelectRoute={setSelectedRoute} />}
-          {activeTab === 'completed' && <CompletedRoutesTable routes={routes.filter((r: DeliveryRoute) => r.status === 'completed' && new Date(r.completedAt || '').toDateString() === new Date().toDateString())} onSelectRoute={setSelectedRoute} />}
-          {activeTab === 'exceptions' && <ExceptionsTable routes={routes.filter((r: DeliveryRoute) => r.status === 'exception')} onSelectRoute={setSelectedRoute} />}
+          {/* Content based on active tab and view mode */}
+          {viewMode === 'table' ? (
+            <>
+              {activeTab === 'pickup' && <PickupOverviewTable pickupLocations={pickupLocations} />}
+              {activeTab === 'active' && <ActiveRoutesTable routes={routes.filter((r: DeliveryRoute) => r.status === 'in_progress')} onSelectRoute={setSelectedRoute} />}
+              {activeTab === 'completed' && <CompletedRoutesTable routes={routes.filter((r: DeliveryRoute) => r.status === 'completed' && new Date(r.completedAt || '').toDateString() === new Date().toDateString())} onSelectRoute={setSelectedRoute} />}
+              {activeTab === 'exceptions' && <ExceptionsTable routes={routes.filter((r: DeliveryRoute) => r.status === 'exception')} onSelectRoute={setSelectedRoute} />}
+            </>
+          ) : (
+            <MapView 
+              activeTab={activeTab}
+              pickupLocations={pickupLocations}
+              routes={routes}
+              onSelectRoute={setSelectedRoute}
+            />
+          )}
         </div>
       </Card>
 
@@ -321,6 +355,35 @@ export default function LastMile() {
           </SheetContent>
         </Sheet>
       )}
+    </div>
+  );
+}
+
+// Map View Component
+function MapView({ activeTab, pickupLocations, routes, onSelectRoute }: { 
+  activeTab: string; 
+  pickupLocations: PickupLocation[]; 
+  routes: DeliveryRoute[];
+  onSelectRoute: (route: DeliveryRoute) => void;
+}) {
+  return (
+    <div className="relative bg-gray-100 rounded-lg h-[600px] flex items-center justify-center">
+      <div className="text-center">
+        <Map className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Map View</h3>
+        <p className="text-gray-600 mb-4">
+          Google Maps integration will show:
+        </p>
+        <ul className="text-sm text-gray-500 space-y-1">
+          <li>• Fulfillment Centers (pickup origins)</li>
+          <li>• Sortation Hubs (intermediate nodes)</li>
+          <li>• Delivery Zones (final hubs)</li>
+          <li>• Real-time routes and driver locations</li>
+        </ul>
+        <p className="text-xs text-gray-400 mt-4">
+          Map integration pending Google Maps API setup
+        </p>
+      </div>
     </div>
   );
 }

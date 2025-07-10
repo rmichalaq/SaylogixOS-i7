@@ -147,6 +147,17 @@ Saylogix OS is a comprehensive fullstack logistics management system built as a 
 ## Changelog
 ```
 Changelog:
+- July 10, 2025. Completed comprehensive UI redesign for warehouse management modules
+  - Redesigned Last Mile (LMS) screen with pixel-perfect alignment to Inventory layout
+  - Added Map View toggle for Last Mile screen (Table/Map view switch)
+  - Created 4 KPI cards: Planned Routes, Active Routes, Completed Today, Total Stops
+  - Implemented 4 section tabs: Pickup Overview, Active Routes, Completed, Exceptions
+  - Added Excel-style table sorting with three-dot (MoreVertical) filter icons on all columns
+  - Implemented filter chips with clear "x" buttons for active filters
+  - Added right-sliding drawer for route details with route info and action buttons
+  - Created mock data (MOCK_route_*, MOCK_FC_*) for testing - marked for future removal
+  - Successfully aligned all 6 warehouse modules: Inventory, Inbound, Packing, Picking, Dispatch, Last Mile
+  - All modules now feature consistent KPI cards, section tabs, sortable tables, and drawers
 - July 09, 2025. Enhanced Purchase Orders interface with drawer-based workflow
   - Removed Actions column from Purchase Orders table for cleaner interface
   - Made PO Numbers clickable to open detailed processing drawer

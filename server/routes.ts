@@ -582,6 +582,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Internal server error" });
     }
   });
+  
+  // Pickup Locations (Mock data for now)
+  app.get("/api/pickup-locations", async (req, res) => {
+    try {
+      // Mock data for pickup locations
+      const pickupLocations = [
+        {
+          id: 1,
+          fcName: "MOCK_FC_Riyadh_Central",
+          packagesReady: 45,
+          courierAssigned: "Aramex",
+          pickupWindow: "09:00 - 11:00",
+          status: "ready",
+          address: "King Fahd Road, Riyadh 12345"
+        },
+        {
+          id: 2,
+          fcName: "MOCK_FC_Riyadh_East",
+          packagesReady: 32,
+          courierAssigned: "SMSA",
+          pickupWindow: "14:00 - 16:00",
+          status: "ready",
+          address: "Eastern Ring Road, Riyadh 12678"
+        },
+        {
+          id: 3,
+          fcName: "MOCK_Sortation_Hub_Main",
+          packagesReady: 0,
+          courierAssigned: "Naqel",
+          pickupWindow: "N/A",
+          status: "awaiting",
+          address: "Industrial Area, Riyadh 13579"
+        }
+      ];
+      res.json(pickupLocations);
+    } catch (error) {
+      console.error("Failed to get pickup locations:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
 
   // Shopify Integration
   app.post("/api/shopify/sync", async (req, res) => {
