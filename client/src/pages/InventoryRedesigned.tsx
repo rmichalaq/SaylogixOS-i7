@@ -1824,39 +1824,7 @@ function ExpiryReport() {
         </Card>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center space-x-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search by SKU or batch number..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            
-            <Select value={filterLevel} onValueChange={setFilterLevel}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Alert Level" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Levels</SelectItem>
-                <SelectItem value="red">Critical/Expired</SelectItem>
-                <SelectItem value="yellow">Warning</SelectItem>
-                <SelectItem value="green">Good</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Button variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      
 
       {/* Expiry Table */}
       <Card>
