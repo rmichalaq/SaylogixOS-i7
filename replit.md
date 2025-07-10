@@ -185,6 +185,13 @@ Changelog:
   - Removed mock activity data fallback - now displays only authentic real-time activity
   - Cleared live activity feed API to return empty array - activity section now hidden
   - Dashboard now displays 100% authentic data with proper empty states reflecting true operational state
+- July 10, 2025. Created comprehensive database schema documentation and UI refinements
+  - Created complete database_schema_overview.md documenting all 28 tables with detailed field specifications
+  - Documented table relationships, constraints, status field values, and data flow patterns
+  - Organized schema by functional areas: Core Business, Warehouse Management, Configuration, Inventory Management, Integration & System tables
+  - Added comprehensive field descriptions, data types, and business logic documentation
+  - Removed CardContent wrapper from Inventory Expiry Report table for cleaner structure
+  - Database documentation now serves as authoritative reference for future mock data seeding and system development
 - July 10, 2025. Completed comprehensive Settings layout redesign matching Inventory structure
   - Restructured Settings into 3 major tabs: Warehouse, Users, Clients (removed KPI cards as requested)
   - Warehouse sub-tabs: Warehouses/Hubs, Zones, Locations, Packaging Material, Dock Settings
