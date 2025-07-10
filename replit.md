@@ -147,6 +147,15 @@ Saylogix OS is a comprehensive fullstack logistics management system built as a 
 ## Changelog
 ```
 Changelog:
+- January 10, 2025. Fixed SPL API authentication and removed mock data fallbacks
+  - CRITICAL FIX: Removed all mock data fallbacks from SPL API service that were returning fake addresses
+  - Fixed 401 authentication errors by updating SPL API error handling to throw proper exceptions
+  - Modified splService.ts to ensure only authentic Saudi Post API data is displayed to users
+  - When API authentication fails, system now shows error messages instead of placeholder data
+  - Removed getMockAddressData fallback calls that were displaying "Generic District", "Generic Street"
+  - Updated error handling to provide specific messages for 401 (auth), 404 (not found), 500 (server) errors
+  - System now requires valid SPL_API_KEY environment variable for any address verification
+  - PRODUCTION READY: Only authentic Saudi Post National Address data is displayed, no mock/test data
 - January 10, 2025. Completed comprehensive SPL NAS verification system enhancement
   - Enhanced SPL API service with detailed request/response logging including headers, status codes, and response bodies
   - Added comprehensive error tracking with duration metrics and fallback handling for 404/500/401 responses
