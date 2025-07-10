@@ -1986,9 +1986,14 @@ export default function InventoryRedesigned() {
     refetchInterval: 30000
   });
 
+  const { data: adjustments } = useQuery({
+    queryKey: ["/api/inventory/adjustments"],
+  });
+
   const totalItems = inventory?.length || 0;
   const lowStockItems = inventory?.filter((item: any) => item.availableQty <= item.reorderLevel).length || 0;
   const totalValue = inventory?.reduce((sum: number, item: any) => sum + (item.availableQty * 25), 0) || 0;
+  const activeAdjustments = adjustments?.filter((adj: any) => adj.status === 'pending').length || 0;
 
   return (
     <div className="space-y-6">
@@ -2050,7 +2055,7 @@ export default function InventoryRedesigned() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Active Adjustments</p>
-                <p className="text-3xl font-bold text-amber-600">3</p>
+                <p className="text-3xl font-bold text-amber-600">{activeAdjustments}</p>
                 <p className="text-sm text-amber-600">Pending approval</p>
               </div>
               <Edit className="h-8 w-8 text-amber-600" />
