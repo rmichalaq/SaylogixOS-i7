@@ -106,18 +106,7 @@ export default function TopNavBar() {
           <Search className="h-4 w-4" />
         </Button>
 
-        {/* Scan Button */}
-        {currentScreen?.scan.enabled && (
-          <Button
-            onClick={() => {
-              openScanner(currentScreen.scan.context || "general");
-            }}
-            className="flex items-center px-2 lg:px-4 py-2 bg-primary-500 text-white hover:bg-primary-600"
-          >
-            <QrCode className="h-4 w-4 lg:mr-2" />
-            <span className="hidden lg:inline">Scan</span>
-          </Button>
-        )}
+        
 
         {/* Notifications */}
         <Button
