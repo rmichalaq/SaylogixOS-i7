@@ -3,6 +3,7 @@ import React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,6 +37,8 @@ import {
   ChevronUp,
   ChevronDown,
   MoreHorizontal,
+  MoreVertical,
+  ArrowUpDown,
   Upload,
   FileSpreadsheet,
   Settings,
@@ -500,35 +503,139 @@ export default function Inbound() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Inbound</h1>
-          <p className="text-sm text-gray-500">
-            Manage purchase orders, receiving, and warehouse inbound operations
-          </p>
-        </div>
-        <InboundActionsMenu />
+      {/* KPI Cards - Match Inventory exact layout */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="relative overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">Total Purchase Orders</CardTitle>
+            <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
+              <Package className="h-4 w-4 text-blue-600" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-900">{purchaseOrders?.length || 0}</div>
+            <p className="text-xs text-gray-500 flex items-center mt-1">
+              <span className="text-green-600 text-xs font-medium">↗</span>
+              Active POs
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="relative overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">Pending Receipts</CardTitle>
+            <div className="h-8 w-8 rounded-lg bg-yellow-100 flex items-center justify-center">
+              <Truck className="h-4 w-4 text-yellow-600" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-900">{grns?.length || 0}</div>
+            <p className="text-xs text-gray-500 flex items-center mt-1">
+              Awaiting processing
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="relative overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">Putaway Tasks</CardTitle>
+            <div className="h-8 w-8 rounded-lg bg-green-100 flex items-center justify-center">
+              <MapPin className="h-4 w-4 text-green-600" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{putawayTasks?.length || 0}</div>
+            <p className="text-xs text-gray-500 flex items-center mt-1">
+              <span className="text-green-600 text-xs font-medium">↗</span>
+              Ready to locate
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="relative overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">Today's Receipts</CardTitle>
+            <div className="h-8 w-8 rounded-lg bg-orange-100 flex items-center justify-center">
+              <CheckCircle2 className="h-4 w-4 text-orange-600" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">2</div>
+            <p className="text-xs text-gray-500 flex items-center mt-1">
+              Items received
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="purchase-orders">Purchase Orders</TabsTrigger>
-          <TabsTrigger value="grns">GRNs</TabsTrigger>
-          <TabsTrigger value="putaway">Putaway Tasks</TabsTrigger>
-        </TabsList>
+      {/* Section Tabs - Match Inventory exact styling */}
+      <div className="flex items-center justify-between">
+        <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+          <button 
+            onClick={() => setActiveTab('purchase-orders')}
+            className={`flex items-center space-x-2 px-3 py-1.5 text-sm font-medium ${activeTab === 'purchase-orders' ? 'text-blue-600 bg-white rounded-md shadow-sm' : 'text-gray-500'}`}
+          >
+            <Package className="h-4 w-4" />
+            <span>Purchase Orders ({purchaseOrders?.length || 0})</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('grns')}
+            className={`flex items-center space-x-2 px-3 py-1.5 text-sm font-medium ${activeTab === 'grns' ? 'text-blue-600 bg-white rounded-md shadow-sm' : 'text-gray-500'}`}
+          >
+            <Truck className="h-4 w-4" />
+            <span>GRNs ({grns?.length || 0})</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('putaway')}
+            className={`flex items-center space-x-2 px-3 py-1.5 text-sm font-medium ${activeTab === 'putaway' ? 'text-blue-600 bg-white rounded-md shadow-sm' : 'text-gray-500'}`}
+          >
+            <MapPin className="h-4 w-4" />
+            <span>Putaway Tasks ({putawayTasks?.length || 0})</span>
+          </button>
+        </div>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="flex items-center space-x-2">
+              <Settings className="h-4 w-4" />
+              <span>Actions</span>
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Purchase Order
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Upload className="h-4 w-4 mr-2" />
+              Upload ASN
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Export Data
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
-        <TabsContent value="purchase-orders">
-          <PurchaseOrdersTable />
-        </TabsContent>
+      {/* Main Content Area - Match Inventory styling */}
+      <Card className="p-0 overflow-hidden">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">
+              {activeTab === 'purchase-orders' && `Purchase Orders (${purchaseOrders?.length || 0})`}
+              {activeTab === 'grns' && `GRNs (${grns?.length || 0})`}
+              {activeTab === 'putaway' && `Putaway Tasks (${putawayTasks?.length || 0})`}
+            </h2>
+          </div>
 
-        <TabsContent value="grns">
-          <GRNsTable />
-        </TabsContent>
-
-        <TabsContent value="putaway">
-          <PutawayTasksTable />
-        </TabsContent>
-      </Tabs>
+          {/* Content based on active tab */}
+          {activeTab === 'purchase-orders' && <PurchaseOrdersTable />}
+          {activeTab === 'grns' && <GRNsTable />}
+          {activeTab === 'putaway' && <PutawayTasksTable />}
+        </div>
+      </Card>
     </div>
   );
 }
@@ -642,143 +749,109 @@ function PurchaseOrdersTable() {
     return <Badge className={config.className}>{config.label}</Badge>;
   };
 
+  const SortableHeader = ({ field, children }: { field: string; children: React.ReactNode }) => (
+    <TableHead className="cursor-pointer group">
+      <div className="flex items-center space-x-2">
+        <span onClick={() => handleSort(field)} className="select-none">
+          {children}
+        </span>
+        <div className="flex flex-col items-center">
+          <button
+            onClick={() => handleSort(field)}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <ArrowUpDown className="h-3 w-3" />
+          </button>
+          {sortConfig.key === field && (
+            <span className="text-xs text-blue-600 font-medium">
+              {sortConfig.direction === 'asc' ? '↑' : '↓'}
+            </span>
+          )}
+        </div>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="text-gray-400 hover:text-gray-600 transition-colors opacity-0 group-hover:opacity-100">
+              <MoreVertical className="h-3 w-3" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56" align="start">
+            <div className="space-y-2">
+              <Label htmlFor={`filter-${field}`} className="text-sm font-medium">
+                Filter {children}
+              </Label>
+              <Input
+                id={`filter-${field}`}
+                placeholder={`Search ${children}...`}
+                value={columnFilters[field] || ''}
+                onChange={(e) => handleColumnFilter(field, e.target.value)}
+                className="h-8"
+              />
+              {columnFilters[field] && (
+                <Button
+                  onClick={() => handleClearFilter(field)}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs"
+                >
+                  Clear filter
+                </Button>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    </TableHead>
+  );
+
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <Search className="h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search purchase orders..."
-              className="w-64"
-              disabled
-            />
-          </div>
-        </div>
-        <div className="text-center py-8">
-          <RefreshCw className="h-8 w-8 animate-spin mx-auto text-gray-400" />
-          <p className="text-gray-500 mt-2">Loading purchase orders...</p>
-        </div>
+      <div className="text-center py-8">
+        <RefreshCw className="h-8 w-8 animate-spin mx-auto text-gray-400" />
+        <p className="text-gray-500 mt-2">Loading purchase orders...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-2">
-          <Search className="h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Search purchase orders..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-64"
-          />
+    <div className="border border-gray-200 rounded-lg overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <SortableHeader field="poNumber">PO Number</SortableHeader>
+            <SortableHeader field="supplier">Supplier</SortableHeader>
+            <SortableHeader field="eta">ETA</SortableHeader>
+            <SortableHeader field="status">Status</SortableHeader>
+            <SortableHeader field="itemCount">Items</SortableHeader>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredPOs.map((po) => (
+            <TableRow 
+              key={po.id} 
+              className="cursor-pointer hover:bg-gray-50"
+              onClick={() => handleRowClick(po)}
+            >
+              <TableCell className="font-medium">{po.poNumber}</TableCell>
+              <TableCell>
+                <div className="flex items-center">
+                  <Building className="h-4 w-4 text-gray-400 mr-2" />
+                  {po.supplier}
+                </div>
+              </TableCell>
+              <TableCell>{format(new Date(po.eta), 'MMM dd, yyyy')}</TableCell>
+              <TableCell>{getStatusBadge(po.status)}</TableCell>
+              <TableCell>{po.items?.length || 0} items</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      
+      {filteredPOs.length === 0 && (
+        <div className="text-center py-12">
+          <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-500">No purchase orders found</p>
         </div>
-        <div className="text-sm text-gray-500">
-          {filteredPOs.length} of {purchaseOrders?.length || 0} purchase orders
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <SortableColumnHeader
-                column="poNumber"
-                label="PO Number"
-                sortConfig={sortConfig}
-                columnFilters={columnFilters}
-                onSort={handleSort}
-                onFilter={handleColumnFilter}
-                onClearFilter={handleClearFilter}
-              />
-              <SortableColumnHeader
-                column="supplier"
-                label="Supplier"
-                sortConfig={sortConfig}
-                columnFilters={columnFilters}
-                onSort={handleSort}
-                onFilter={handleColumnFilter}
-                onClearFilter={handleClearFilter}
-              />
-              <SortableColumnHeader
-                column="eta"
-                label="ETA"
-                sortConfig={sortConfig}
-                columnFilters={columnFilters}
-                onSort={handleSort}
-                onFilter={handleColumnFilter}
-                onClearFilter={handleClearFilter}
-              />
-              <SortableColumnHeader
-                column="status"
-                label="Status"
-                sortConfig={sortConfig}
-                columnFilters={columnFilters}
-                onSort={handleSort}
-                onFilter={handleColumnFilter}
-                onClearFilter={handleClearFilter}
-              />
-              <SortableColumnHeader
-                column="itemCount"
-                label="Items"
-                sortConfig={sortConfig}
-                columnFilters={columnFilters}
-                onSort={handleSort}
-                onFilter={handleColumnFilter}
-                onClearFilter={handleClearFilter}
-              />
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredPOs.map((po) => (
-              <tr
-                key={po.id}
-                className="hover:bg-gray-50 cursor-pointer transition-colors"
-                onClick={() => handleRowClick(po)}
-              >
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <Package className="h-4 w-4 text-gray-400 mr-2" />
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{po.poNumber}</div>
-                      <div className="text-sm text-gray-500">ID: {po.id}</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <Building className="h-4 w-4 text-gray-400 mr-2" />
-                    <div className="text-sm text-gray-900">{po.supplier}</div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <Clock className="h-4 w-4 text-gray-400 mr-2" />
-                    <div className="text-sm text-gray-900">
-                      {format(new Date(po.eta), 'MMM dd, yyyy')}
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {getStatusBadge(po.status)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {po.items?.length || 0} items
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        
-        {filteredPOs.length === 0 && (
-          <div className="text-center py-12">
-            <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500">No purchase orders found</p>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Purchase Order Details Drawer */}
       <PODetailsDrawer
