@@ -42,13 +42,17 @@ export async function seedMockDataComprehensive() {
     // 1. CONFIGURATION TABLES (seed first as they're referenced by others)
     console.log("Seeding configuration tables...");
     
+    // Get first warehouse ID for zones
+    const [firstWarehouse] = await db.select({ id: warehouses.id }).from(warehouses).limit(1);
+    const warehouseId = firstWarehouse?.id || 1;
+
     // Warehouse zones
     const zones = [
-      { name: "MOCK_Zone_A", description: "Receiving and inbound area" },
-      { name: "MOCK_Zone_B", description: "Fast-moving products" },
-      { name: "MOCK_Zone_C", description: "Slow-moving products" },
-      { name: "MOCK_Zone_D", description: "High-value items" },
-      { name: "MOCK_Zone_E", description: "Hazardous materials" }
+      { warehouseId, name: "MOCK_Zone_A", description: "Receiving and inbound area" },
+      { warehouseId, name: "MOCK_Zone_B", description: "Fast-moving products" },
+      { warehouseId, name: "MOCK_Zone_C", description: "Slow-moving products" },
+      { warehouseId, name: "MOCK_Zone_D", description: "High-value items" },
+      { warehouseId, name: "MOCK_Zone_E", description: "Hazardous materials" }
     ];
     
     for (const zone of zones) {
