@@ -12,6 +12,15 @@ export interface SPLAddressData {
     lat?: number;
     lng?: number;
   };
+  city?: string;
+  district?: string;
+  street?: string;
+  buildingNumber?: string;
+  unitNumber?: string;
+  municipality?: string;
+  region?: string;
+  landmark?: string;
+  isActive?: boolean;
 }
 
 export async function fetchAddressFromSPL(shortcode: string): Promise<SPLAddressData> {
@@ -83,19 +92,46 @@ function getMockAddressData(shortcode: string): SPLAddressData {
       fullAddress: '4386 Al Nasbah 53, 6887, Al Muruj Dist., UMLUJ, Tabuk, 48333',
       postalCode: '48333',
       additionalCode: '6887',
-      coordinates: { lat: 25.0218, lng: 37.2685 }
+      coordinates: { lat: 25.0218, lng: 37.2685 },
+      city: 'UMLUJ',
+      district: 'Al Muruj District',
+      street: 'Al Nasbah Street',
+      buildingNumber: '4386',
+      unitNumber: '53',
+      municipality: 'Umluj Municipality',
+      region: 'Tabuk Province',
+      landmark: 'Near Red Sea Coast',
+      isActive: true
     },
     'RQRA6790': {
       fullAddress: '6790 Al Badour, Ar Rawabi RQRA6790 Riyadh 14213',
       postalCode: '14213',
       additionalCode: '6790',
-      coordinates: { lat: 24.7136, lng: 46.6753 }
+      coordinates: { lat: 24.7136, lng: 46.6753 },
+      city: 'Riyadh',
+      district: 'Ar Rawabi',
+      street: 'Al Badour Street',
+      buildingNumber: '6790',
+      unitNumber: '101',
+      municipality: 'Riyadh Municipality',
+      region: 'Riyadh Province',
+      landmark: 'Near King Fahd Hospital',
+      isActive: true
     },
     'RIYD2342': {
       fullAddress: '2342 King Fahd Road, Riyadh 12345',
       postalCode: '12345',
       additionalCode: '2342',
-      coordinates: { lat: 24.7136, lng: 46.6753 }
+      coordinates: { lat: 24.7136, lng: 46.6753 },
+      city: 'Riyadh',
+      district: 'Al Olaya',
+      street: 'King Fahd Road',
+      buildingNumber: '2342',
+      unitNumber: 'A12',
+      municipality: 'Riyadh Municipality',
+      region: 'Riyadh Province',
+      landmark: 'Kingdom Centre Tower',
+      isActive: true
     }
   };
 
