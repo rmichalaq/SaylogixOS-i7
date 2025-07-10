@@ -673,39 +673,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Pickup Locations (Mock data for now)
+  // Pickup Locations - Real data from database
   app.get("/api/pickup-locations", async (req, res) => {
     try {
-      // Mock data for pickup locations
-      const pickupLocations = [
-        {
-          id: 1,
-          fcName: "MOCK_FC_Riyadh_Central",
-          packagesReady: 45,
-          courierAssigned: "Aramex",
-          pickupWindow: "09:00 - 11:00",
-          status: "ready",
-          address: "King Fahd Road, Riyadh 12345"
-        },
-        {
-          id: 2,
-          fcName: "MOCK_FC_Riyadh_East",
-          packagesReady: 32,
-          courierAssigned: "SMSA",
-          pickupWindow: "14:00 - 16:00",
-          status: "ready",
-          address: "Eastern Ring Road, Riyadh 12678"
-        },
-        {
-          id: 3,
-          fcName: "MOCK_Sortation_Hub_Main",
-          packagesReady: 0,
-          courierAssigned: "Naqel",
-          pickupWindow: "N/A",
-          status: "awaiting",
-          address: "Industrial Area, Riyadh 13579"
-        }
-      ];
+      // Query real fulfillment centers from warehouse settings or create from actual orders
+      const packLocations = await db.execute(sql`
+        SELECT 
+          'FC_' || ROW_NUMBER() OVER (ORDER BY COUNT(*) DESC) as id,
+          COALESCE(courier_assigned, 'Unassigned') as fc_name,
+          COUNT(*) as packages_ready,
+          courier_assigned,
+          'TBD' as pickup_window,
+          CASE 
+            WHEN COUNT(*) > 0 THEN 'ready'
+            ELSE 'awaiting'
+          END as status,
+          'Warehouse Location' as address
+        FROM orders 
+        WHERE status IN ('packed', 'ready_to_ship') 
+          AND courier_assigned IS NOT NULL
+        GROUP BY courier_assigned
+        HAVING COUNT(*) > 0
+        
+        UNION ALL
+        
+        -- Show awaiting status when no packages ready
+        SELECT 
+          'FC_Main' as id,
+          'Main Fulfillment Center' as fc_name,
+          0 as packages_ready,
+          'Multiple' as courier_assigned,
+          'N/A' as pickup_window,
+          'awaiting' as status,
+          'Main Warehouse' as address
+        WHERE NOT EXISTS (
+          SELECT 1 FROM orders 
+          WHERE status IN ('packed', 'ready_to_ship') 
+            AND courier_assigned IS NOT NULL
+        )
+      `);
+
+      const pickupLocations = packLocations.rows.map((row: any) => ({
+        id: row.id,
+        fcName: row.fc_name,
+        packagesReady: parseInt(row.packages_ready),
+        courierAssigned: row.courier_assigned,
+        pickupWindow: row.pickup_window,
+        status: row.status,
+        address: row.address
+      }));
       res.json(pickupLocations);
     } catch (error) {
       console.error("Failed to get pickup locations:", error);
