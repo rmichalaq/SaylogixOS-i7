@@ -71,11 +71,8 @@ export default function AddressVerify() {
     refetchInterval: 5000,
   });
 
-  // Fetch verified orders
-  const { data: verifiedOrders, isLoading: verifiedLoading } = useQuery({
-    queryKey: ['/api/orders/verified'],
-    select: (data) => data?.filter((order: any) => order.addressVerified) || []
-  });
+  // Fetch verified orders by filtering all orders
+  const verifiedOrders = orders?.filter((order: any) => order.addressVerified) || [];
 
   // SPL verification mutation
   const splVerification = useMutation({
@@ -199,12 +196,19 @@ export default function AddressVerify() {
   const extractNasFromAddress = (address: any): string | null => {
     if (!address) return null;
     
-    const addressText = typeof address === 'string' ? address : 
-      `${address.address1 || ''} ${address.address2 || ''} ${address.city || ''} ${address.zip || ''}`;
+    let addressText = '';
     
-    const nasPattern = /\b[A-Z]{4}[0-9]{4}\b/g;
+    if (typeof address === 'string') {
+      addressText = address;
+    } else if (typeof address === 'object') {
+      // Handle JSON object format
+      addressText = `${address.address1 || ''} ${address.address2 || ''} ${address.city || ''} ${address.zip || ''}`;
+    }
+    
+    // Look for patterns like KUGA4386, RIYD2342, RESB3139, etc.
+    const nasPattern = /\b[A-Z]{4}[0-9]{4}\b/gi;
     const matches = addressText.match(nasPattern);
-    return matches ? matches[0] : null;
+    return matches ? matches[0].toUpperCase() : null;
   };
 
   const renderAddressCard = (data: SPLAddressData, source: string) => (

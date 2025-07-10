@@ -4,7 +4,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { shopifyService, ShopifyService } from "./services/shopify";
 import { nasService } from "./services/nasService";
-import { fetchAddressFromSPL } from "./services/splService";
+import * as splService from "./services/splService";
 import { whatsappService } from "./services/whatsappService";
 import { webhookService } from "./services/webhookService";
 import { courierService } from "./services/courierService";
