@@ -183,6 +183,7 @@ Changelog:
   - Removed hardcoded trend data from KPI Cards component and unused trend icons
   - Replaced hardcoded "Next Pickups", "Pending Manifests", and "Unassigned Routes" with empty states
   - Removed mock activity data fallback - now displays only authentic real-time activity
+  - Cleared live activity feed API to return empty array - activity section now hidden
   - Dashboard now displays 100% authentic data with proper empty states reflecting true operational state
 - July 10, 2025. Completed comprehensive Settings layout redesign matching Inventory structure
   - Restructured Settings into 3 major tabs: Warehouse, Users, Clients (removed KPI cards as requested)

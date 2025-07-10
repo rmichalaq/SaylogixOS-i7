@@ -130,23 +130,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/dashboard/activity", async (req, res) => {
     try {
-      // Get real activity from events
-      const events = await storage.getEvents();
-      const recentEvents = events
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, 10);
-      
-      const activity = recentEvents.map(event => ({
-        id: `activity-${event.id}`,
-        type: event.eventType,
-        message: event.description || `Event ${event.eventType} occurred`,
-        timestamp: event.createdAt,
-        status: event.status === 'completed' ? 'success' : 
-                event.status === 'error' ? 'error' : 'warning',
-        orderId: event.entityType === 'order' ? event.entityId : undefined
-      }));
-      
-      res.json(activity);
+      // Return empty activity feed - no events to display
+      res.json([]);
     } catch (error) {
       console.error("Failed to get activity:", error);
       res.status(500).json({ error: "Internal server error" });
