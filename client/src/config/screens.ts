@@ -11,7 +11,7 @@ import DispatchPage from "@/pages/Dispatch";
 import LastMilePage from "@/pages/LastMile";
 import ReportsPage from "@/pages/Reports";
 import Settings from "@/pages/Settings";
-import Integrations from "@/pages/Integrations";
+import IntegrationsRedesigned from "@/pages/IntegrationsRedesigned";
 
 export interface ScreenConfig {
   path: string;
@@ -115,7 +115,7 @@ export const screens: ScreenConfig[] = [
   },
   {
     path: "/integrations",
-    component: Integrations,
+    component: IntegrationsRedesigned,
     label: "Integrations",
     menuGroup: "System",
     scan: { enabled: false },
