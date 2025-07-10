@@ -384,6 +384,7 @@ interface Order {
   saylogixNumber: string;
   sourceOrderNumber: string;
   sourceChannel: string;
+  sourceChannelData?: any;
   status: string;
   priority: string;
   customerName: string;
@@ -392,6 +393,7 @@ interface Order {
   region: string;
   courierService: string;
   totalAmount: string;
+  orderValue?: string;
   currency: string;
   itemCount: number;
   createdAt: string;
@@ -438,7 +440,7 @@ function OrderDetailsDrawer({
         priority: order.priority || "",
         status: order.status || "",
         courierService: order.courierService || "",
-        totalAmount: order.totalAmount || "",
+        totalAmount: order.orderValue || order.sourceChannelData?.total_price || order.totalAmount || "",
         currency: order.currency || ""
       });
     }
@@ -474,7 +476,7 @@ function OrderDetailsDrawer({
         priority: order.priority || "",
         status: order.status || "",
         courierService: order.courierService || "",
-        totalAmount: order.totalAmount || "",
+        totalAmount: order.orderValue || order.sourceChannelData?.total_price || order.totalAmount || "",
         currency: order.currency || ""
       });
     }
@@ -494,26 +496,26 @@ function OrderDetailsDrawer({
         </SheetHeader>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="saylogixNumber">Saylogix Number</Label>
-              <Input
-                id="saylogixNumber"
-                value={order.saylogixNumber}
-                disabled
-                className="bg-gray-50"
-              />
+          {/* Order References */}
+          <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+            <h3 className="text-sm font-medium text-gray-700">Order References</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-1">
+                <Label className="text-xs text-gray-500">Saylogix Number</Label>
+                <div className="font-medium">{order.saylogixNumber}</div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-gray-500">Shopify Number</Label>
+                <div className="font-medium">#{order.sourceOrderNumber}</div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-gray-500">Order ID</Label>
+                <div className="font-medium">{order.sourceChannelData?.id || order.sourceOrderNumber}</div>
+              </div>
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="sourceOrderNumber">Source Order</Label>
-              <Input
-                id="sourceOrderNumber"
-                value={order.sourceOrderNumber}
-                disabled
-                className="bg-gray-50"
-              />
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             <div className="space-y-2">
               <Label htmlFor="customerName">Customer Name</Label>
@@ -755,7 +757,7 @@ function SortableColumnHeader({
 }
 
 // Main Orders Table Component
-function OrdersTable() {
+function OrdersTable({ statusFilter }: { statusFilter?: string }) {
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: "", direction: null });
   const [columnFilters, setColumnFilters] = useState<ColumnFilters>({});
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -817,6 +819,16 @@ function OrdersTable() {
     if (!orders) return [];
     
     let filteredOrders = orders.filter((order: Order) => {
+      // Apply status filter based on tab
+      if (statusFilter && statusFilter !== 'all') {
+        if (statusFilter === 'new') {
+          // New orders are those with status 'fetched' or 'received'
+          if (!['fetched', 'received'].includes(order.status)) return false;
+        } else if (order.status !== statusFilter) {
+          return false;
+        }
+      }
+      
       // Apply column filters
       const matchesColumnFilters = Object.entries(columnFilters).every(([column, filterValue]) => {
         if (!filterValue) return true;
@@ -844,7 +856,7 @@ function OrdersTable() {
     }
 
     return filteredOrders;
-  }, [orders, sortConfig, columnFilters]);
+  }, [orders, sortConfig, columnFilters, statusFilter]);
 
   const handleRowClick = (order: Order) => {
     setSelectedOrder(order);
@@ -990,7 +1002,7 @@ function OrdersTable() {
                         <div className="space-y-1">
                           <div className="font-medium text-gray-900">{order.saylogixNumber}</div>
                           <div className="text-sm text-gray-500">Shopify: #{order.sourceOrderNumber}</div>
-                          <div className="text-xs text-gray-400">ID: {order.id}</div>
+                          <div className="text-xs text-gray-400">Order: {order.sourceChannelData?.id || order.sourceOrderNumber}</div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -1007,7 +1019,12 @@ function OrdersTable() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="font-medium text-gray-900">
-                          {parseFloat(order.totalAmount).toFixed(2)} {order.currency}
+                          {order.orderValue ? 
+                            `${parseFloat(order.orderValue).toLocaleString('en-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${order.currency}` : 
+                            order.sourceChannelData?.total_price ? 
+                              `${parseFloat(order.sourceChannelData.total_price).toLocaleString('en-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${order.currency}` : 
+                              `${parseFloat(order.totalAmount || '0').toLocaleString('en-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${order.currency}`
+                          }
                         </div>
                         <div className="text-sm text-gray-500">{order.itemCount} items</div>
                       </td>
@@ -1015,7 +1032,7 @@ function OrdersTable() {
                         <div className="text-gray-900">{order.courierService || 'Not assigned'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                        {order.createdAt ? format(new Date(order.createdAt), 'MMM dd, yyyy') : '-'}
+                        {order.createdAt ? format(new Date(order.createdAt), 'MMM dd, yyyy - hh:mm:ss a') : '-'}
                       </td>
                     </tr>
                   ))}
@@ -1151,31 +1168,31 @@ export default function Orders() {
             </div>
             
             <TabsContent value="all">
-              <OrdersTable />
+              <OrdersTable statusFilter="all" />
             </TabsContent>
             
             <TabsContent value="new">
-              <OrdersTable />
+              <OrdersTable statusFilter="new" />
             </TabsContent>
             
             <TabsContent value="picked">
-              <OrdersTable />
+              <OrdersTable statusFilter="picked" />
             </TabsContent>
             
             <TabsContent value="packed">
-              <OrdersTable />
+              <OrdersTable statusFilter="packed" />
             </TabsContent>
             
             <TabsContent value="dispatched">
-              <OrdersTable />
+              <OrdersTable statusFilter="dispatched" />
             </TabsContent>
             
             <TabsContent value="delivered">
-              <OrdersTable />
+              <OrdersTable statusFilter="delivered" />
             </TabsContent>
             
             <TabsContent value="cancelled">
-              <OrdersTable />
+              <OrdersTable statusFilter="cancelled" />
             </TabsContent>
           </Tabs>
         </TabsContent>

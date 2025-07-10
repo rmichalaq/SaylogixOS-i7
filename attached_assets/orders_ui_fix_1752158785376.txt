@@ -1,0 +1,64 @@
+## Orders UI Fix - Consistency & Data Corrections
+
+### 🛠 Summary of Fixes Required
+
+This file outlines the necessary corrections to the Orders UI to align it with expected data structure and behavior.
+
+---
+
+### ✅ Layout & Data Consistency Fixes
+
+#### 1. **Order References (3 Identifiers)**
+- **Current issue**: Only two identifiers are shown: SL Order ID and Shopify hash (e.g. `#1018`), followed by an internal `ID: 77`.
+- **Fix**:
+  - Remove the current "ID" field (e.g., `ID: 77`).
+  - Add third reference as: `Order: <long Shopify ID>` (e.g. `Order: 6549350875363`).
+  - Final structure:
+    ```
+    SL25-015
+    Shopify: #1018
+    Order: 6549350875363
+    ```
+
+#### 2. **Value Field (NaN SAR)**
+- **Current issue**: Shows `NaN SAR`, indicating failed value parsing.
+- **Fix**: 
+  - Fetch `total_price` from Shopify order object.
+  - Format it to currency with two decimals: `1,862.44 SAR`
+  - Replace NaN with correct value.
+
+#### 3. **Created Field Format**
+- **Current issue**: Displays date only (`Jul 09, 2025`).
+- **Fix**: 
+  - Change to include timestamp: `Jul 09, 2025 - 11:10:06 AM`
+
+---
+
+### 🔍 Subtab Filtering Logic
+
+#### 4. **Subtab Behavior**
+- **Current issue**: All tabs (New, Picked, Packed, Dispatched, Delivered, Cancelled) show the same unfiltered list.
+- **Fix**:
+  - Only `All` and `New` should show data now.
+  - For all other tabs (`Picked`, `Packed`, `Dispatched`, `Delivered`, `Cancelled`):
+    - Filter by internal order status.
+    - If no orders exist in that state, return empty result.
+
+---
+
+### 🧪 Testing Criteria
+
+- [ ] Clicking any order opens drawer with 3 correct references.
+- [ ] Value is fetched from Shopify and not `NaN`.
+- [ ] Created shows both date and time.
+- [ ] Subtabs reflect filtered content per status.
+
+---
+
+### 🔖 Optional Enhancements
+
+- Consider adding tooltip on each reference to clarify:
+  - `Shopify: #1018` → Tooltip: "Short Shopify Order Number"
+  - `Order: 6549350875363` → Tooltip: "Shopify Order ID"
+
+---
