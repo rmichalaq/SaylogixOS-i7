@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { 
   Package, 
   Search, 
@@ -30,10 +31,105 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
-  Timer
+  Timer,
+  ChevronUp,
+  ChevronDown,
+  MoreHorizontal
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
+
+// Types for sorting and filtering
+type SortConfig = {
+  key: string;
+  direction: 'asc' | 'desc' | null;
+};
+
+type ColumnFilters = {
+  [key: string]: string;
+};
+
+// Sortable Column Header Component
+function SortableColumnHeader({ 
+  column, 
+  label, 
+  className = "",
+  sortConfig,
+  columnFilters,
+  onSort,
+  onFilter,
+  onClearFilter
+}: { 
+  column: string; 
+  label: string; 
+  className?: string;
+  sortConfig: SortConfig;
+  columnFilters: ColumnFilters;
+  onSort: (column: string) => void;
+  onFilter: (column: string, value: string) => void;
+  onClearFilter: (column: string) => void;
+}) {
+  const getSortIcon = () => {
+    if (sortConfig.key !== column) return null;
+    return sortConfig.direction === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />;
+  };
+
+  const hasActiveFilter = columnFilters[column] && columnFilters[column].length > 0;
+
+  return (
+    <th className={`px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider ${className}`}>
+      <div className="flex items-center justify-between group">
+        <button
+          onClick={() => onSort(column)}
+          className="flex items-center space-x-1 hover:text-gray-700 transition-colors"
+        >
+          <span>{label}</span>
+          {getSortIcon()}
+        </button>
+        
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity ${
+                hasActiveFilter ? 'opacity-100 text-blue-600' : ''
+              }`}
+            >
+              <MoreHorizontal className="h-3 w-3" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-64 p-3" align="start">
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor={`filter-${column}`} className="text-sm font-medium">
+                  Filter {label}
+                </Label>
+                <Input
+                  id={`filter-${column}`}
+                  placeholder={`Search ${label.toLowerCase()}...`}
+                  value={columnFilters[column] || ''}
+                  onChange={(e) => onFilter(column, e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              {hasActiveFilter && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onClearFilter(column)}
+                  className="w-full"
+                >
+                  Clear Filter
+                </Button>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    </th>
+  );
+}
 
 // View Tab Components
 function ViewAllProducts() {
@@ -41,32 +137,162 @@ function ViewAllProducts() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: '', direction: null });
+  const [columnFilters, setColumnFilters] = useState<ColumnFilters>({});
 
   const { data: inventory, isLoading } = useQuery({
     queryKey: ["/api/inventory"],
     refetchInterval: 30000
   });
 
-  const filteredInventory = inventory?.filter((item: any) => {
-    const matchesSearch = searchTerm === "" || 
-      item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.productName.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
-    
-    return matchesSearch && matchesCategory;
-  }) || [];
+  const filteredInventory = React.useMemo(() => {
+    if (!inventory) return [];
+
+    let items = inventory.filter((item: any) => {
+      const matchesSearch = searchTerm === "" || 
+        item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.productName.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
+      
+      // Apply column filters
+      const matchesColumnFilters = Object.entries(columnFilters).every(([column, filterValue]) => {
+        if (!filterValue) return true;
+        const itemValue = getColumnValue(item, column).toString().toLowerCase();
+        return itemValue.includes(filterValue.toLowerCase());
+      });
+      
+      return matchesSearch && matchesCategory && matchesColumnFilters;
+    });
+
+    // Apply sorting
+    if (sortConfig.key && sortConfig.direction) {
+      items.sort((a, b) => {
+        const aValue = getColumnValue(a, sortConfig.key);
+        const bValue = getColumnValue(b, sortConfig.key);
+        
+        if (aValue < bValue) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+
+    return items;
+  }, [inventory, searchTerm, categoryFilter, columnFilters, sortConfig]);
 
   const categories = [...new Set(inventory?.map((item: any) => item.category).filter(Boolean))] || [];
+
+  // Helper function to get column values for sorting and filtering
+  const getColumnValue = (item: any, column: string) => {
+    switch (column) {
+      case 'product':
+        return item.sku + ' ' + item.productName;
+      case 'category':
+        return item.category || '';
+      case 'available':
+        return item.availableQty || 0;
+      case 'reserved':
+        return item.reservedQty || 0;
+      case 'onHand':
+        return item.onHandQty || 0;
+      case 'status':
+        return item.status || '';
+      default:
+        return '';
+    }
+  };
+
+  // Handle column sorting
+  const handleSort = (column: string) => {
+    let direction: 'asc' | 'desc' | null = 'asc';
+    
+    if (sortConfig.key === column && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    } else if (sortConfig.key === column && sortConfig.direction === 'desc') {
+      direction = null;
+    }
+    
+    setSortConfig({ key: column, direction });
+  };
+
+  // Handle column filtering
+  const handleColumnFilter = (column: string, value: string) => {
+    setColumnFilters(prev => ({
+      ...prev,
+      [column]: value
+    }));
+  };
+
+  // Clear filter for a specific column
+  const clearColumnFilter = (column: string) => {
+    setColumnFilters(prev => {
+      const newFilters = { ...prev };
+      delete newFilters[column];
+      return newFilters;
+    });
+  };
 
   const handleProductClick = (product: any) => {
     setSelectedProduct(product);
     setEditDrawerOpen(true);
   };
 
+
+
+  // Check if any filters are active
+  const hasActiveFilters = Object.keys(columnFilters).some(key => columnFilters[key]);
+  const hasActiveSort = sortConfig.key && sortConfig.direction;
+
   return (
     <div className="space-y-6">
-      
+      {/* Active Filters Display */}
+      {(hasActiveFilters || hasActiveSort) && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <h4 className="text-sm font-medium text-gray-700">Active Filters & Sort:</h4>
+                <div className="flex items-center space-x-2">
+                  {hasActiveSort && (
+                    <Badge variant="outline" className="text-xs">
+                      Sort: {sortConfig.key} {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                    </Badge>
+                  )}
+                  {Object.entries(columnFilters).map(([column, value]) => (
+                    value && (
+                      <Badge key={column} variant="outline" className="text-xs">
+                        {column}: "{value}"
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-4 w-4 p-0 ml-1"
+                          onClick={() => clearColumnFilter(column)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
+                    )
+                  ))}
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setColumnFilters({});
+                  setSortConfig({ key: '', direction: null });
+                }}
+              >
+                Clear All
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Products Table */}
       <Card>
@@ -89,24 +315,66 @@ function ViewAllProducts() {
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Product
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Category
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Available
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Reserved
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      On Hand
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
+                    <SortableColumnHeader 
+                      column="product" 
+                      label="Product" 
+                      className="text-left"
+                      sortConfig={sortConfig}
+                      columnFilters={columnFilters}
+                      onSort={handleSort}
+                      onFilter={handleColumnFilter}
+                      onClearFilter={clearColumnFilter}
+                    />
+                    <SortableColumnHeader 
+                      column="category" 
+                      label="Category" 
+                      className="text-center"
+                      sortConfig={sortConfig}
+                      columnFilters={columnFilters}
+                      onSort={handleSort}
+                      onFilter={handleColumnFilter}
+                      onClearFilter={clearColumnFilter}
+                    />
+                    <SortableColumnHeader 
+                      column="available" 
+                      label="Available" 
+                      className="text-center"
+                      sortConfig={sortConfig}
+                      columnFilters={columnFilters}
+                      onSort={handleSort}
+                      onFilter={handleColumnFilter}
+                      onClearFilter={clearColumnFilter}
+                    />
+                    <SortableColumnHeader 
+                      column="reserved" 
+                      label="Reserved" 
+                      className="text-center"
+                      sortConfig={sortConfig}
+                      columnFilters={columnFilters}
+                      onSort={handleSort}
+                      onFilter={handleColumnFilter}
+                      onClearFilter={clearColumnFilter}
+                    />
+                    <SortableColumnHeader 
+                      column="onHand" 
+                      label="On Hand" 
+                      className="text-center"
+                      sortConfig={sortConfig}
+                      columnFilters={columnFilters}
+                      onSort={handleSort}
+                      onFilter={handleColumnFilter}
+                      onClearFilter={clearColumnFilter}
+                    />
+                    <SortableColumnHeader 
+                      column="status" 
+                      label="Status" 
+                      className="text-center"
+                      sortConfig={sortConfig}
+                      columnFilters={columnFilters}
+                      onSort={handleSort}
+                      onFilter={handleColumnFilter}
+                      onClearFilter={clearColumnFilter}
+                    />
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
