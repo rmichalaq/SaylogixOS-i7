@@ -135,54 +135,7 @@ export default function DashboardRedesigned() {
     return time.toLocaleDateString();
   };
 
-  // Mock activity data if none exists
-  const mockActivity: ActivityEvent[] = [
-    {
-      id: "1",
-      type: "user_scan",
-      message: "User Ali scanned SKU-001 for Order SL25-030",
-      timestamp: new Date(Date.now() - 2 * 60000).toISOString(),
-      status: "success",
-      userId: "ali",
-      userName: "Ali",
-      sku: "SKU-001",
-      orderId: "SL25-030"
-    },
-    {
-      id: "2",
-      type: "tote_dispatched",
-      message: "Tote T-045 dispatched from Jeddah FC to Riyadh Hub",
-      timestamp: new Date(Date.now() - 5 * 60000).toISOString(),
-      status: "success",
-      toteId: "T-045",
-      location: "Jeddah FC"
-    },
-    {
-      id: "3",
-      type: "manifest_generated",
-      message: "Manifest M-001 generated for Aramex pickup",
-      timestamp: new Date(Date.now() - 8 * 60000).toISOString(),
-      status: "success"
-    },
-    {
-      id: "4",
-      type: "order_received",
-      message: "New order SL25-031 received from Shopify",
-      timestamp: new Date(Date.now() - 12 * 60000).toISOString(),
-      status: "success",
-      orderId: "SL25-031"
-    },
-    {
-      id: "5",
-      type: "address_verification",
-      message: "Address verified for order SL25-029",
-      timestamp: new Date(Date.now() - 15 * 60000).toISOString(),
-      status: "success",
-      orderId: "SL25-029"
-    }
-  ];
-
-  const displayActivity = activity.length > 0 ? activity : mockActivity;
+  const displayActivity = activity;
 
   return (
     <div className="flex-1 p-6 bg-gray-50 space-y-6">
@@ -318,19 +271,9 @@ export default function DashboardRedesigned() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between p-2 bg-blue-50 rounded">
-                <span className="text-sm font-medium">Aramex</span>
-                <Badge variant="outline">2:30 PM</Badge>
-              </div>
-              <div className="flex items-center justify-between p-2 bg-blue-50 rounded">
-                <span className="text-sm font-medium">SMSA</span>
-                <Badge variant="outline">3:00 PM</Badge>
-              </div>
-              <div className="flex items-center justify-between p-2 bg-blue-50 rounded">
-                <span className="text-sm font-medium">Fastlo</span>
-                <Badge variant="outline">4:15 PM</Badge>
-              </div>
+            <div className="text-center py-6 text-gray-500">
+              <TruckIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm">No scheduled pickups</p>
             </div>
           </CardContent>
         </Card>
@@ -343,21 +286,9 @@ export default function DashboardRedesigned() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between p-2 bg-yellow-50 rounded">
-                <span className="text-sm font-medium">Manifest M-003</span>
-                <Badge variant="outline">12 orders</Badge>
-              </div>
-              <div className="flex items-center justify-between p-2 bg-yellow-50 rounded">
-                <span className="text-sm font-medium">Manifest M-004</span>
-                <Badge variant="outline">8 orders</Badge>
-              </div>
-              <div className="text-center py-2">
-                <Button variant="outline" size="sm">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Generate All
-                </Button>
-              </div>
+            <div className="text-center py-6 text-gray-500">
+              <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm">No pending manifests</p>
             </div>
           </CardContent>
         </Card>
@@ -370,21 +301,9 @@ export default function DashboardRedesigned() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between p-2 bg-red-50 rounded">
-                <span className="text-sm font-medium">Route R-005</span>
-                <Badge variant="destructive">No Driver</Badge>
-              </div>
-              <div className="flex items-center justify-between p-2 bg-red-50 rounded">
-                <span className="text-sm font-medium">Route R-006</span>
-                <Badge variant="destructive">No Driver</Badge>
-              </div>
-              <div className="text-center py-2">
-                <Button variant="outline" size="sm">
-                  <Users className="h-4 w-4 mr-2" />
-                  Assign Drivers
-                </Button>
-              </div>
+            <div className="text-center py-6 text-gray-500">
+              <Route className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm">No unassigned routes</p>
             </div>
           </CardContent>
         </Card>

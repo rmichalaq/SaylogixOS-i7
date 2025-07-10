@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
-import { ShoppingCart, Hand, Truck, CheckCircle, TrendingUp, ArrowRight } from "lucide-react";
+import { ShoppingCart, Hand, Truck, CheckCircle } from "lucide-react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 function KpiCardsContent() {
@@ -31,8 +31,6 @@ function KpiCardsContent() {
     {
       title: "Active Orders",
       value: stats?.activeOrders || 0,
-      trend: "+12% from yesterday",
-      trendUp: true,
       icon: ShoppingCart,
       bgColor: "bg-blue-100",
       iconColor: "text-blue-600"
@@ -40,8 +38,6 @@ function KpiCardsContent() {
     {
       title: "In Picking",
       value: stats?.inPicking || 0,
-      trend: "2 priority orders",
-      trendUp: null,
       icon: Hand,
       bgColor: "bg-amber-100",
       iconColor: "text-amber-600"
@@ -49,8 +45,6 @@ function KpiCardsContent() {
     {
       title: "Ready to Ship",
       value: stats?.readyToShip || 0,
-      trend: "+8% efficiency",
-      trendUp: true,
       icon: Truck,
       bgColor: "bg-green-100",
       iconColor: "text-green-600"
@@ -58,8 +52,6 @@ function KpiCardsContent() {
     {
       title: "Delivered Today",
       value: stats?.deliveredToday || 0,
-      trend: "98.2% success rate",
-      trendUp: true,
       icon: CheckCircle,
       bgColor: "bg-green-100",
       iconColor: "text-green-600"
@@ -91,15 +83,6 @@ function KpiCardsContent() {
                 <div>
                   <p className="text-sm font-medium text-gray-600">{card.title}</p>
                   <p className="text-3xl font-bold text-gray-900">{card.value}</p>
-                  <p className={`text-sm flex items-center ${
-                    card.trendUp === true ? 'text-green-600' : 
-                    card.trendUp === false ? 'text-red-600' : 'text-amber-600'
-                  }`}>
-                    {card.trendUp === true && <TrendingUp className="w-3 h-3 mr-1" />}
-                    {card.trendUp === false && <TrendingUp className="w-3 h-3 mr-1 rotate-180" />}
-                    {card.trendUp === null && <ArrowRight className="w-3 h-3 mr-1" />}
-                    {card.trend}
-                  </p>
                 </div>
                 <div className={`w-12 h-12 ${card.bgColor} rounded-lg flex items-center justify-center`}>
                   <Icon className={`h-6 w-6 ${card.iconColor}`} />
