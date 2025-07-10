@@ -1,4 +1,4 @@
-import Dashboard from "@/pages/Dashboard";
+import DashboardRedesigned from "@/pages/DashboardRedesigned";
 import OrdersPage from "@/pages/Orders";
 import VerifyPage from "@/pages/AddressVerify";
 import TrackingPage from "@/pages/tracking/TrackingPage";
@@ -26,7 +26,7 @@ export interface ScreenConfig {
 export const screens: ScreenConfig[] = [
   {
     path: "/dashboard",
-    component: Dashboard,
+    component: DashboardRedesigned,
     label: "Dashboard",
     menuGroup: "Overview",
     scan: { enabled: false },

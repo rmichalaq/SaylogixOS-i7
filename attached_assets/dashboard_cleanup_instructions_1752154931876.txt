@@ -1,0 +1,70 @@
+## Saylogix Dashboard Cleanup Instructions (.md for Replit)
+
+### Objective
+Clean and modernize the Saylogix Dashboard so it behaves as a control center with alerts, volume stats, real-time updates, and actionable insights. Eliminate visual clutter and non-critical information.
+
+---
+
+### ✅ What To Display
+
+#### 🔔 Critical Alerts Panel (Top Left)
+**This must always be visible, red/yellow coded and refreshed live:**
+- `# of Orders Not Picked` past cutoff (highlight SLA violation)
+- `# of Courier Failures` (pickup not confirmed, API not responsive)
+- `# of NAS Address Failures`
+- `# of SKUs with No Stock`
+
+#### 📊 Today’s Load Summary (Top Center)
+Display the day’s operational volume across key zones:
+- **Orders to Fulfill Today**
+- **Pickups Scheduled**
+- **Last Mile Routes Created**
+- **Manifests Generated**
+
+#### 🧠 Live Activity Feed (Center Panel)
+Replace "no recent activity" with actual timeline feed:
+- `User Ali scanned SKU-001 for Order SL25-030`
+- `Tote T-045 dispatched from Jeddah FC to Riyadh Hub`
+- Include timestamp and user info
+
+#### 🧭 Upcoming Actions (Bottom Panel)
+Use cards for upcoming work:
+- `Next Pickups (list by courier)`
+- `Pending Manifests`
+- `Routes Missing Courier Assignment`
+
+---
+
+### 🧹 What To Remove or Move
+
+- ❌ “+12% from yesterday” stats: not actionable
+- ❌ “Quick Actions” box → move these to Settings sidebar or sticky FAB (floating action button)
+- ❌ “Order Processing Performance” → replace with actual visualizations only if they show delay heatmap or SLA breach graph
+
+---
+
+### 🧪 Mock Data Seeding
+Use mock seed entries for visual testing:
+- Orders: `MOCK_Order_001` to `MOCK_Order_020`
+- Users: `User_Ali`, `User_Sara`
+- Couriers: `MOCK_Flow`, `MOCK_Aramex`
+- Tote movements, dispatches, address failures
+
+> 📝 Add `"source": "MOCK_Dashboard"` to DB entries for easy removal
+
+---
+
+### 🧩 Future Enhancements (optional)
+- Add tabs for: **Operations / Exceptions / Courier Failures**
+- Integrate graphs powered by real data (if performance allows)
+- Filter feed by warehouse (if multiple FCs exist)
+
+---
+
+### Final Note
+**Keep it modern, light, sharp.** 
+The user must know in 5 seconds what needs their attention and what today’s volume looks like.
+
+Use Inventory layout as the design baseline.
+
+---

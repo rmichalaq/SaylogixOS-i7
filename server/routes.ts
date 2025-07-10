@@ -18,8 +18,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard API
   app.get("/api/dashboard/stats", async (req, res) => {
     try {
-      const stats = await storage.getDashboardStats();
-      res.json(stats);
+      const baseStats = await storage.getDashboardStats();
+      
+      // Enhanced stats for the modernized dashboard
+      const enhancedStats = {
+        ...baseStats,
+        // Critical alerts data
+        ordersNotPicked: 3, // Mock: orders past SLA cutoff
+        courierFailures: 1, // Mock: API not responsive
+        nasFailures: 2, // Mock: address verification failures
+        outOfStock: 5, // Mock: SKUs with no inventory
+        
+        // Today's load summary
+        ordersToFulfillToday: 28,
+        pickupsScheduled: 4,
+        routesCreated: 6,
+        manifestsGenerated: 3,
+        
+        // Upcoming actions
+        nextPickups: [
+          { courier: "Aramex", time: "2:30 PM", manifestId: "M-001" },
+          { courier: "SMSA", time: "3:00 PM", manifestId: "M-002" },
+          { courier: "Fastlo", time: "4:15 PM", manifestId: "M-003" }
+        ],
+        pendingManifests: [
+          { id: "M-003", orderCount: 12 },
+          { id: "M-004", orderCount: 8 }
+        ],
+        unassignedRoutes: [
+          { id: "R-005", reason: "No Driver" },
+          { id: "R-006", reason: "No Driver" }
+        ]
+      };
+      
+      res.json(enhancedStats);
     } catch (error) {
       console.error("Failed to get dashboard stats:", error);
       res.status(500).json({ error: "Internal server error" });
@@ -133,17 +165,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const events = await storage.getEvents();
       const recentEvents = events
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, 20);
+        .slice(0, 5);
       
-      const activity = recentEvents.map(event => ({
+      const realActivity = recentEvents.map(event => ({
         id: `activity-${event.id}`,
         type: event.eventType,
         message: event.description || `Event ${event.eventType} occurred`,
         timestamp: event.createdAt,
+        status: event.status === 'completed' ? 'success' : 
+                event.status === 'error' ? 'error' : 'warning',
         orderId: event.entityType === 'order' ? event.entityId : undefined
       }));
 
-      res.json(activity);
+      // Add mock activity for demonstration (marked with source for easy removal)
+      const mockActivity = [
+        {
+          id: "mock_1",
+          type: "user_scan",
+          message: "User Ali scanned SKU-001 for Order SL25-030",
+          timestamp: new Date(Date.now() - 2 * 60000).toISOString(),
+          status: "success",
+          userId: "ali",
+          userName: "Ali",
+          sku: "SKU-001",
+          orderId: "SL25-030",
+          source: "MOCK_Dashboard"
+        },
+        {
+          id: "mock_2", 
+          type: "tote_dispatched",
+          message: "Tote T-045 dispatched from Jeddah FC to Riyadh Hub",
+          timestamp: new Date(Date.now() - 5 * 60000).toISOString(),
+          status: "success",
+          toteId: "T-045",
+          location: "Jeddah FC",
+          source: "MOCK_Dashboard"
+        },
+        {
+          id: "mock_3",
+          type: "manifest_generated", 
+          message: "Manifest M-001 generated for Aramex pickup",
+          timestamp: new Date(Date.now() - 8 * 60000).toISOString(),
+          status: "success",
+          source: "MOCK_Dashboard"
+        },
+        {
+          id: "mock_4",
+          type: "order_received",
+          message: "New order SL25-031 received from Shopify",
+          timestamp: new Date(Date.now() - 12 * 60000).toISOString(), 
+          status: "success",
+          orderId: "SL25-031",
+          source: "MOCK_Dashboard"
+        },
+        {
+          id: "mock_5",
+          type: "address_verification",
+          message: "Address verified for order SL25-029",
+          timestamp: new Date(Date.now() - 15 * 60000).toISOString(),
+          status: "success", 
+          orderId: "SL25-029",
+          source: "MOCK_Dashboard"
+        }
+      ];
+
+      // Combine real and mock activity, limit to 10 items
+      const combinedActivity = [...realActivity, ...mockActivity].slice(0, 10);
+      
+      res.json(combinedActivity);
     } catch (error) {
       console.error("Failed to get activity:", error);
       res.status(500).json({ error: "Internal server error" });
