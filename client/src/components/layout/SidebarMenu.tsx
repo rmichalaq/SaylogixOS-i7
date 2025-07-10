@@ -158,7 +158,7 @@ export default function SidebarMenu() {
               <Package className="h-4 w-4 text-white" />
             </div>
             {!isCollapsed && (
-              <span className="text-xl font-bold text-secondary-700 whitespace-nowrap overflow-hidden font-mono tracking-wider">
+              <span className="text-xl font-bold text-secondary-700 whitespace-nowrap overflow-hidden font-orbitron tracking-wider">
                 SAYLOGIX
               </span>
             )}
