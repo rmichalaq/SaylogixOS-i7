@@ -354,7 +354,7 @@ export default function IntegrationsRedesigned() {
     
     return (
       <Card className="h-auto">
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <img 
@@ -364,7 +364,6 @@ export default function IntegrationsRedesigned() {
               />
               <div>
                 <CardTitle className="text-lg">Shopify</CardTitle>
-                <CardDescription className="text-sm">Main Store</CardDescription>
               </div>
             </div>
             <Badge variant="default">
@@ -374,191 +373,177 @@ export default function IntegrationsRedesigned() {
           </div>
         </CardHeader>
         
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div className="flex flex-col items-center justify-center h-16 bg-gray-50 rounded">
-              <div className="text-2xl font-semibold">{mockShopifyStores[0]?.orderCount || 0}</div>
-              <div className="text-xs text-gray-600">Orders Synced</div>
-            </div>
-            <div className="flex flex-col items-center justify-center h-16 bg-gray-50 rounded">
-              <div className="text-2xl font-semibold">{mockShopifyStores[0]?.skuCount || 0}</div>
-              <div className="text-xs text-gray-600">SKUs Synced</div>
-            </div>
-          </div>
-          
-          <div className="flex gap-2">
-            <Sheet open={shopifyDrawerOpen} onOpenChange={setShopifyDrawerOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="sm" className="flex-1">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Configure
-                </Button>
-              </SheetTrigger>
-              <SheetContent className="w-[600px] sm:max-w-[600px]">
-                <SheetHeader>
-                  <SheetTitle>Shopify Integration</SheetTitle>
-                  <SheetDescription>
-                    Manage your Shopify store connections and view sync activity
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="mt-6">
-                  <Tabs value={shopifyDrawerTab} onValueChange={setShopifyDrawerTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-4">
-                      <TabsTrigger value="credentials">Credentials</TabsTrigger>
-                      <TabsTrigger value="skus">SKUs</TabsTrigger>
-                      <TabsTrigger value="orders">Orders</TabsTrigger>
-                      <TabsTrigger value="logs">Logs</TabsTrigger>
-                    </TabsList>
+        <CardContent>
+          <Sheet open={shopifyDrawerOpen} onOpenChange={setShopifyDrawerOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="w-full">
+                <Settings className="h-4 w-4 mr-2" />
+                Configure
+              </Button>
+            </SheetTrigger>
+            <SheetContent className="w-[600px] sm:max-w-[600px]">
+              <SheetHeader>
+                <SheetTitle>Shopify Integration</SheetTitle>
+                <SheetDescription>
+                  Manage your Shopify store connections and view sync activity
+                </SheetDescription>
+              </SheetHeader>
+              <div className="mt-6">
+                <Tabs value={shopifyDrawerTab} onValueChange={setShopifyDrawerTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="credentials">Credentials</TabsTrigger>
+                    <TabsTrigger value="skus">SKUs</TabsTrigger>
+                    <TabsTrigger value="orders">Orders</TabsTrigger>
+                    <TabsTrigger value="logs">Logs</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="credentials" className="space-y-4 mt-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-lg font-medium">Connected Stores</h4>
+                      <Button size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Store
+                      </Button>
+                    </div>
                     
-                    <TabsContent value="credentials" className="space-y-4 mt-4">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-lg font-medium">Connected Stores</h4>
-                        <Button size="sm">
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Store
-                        </Button>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        {mockShopifyStores.map((store) => (
-                          <Card key={store.id}>
-                            <CardContent className="p-4">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <h5 className="font-medium">{store.name}</h5>
-                                  <p className="text-sm text-gray-600">{store.storeUrl}</p>
-                                  <div className="flex items-center gap-4 mt-2 text-sm">
-                                    <span className="text-gray-600">
-                                      {store.orderCount} orders synced
-                                    </span>
-                                    <span className="text-gray-600">
-                                      {store.skuCount} SKUs synced
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Badge variant={store.isEnabled ? "default" : "secondary"}>
-                                    {store.isEnabled ? "Active" : "Inactive"}
-                                  </Badge>
-                                  <Button variant="outline" size="sm">
-                                    Edit
-                                  </Button>
+                    <div className="space-y-3">
+                      {mockShopifyStores.map((store) => (
+                        <Card key={store.id}>
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h5 className="font-medium">{store.name}</h5>
+                                <p className="text-sm text-gray-600">{store.storeUrl}</p>
+                                <div className="flex items-center gap-4 mt-2 text-sm">
+                                  <span className="text-gray-600">
+                                    {store.orderCount} orders synced
+                                  </span>
+                                  <span className="text-gray-600">
+                                    {store.skuCount} SKUs synced
+                                  </span>
                                 </div>
                               </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    </TabsContent>
-                    
-                    <TabsContent value="skus" className="space-y-4 mt-4">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-lg font-medium">Synced SKUs</h4>
-                        <Button variant="outline" size="sm">
-                          <RefreshCw className="h-4 w-4 mr-2" />
-                          Sync Now
-                        </Button>
-                      </div>
-                      
-                      <div className="max-h-96 overflow-y-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>SKU</TableHead>
-                              <TableHead>Product</TableHead>
-                              <TableHead>Stock</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {shopifySkus?.slice(0, 5).map((sku: any, index: number) => (
-                              <TableRow key={index}>
-                                <TableCell className="font-medium">{sku.sku}</TableCell>
-                                <TableCell>{sku.productName || "Product"}</TableCell>
-                                <TableCell>{sku.onHandQty || 0}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </TabsContent>
-                    
-                    <TabsContent value="orders" className="space-y-4 mt-4">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-lg font-medium">Recent Orders</h4>
-                        <Button variant="outline" size="sm">
-                          <RefreshCw className="h-4 w-4 mr-2" />
-                          Sync Now
-                        </Button>
-                      </div>
-                      
-                      <div className="max-h-96 overflow-y-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Order ID</TableHead>
-                              <TableHead>Customer</TableHead>
-                              <TableHead>Status</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {shopifyOrders?.slice(0, 5).map((order: any) => (
-                              <TableRow key={order.id}>
-                                <TableCell className="font-medium">{order.saylogixNumber}</TableCell>
-                                <TableCell>{order.customerName}</TableCell>
-                                <TableCell>
-                                  <Badge variant="outline">{order.status}</Badge>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </TabsContent>
-                    
-                    <TabsContent value="logs" className="space-y-4 mt-4">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-lg font-medium">Sync Logs</h4>
-                        <Button variant="outline" size="sm">
-                          <FileText className="h-4 w-4 mr-2" />
-                          Export
-                        </Button>
-                      </div>
-                      
-                      <div className="space-y-3 max-h-96 overflow-y-auto">
-                        {mockShopifyStores[0]?.syncLogs.map((log, idx) => (
-                          <div key={idx} className="flex items-start gap-3 p-3 border rounded">
-                            <Badge variant={log.status === 'success' ? 'default' : 'destructive'}>
-                              {log.status === 'success' ? (
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                              ) : (
-                                <XCircle className="h-3 w-3 mr-1" />
-                              )}
-                              {log.status}
-                            </Badge>
-                            <div className="flex-1">
-                              <p className="text-sm">{log.message}</p>
-                              <p className="text-xs text-gray-500">{new Date(log.timestamp).toLocaleString()}</p>
+                              <div className="flex items-center gap-2">
+                                <Badge variant={store.isEnabled ? "default" : "secondary"}>
+                                  {store.isEnabled ? "Active" : "Inactive"}
+                                </Badge>
+                                <Button variant="outline" size="sm">
+                                  Edit
+                                </Button>
+                              </div>
                             </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                    
+                    <div className="pt-4 border-t">
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={() => toggleIntegrationMutation.mutate({ name: 'shopify', enabled: false })}
+                      >
+                        Disconnect Integration
+                      </Button>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="skus" className="space-y-4 mt-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-lg font-medium">Synced SKUs</h4>
+                      <Button variant="outline" size="sm">
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Sync Now
+                      </Button>
+                    </div>
+                    
+                    <div className="max-h-96 overflow-y-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>SKU</TableHead>
+                            <TableHead>Product</TableHead>
+                            <TableHead>Stock</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {shopifySkus?.slice(0, 5).map((sku: any, index: number) => (
+                            <TableRow key={index}>
+                              <TableCell className="font-medium">{sku.sku}</TableCell>
+                              <TableCell>{sku.productName || "Product"}</TableCell>
+                              <TableCell>{sku.onHandQty || 0}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="orders" className="space-y-4 mt-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-lg font-medium">Recent Orders</h4>
+                      <Button variant="outline" size="sm">
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Sync Now
+                      </Button>
+                    </div>
+                    
+                    <div className="max-h-96 overflow-y-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Order ID</TableHead>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {shopifyOrders?.slice(0, 5).map((order: any) => (
+                            <TableRow key={order.id}>
+                              <TableCell className="font-medium">{order.saylogixNumber}</TableCell>
+                              <TableCell>{order.customerName}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline">{order.status}</Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="logs" className="space-y-4 mt-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-lg font-medium">Sync Logs</h4>
+                      <Button variant="outline" size="sm">
+                        <FileText className="h-4 w-4 mr-2" />
+                        Export
+                      </Button>
+                    </div>
+                    
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {mockShopifyStores[0]?.syncLogs.map((log, idx) => (
+                        <div key={idx} className="flex items-start gap-3 p-3 border rounded">
+                          <Badge variant={log.status === 'success' ? 'default' : 'destructive'}>
+                            {log.status === 'success' ? (
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                            ) : (
+                              <XCircle className="h-3 w-3 mr-1" />
+                            )}
+                            {log.status}
+                          </Badge>
+                          <div className="flex-1">
+                            <p className="text-sm">{log.message}</p>
+                            <p className="text-xs text-gray-500">{new Date(log.timestamp).toLocaleString()}</p>
                           </div>
-                        ))}
-                      </div>
-                    </TabsContent>
-                  </Tabs>
-                </div>
-              </SheetContent>
-            </Sheet>
-            
-            <Button variant="outline" size="sm">
-              <TestTube className="h-4 w-4 mr-2" />
-              Test
-            </Button>
-          </div>
-
-          <div className="flex justify-between items-center pt-2 border-t">
-            <div className="text-xs text-gray-600">
-              Last sync: {new Date(mockShopifyStores[0]?.lastSync || Date.now()).toLocaleString()}
-            </div>
-          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </div>
+            </SheetContent>
+          </Sheet>
         </CardContent>
       </Card>
     );
@@ -574,7 +559,7 @@ export default function IntegrationsRedesigned() {
     
     return (
       <Card className="h-auto">
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {config.logo ? (
@@ -591,7 +576,6 @@ export default function IntegrationsRedesigned() {
               <Box className={`h-8 w-8 text-gray-400 fallback-icon ${config.logo ? 'hidden' : ''}`} />
               <div>
                 <CardTitle className="text-lg">{config.title}</CardTitle>
-                <CardDescription className="text-sm">{config.description}</CardDescription>
               </div>
             </div>
             <Badge variant={integration.isEnabled ? "default" : "secondary"}>
@@ -610,59 +594,39 @@ export default function IntegrationsRedesigned() {
           </div>
         </CardHeader>
         
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div className="flex flex-col items-center justify-center h-16 bg-gray-50 rounded">
-              <div className="text-2xl font-semibold">{integration.successCount || 0}</div>
-              <div className="text-xs text-gray-600">Processed</div>
-            </div>
-            <div className="flex flex-col items-center justify-center h-16 bg-gray-50 rounded">
-              <div className="text-2xl font-semibold">{integration.failureCount || 0}</div>
-              <div className="text-xs text-gray-600">Failed</div>
-            </div>
-          </div>
-          
-          <div className="flex gap-2">
-            <Dialog open={configDialogOpen === config.name} onOpenChange={(open) => setConfigDialogOpen(open ? config.name : null)}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="flex-1">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Configure
+        <CardContent>
+          <Dialog open={configDialogOpen === config.name} onOpenChange={(open) => setConfigDialogOpen(open ? config.name : null)}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="w-full">
+                <Settings className="h-4 w-4 mr-2" />
+                Configure
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Configure {config.title}</DialogTitle>
+                <DialogDescription>
+                  Update your {config.title} integration credentials and settings
+                </DialogDescription>
+              </DialogHeader>
+              <ConfigForm 
+                integrationName={config.name} 
+                onClose={() => setConfigDialogOpen(null)} 
+              />
+              <div className="pt-4 border-t">
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  onClick={() => {
+                    toggleIntegrationMutation.mutate({ name: config.name, enabled: false });
+                    setConfigDialogOpen(null);
+                  }}
+                >
+                  Disconnect Integration
                 </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Configure {config.title}</DialogTitle>
-                  <DialogDescription>
-                    Update your {config.title} integration credentials and settings
-                  </DialogDescription>
-                </DialogHeader>
-                <ConfigForm 
-                  integrationName={config.name} 
-                  onClose={() => setConfigDialogOpen(null)} 
-                />
-              </DialogContent>
-            </Dialog>
-            
-            <Button variant="outline" size="sm">
-              <TestTube className="h-4 w-4 mr-2" />
-              Test
-            </Button>
-          </div>
-
-          <div className="flex justify-between items-center pt-2 border-t">
-            <div className="text-xs text-gray-600">
-              {integration.lastSyncAt && `Last sync: ${new Date(integration.lastSyncAt).toLocaleString()}`}
-            </div>
-            <Button 
-              variant="link" 
-              size="sm"
-              className="text-red-600 hover:text-red-700 p-0 h-auto"
-              onClick={() => toggleIntegrationMutation.mutate({ name: config.name, enabled: false })}
-            >
-              Disconnect
-            </Button>
-          </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
     );
