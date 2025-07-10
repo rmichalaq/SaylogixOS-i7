@@ -16,25 +16,25 @@ const menuItems = [
   {
     section: "Fulfillment",
     items: [
-      { path: "/orders", label: "Orders (OMS)", icon: ShoppingCart },
-      { path: "/verify", label: "Address Verify (NAS)", icon: MapPin },
+      { path: "/orders", label: "Orders", icon: ShoppingCart },
+      { path: "/verify", label: "Verify NAS", icon: MapPin },
       { path: "/tracking", label: "Tracking", icon: Truck }
     ]
   },
   {
     section: "Warehouse",
     items: [
-      { path: "/inventory", label: "Inventory (WMS)", icon: Package, hasSubmenu: true },
       { path: "/inbound", label: "Inbound", icon: ArrowDown },
+      { path: "/inventory", label: "Inventory", icon: Package, hasSubmenu: true },
+      { path: "/packing", label: "Packing", icon: Box },
       { path: "/picking", label: "Picking", icon: Hand },
-      { path: "/packing", label: "Packing", icon: Box }
+      { path: "/dispatch", label: "Dispatch", icon: FastForward }
     ]
   },
   {
-    section: "Dispatch",
+    section: "Last Mile",
     items: [
-      { path: "/dispatch", label: "Dispatch (DMS)", icon: FastForward },
-      { path: "/lastmile", label: "Last Mile (LMS)", icon: Route }
+      { path: "/lastmile", label: "Last Mile", icon: Route }
     ]
   },
   {

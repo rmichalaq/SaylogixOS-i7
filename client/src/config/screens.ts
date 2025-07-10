@@ -92,16 +92,16 @@ export const screens: ScreenConfig[] = [
   {
     path: "/dispatch",
     component: DispatchPage,
-    label: "Dispatch (DMS)",
-    menuGroup: "Dispatch",
+    label: "Dispatch",
+    menuGroup: "Warehouse",
     scan: { enabled: true, context: "AWB" },
     icon: "fas fa-shipping-fast"
   },
   {
     path: "/lastmile",
     component: LastMilePage,
-    label: "Last Mile (LMS)",
-    menuGroup: "Dispatch",
+    label: "Last Mile",
+    menuGroup: "Last Mile",
     scan: { enabled: true, context: "AWB" },
     icon: "fas fa-route"
   },

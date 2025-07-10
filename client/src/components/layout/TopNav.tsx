@@ -13,14 +13,14 @@ export function TopNav({ onScanClick }: TopNavProps) {
   const getPageTitle = () => {
     const titles: Record<string, string> = {
       "/dashboard": "Dashboard",
-      "/orders": "Orders (OMS)",
-      "/verify": "Address Verify (NAS)",
-      "/inventory": "Inventory (WMS)",
+      "/orders": "Orders",
+      "/verify": "Verify NAS",
+      "/inventory": "Inventory",
       "/inbound": "Inbound",
       "/picking": "Picking",
       "/packing": "Packing",
-      "/dispatch": "Dispatch (DMS)",
-      "/lastmile": "Last Mile (LMS)",
+      "/dispatch": "Dispatch",
+      "/lastmile": "Last Mile",
       "/tracking": "Tracking",
       "/reports": "Reports"
     };
