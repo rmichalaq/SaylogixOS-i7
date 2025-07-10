@@ -80,6 +80,14 @@ export default function Picking() {
     refetchInterval: 5000, // Refresh every 5 seconds for real-time updates
   });
 
+  // Calculate completed tasks for today only
+  const today = new Date().toDateString();
+  const completedToday = pickingTasks.filter((task: any) => {
+    return task.status === 'completed' && 
+           task.pickedAt && 
+           new Date(task.pickedAt).toDateString() === today;
+  }).length;
+
   const { data: pickingBatches = [] } = useQuery({
     queryKey: ["/api/pick-batches"],
     refetchInterval: 5000,
@@ -206,7 +214,7 @@ export default function Picking() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {pickingTasks.filter(t => t.status === 'completed').length}
+              {completedToday}
             </div>
             <p className="text-xs text-gray-500 flex items-center mt-1">
               <span className="text-green-600 text-xs font-medium">↗</span>
