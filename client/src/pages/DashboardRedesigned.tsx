@@ -186,121 +186,127 @@ export default function DashboardRedesigned() {
 
   return (
     <div className="flex-1 p-6 bg-gray-50 space-y-6">
-      {/* Critical Alerts Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
-          <Card className="border-red-200 bg-red-50">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-red-800">
-                <AlertCircle className="h-5 w-5" />
-                Critical Alerts
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-red-100 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Timer className="h-4 w-4 text-red-600" />
-                  <div>
-                    <p className="font-medium text-red-800">Orders Not Picked</p>
-                    <p className="text-sm text-red-600">Past SLA cutoff</p>
-                  </div>
+      {/* Critical Alerts Panel - Moved to top */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-red-800">
+            <AlertCircle className="h-5 w-5" />
+            Critical Alerts
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center gap-3">
+                <Timer className="h-5 w-5 text-red-600" />
+                <div>
+                  <p className="font-semibold text-red-800">Orders Not Picked</p>
+                  <p className="text-sm text-red-600">Past SLA cutoff</p>
                 </div>
-                <Badge variant="destructive">{stats?.ordersNotPicked || 0}</Badge>
               </div>
-              
-              <div className="flex items-center justify-between p-3 bg-yellow-100 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <TruckIcon className="h-4 w-4 text-yellow-600" />
-                  <div>
-                    <p className="font-medium text-yellow-800">Courier Failures</p>
-                    <p className="text-sm text-yellow-600">API not responsive</p>
-                  </div>
+              <Badge variant="destructive" className="text-lg font-bold px-3 py-1">
+                {stats?.ordersNotPicked || 0}
+              </Badge>
+            </div>
+            
+            <div className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-center gap-3">
+                <TruckIcon className="h-5 w-5 text-yellow-600" />
+                <div>
+                  <p className="font-semibold text-yellow-800">Courier Failures</p>
+                  <p className="text-sm text-yellow-600">API not responsive</p>
                 </div>
-                <Badge variant="outline" className="bg-yellow-200">{stats?.courierFailures || 0}</Badge>
               </div>
-              
-              <div className="flex items-center justify-between p-3 bg-yellow-100 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <MapPin className="h-4 w-4 text-yellow-600" />
-                  <div>
-                    <p className="font-medium text-yellow-800">NAS Failures</p>
-                    <p className="text-sm text-yellow-600">Address verification</p>
-                  </div>
+              <Badge variant="outline" className="bg-yellow-200 text-yellow-800 text-lg font-bold px-3 py-1">
+                {stats?.courierFailures || 0}
+              </Badge>
+            </div>
+            
+            <div className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-center gap-3">
+                <MapPin className="h-5 w-5 text-yellow-600" />
+                <div>
+                  <p className="font-semibold text-yellow-800">NAS Failures</p>
+                  <p className="text-sm text-yellow-600">Address verification</p>
                 </div>
-                <Badge variant="outline" className="bg-yellow-200">{stats?.nasFailures || 0}</Badge>
               </div>
-              
-              <div className="flex items-center justify-between p-3 bg-red-100 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <PackageX className="h-4 w-4 text-red-600" />
-                  <div>
-                    <p className="font-medium text-red-800">Out of Stock</p>
-                    <p className="text-sm text-red-600">SKUs with no inventory</p>
-                  </div>
+              <Badge variant="outline" className="bg-yellow-200 text-yellow-800 text-lg font-bold px-3 py-1">
+                {stats?.nasFailures || 0}
+              </Badge>
+            </div>
+            
+            <div className="flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center gap-3">
+                <PackageX className="h-5 w-5 text-red-600" />
+                <div>
+                  <p className="font-semibold text-red-800">Out of Stock</p>
+                  <p className="text-sm text-red-600">SKUs with no inventory</p>
                 </div>
-                <Badge variant="destructive">{stats?.outOfStock || 0}</Badge>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+              <Badge variant="destructive" className="text-lg font-bold px-3 py-1">
+                {stats?.outOfStock || 0}
+              </Badge>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* Today's Load Summary */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5" />
-                Today's Load Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">{stats?.ordersToFulfillToday || 0}</div>
-                  <div className="text-sm text-blue-600 font-medium">Orders to Fulfill</div>
-                </div>
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">{stats?.pickupsScheduled || 0}</div>
-                  <div className="text-sm text-green-600 font-medium">Pickups Scheduled</div>
-                </div>
-                <div className="text-center p-4 bg-purple-50 rounded-lg">
-                  <div className="text-2xl font-bold text-purple-600">{stats?.routesCreated || 0}</div>
-                  <div className="text-sm text-purple-600 font-medium">Routes Created</div>
-                </div>
-                <div className="text-center p-4 bg-amber-50 rounded-lg">
-                  <div className="text-2xl font-bold text-amber-600">{stats?.manifestsGenerated || 0}</div>
-                  <div className="text-sm text-amber-600 font-medium">Manifests Generated</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Live Activity Feed */}
+      {/* Today's Load Summary - Moved below Critical Alerts */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2">
             <Activity className="h-5 w-5" />
-            Live Activity Feed
+            Today's Load Summary
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3 max-h-96 overflow-y-auto">
-            {displayActivity.map((event) => (
-              <div key={event.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                <div className="mt-0.5">
-                  {getActivityIcon(event.type, event.status)}
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{event.message}</p>
-                  <p className="text-xs text-gray-500">{formatRelativeTime(event.timestamp)}</p>
-                </div>
-              </div>
-            ))}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <div className="text-2xl font-bold text-blue-600">{stats?.ordersToFulfillToday || 0}</div>
+              <div className="text-sm text-blue-600 font-medium">Orders to Fulfill</div>
+            </div>
+            <div className="text-center p-4 bg-green-50 rounded-lg">
+              <div className="text-2xl font-bold text-green-600">{stats?.pickupsScheduled || 0}</div>
+              <div className="text-sm text-green-600 font-medium">Pickups Scheduled</div>
+            </div>
+            <div className="text-center p-4 bg-purple-50 rounded-lg">
+              <div className="text-2xl font-bold text-purple-600">{stats?.routesCreated || 0}</div>
+              <div className="text-sm text-purple-600 font-medium">Routes Created</div>
+            </div>
+            <div className="text-center p-4 bg-amber-50 rounded-lg">
+              <div className="text-2xl font-bold text-amber-600">{stats?.manifestsGenerated || 0}</div>
+              <div className="text-sm text-amber-600 font-medium">Manifests Generated</div>
+            </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Live Activity Feed - Only show if there's real-time data */}
+      {activity.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              Live Activity Feed
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {activity.map((event) => (
+                <div key={event.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="mt-0.5">
+                    {getActivityIcon(event.type, event.status)}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{event.message}</p>
+                    <p className="text-xs text-gray-500">{formatRelativeTime(event.timestamp)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Upcoming Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -23,7 +23,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Enhanced stats for the modernized dashboard
       const enhancedStats = {
         ...baseStats,
-        // Critical alerts data
+        // Critical alerts data (DASHBOARD_MOCK=true for easy removal)
         ordersNotPicked: 3, // Mock: orders past SLA cutoff
         courierFailures: 1, // Mock: API not responsive
         nasFailures: 2, // Mock: address verification failures

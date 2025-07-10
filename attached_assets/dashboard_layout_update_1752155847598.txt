@@ -1,0 +1,58 @@
+# SaylogixOS - Dashboard Layout Update (Replit Prompt)
+
+## Objective:
+Rework the **Dashboard** layout to ensure:
+- Consistent layout with the Inventory screen.
+- Priority visibility of alerts.
+- Modern, minimal, and action-oriented design.
+
+## Instructions:
+
+### 1. Critical Alerts Placement and Design
+- **Position**: Move the `Critical Alerts` card section **above** the `Today's Load Summary` card.
+- **Layout Matching**: Visually match the styling, border, and spacing of `Critical Alerts` with the existing `Today's Load Summary` component.
+- **Responsiveness**: Ensure `Critical Alerts` adjusts responsively across all screen sizes.
+
+### 2. Critical Alerts Component Behavior
+- Display all alert cards in a **single row** (wrap on smaller screens).
+- Each alert card includes:
+  - Icon on the left.
+  - Title in bold (e.g. "Orders Not Picked").
+  - Subtext in lighter font (e.g. "Past SLA cutoff").
+  - Red badge with count.
+- Alert colors:
+  - **Red** for SLA/picking/stock issues.
+  - **Yellow** for API/system warnings.
+  - Use clear iconography and uniform padding/margin.
+
+### 3. Refactor Today's Load Summary
+- Leave the `Today's Load Summary` exactly as is, but move it **below** `Critical Alerts`.
+- Ensure proper margin/padding between both components.
+
+### 4. General Dashboard Cleanup
+- Remove Live Activity Feed unless there's real-time data to show.
+- Make `Order Processing Performance` an expandable section that defaults collapsed.
+- `Quick Actions` and `Recent Orders` remain at the bottom.
+
+### 5. Mock Data Seeding
+- Use mock data for all alert categories:
+  ```json
+  {
+    "alerts": [
+      {"type": "Orders Not Picked", "count": 3, "description": "Past SLA cutoff"},
+      {"type": "Courier Failures", "count": 1, "description": "API not responsive"},
+      {"type": "NAS Failures", "count": 2, "description": "Address verification"},
+      {"type": "Out of Stock", "count": 5, "description": "SKUs with no inventory"}
+    ]
+  }
+  ```
+- Tag this mock seed as `DASHBOARD_MOCK=true` so it can be removed later.
+
+### 6. Final UI Expectations
+- Clean, aligned design following Inventory-style cards.
+- Alert and load summary sections must be visible at first glance on page load.
+- Mobile responsiveness must preserve card stacking and badges.
+
+---
+
+✅ Once done, confirm that the `.env` contains a flag to remove seeded data later for production builds.
