@@ -1,5 +1,6 @@
 import { Express } from "express";
 import { seedMockData, clearMockData } from "../seedMockData";
+import { seedBasicData } from "../seedBasicData";
 
 export function registerSeedRoutes(app: Express) {
   // Seed mock data endpoint
@@ -88,6 +89,26 @@ export function registerSeedRoutes(app: Express) {
     } catch (error) {
       console.error("Error checking mock data status:", error);
       res.status(500).json({ error: "Failed to check mock data status" });
+    }
+  });
+
+  // Basic seed data endpoint (always works)
+  app.post("/api/admin/seed-basic-data", async (req, res) => {
+    try {
+      const adminKey = req.headers["x-admin-key"];
+      if (adminKey !== process.env.ADMIN_KEY && process.env.NODE_ENV === "production") {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      await seedBasicData();
+      res.json({ 
+        success: true, 
+        message: "Basic mock data seeded successfully",
+        note: "This creates core data for testing basic functionality"
+      });
+    } catch (error) {
+      console.error("Error seeding basic mock data:", error);
+      res.status(500).json({ error: "Failed to seed basic mock data" });
     }
   });
 }

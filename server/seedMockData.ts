@@ -427,20 +427,29 @@ export async function seedMockData() {
         createdRecords.users.find(u => u.role === "packer") : null;
       const toteId = `T${nanoid(4)}`;
       
-      const [packTask] = await db.insert(packTasks).values({
-        orderId: order.id,
-        toteId,
-        status: order.status === "picked" ? "pending" : "completed",
-        assignedTo: assignedPacker?.username || null,
-        boxType: ["Small", "Medium", "Large"][Math.floor(Math.random() * 3)],
-        weight: (Math.random() * 5 + 0.5).toFixed(3),
-        dimensions: `${Math.floor(Math.random() * 30 + 20)}x${Math.floor(Math.random() * 20 + 15)}x${Math.floor(Math.random() * 15 + 10)}`,
-        labelGenerated: order.status !== "picked",
-        trackingNumber: order.trackingNumber,
-        packedAt: order.status === "picked" ? null : daysAgo(Math.floor(Math.random() * 2))
-      }).returning();
-      
-      createdRecords.packTasks.push(packTask);
+      try {
+        const [packTask] = await db.insert(packTasks).values({
+          orderId: order.id,
+          toteId,
+          status: order.status === "picked" ? "pending" : "completed",
+          assignedTo: assignedPacker?.username || null,
+          boxType: ["Small", "Medium", "Large"][Math.floor(Math.random() * 3)],
+          weight: (Math.random() * 5 + 0.5).toFixed(3),
+          dimensions: {
+            length: Math.floor(Math.random() * 30 + 20),
+            width: Math.floor(Math.random() * 20 + 15),
+            height: Math.floor(Math.random() * 15 + 10)
+          },
+          labelGenerated: order.status !== "picked",
+          trackingNumber: order.trackingNumber || null,
+          packedAt: order.status === "picked" ? null : daysAgo(Math.floor(Math.random() * 2))
+        }).returning();
+        
+        createdRecords.packTasks.push(packTask);
+      } catch (error) {
+        console.log(`Skipping pack task for order ${order.id} due to error:`, error);
+        continue;
+      }
     }
 
     // 3.3 Manifests - Create courier manifests
@@ -603,7 +612,7 @@ export async function seedMockData() {
       createdRecords.goodsReceiptNotes.push(grn);
 
       // 4.4 GRN Items
-      const poItems = await db.select().from(purchaseOrderItems).where({ poId: po.id });
+      const poItems = await db.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.poId, po.id));
       
       for (const poItem of poItems) {
         await db.insert(grnItems).values({
@@ -635,9 +644,9 @@ export async function seedMockData() {
       createdRecords.putawayTasks.push(putawayTask);
 
       // 4.6 Putaway Items
-      const grnItems = await db.select().from(grnItems).where({ grnId: grn.id });
+      const grnItemsData = await db.select().from(grnItems).where(eq(grnItems.grnId, grn.id));
       
-      for (const grnItem of grnItems) {
+      for (const grnItem of grnItemsData) {
         await db.insert(putawayItems).values({
           putawayTaskId: putawayTask.id,
           sku: grnItem.sku,
@@ -783,9 +792,14 @@ export async function seedMockData() {
       
       await db.insert(addressVerifications).values({
         orderId: order.id,
-        originalAddress: order.shippingAddress,
+        originalAddress: order.shippingAddress || {
+          street: "MOCK_123 Default Street",
+          city: "Riyadh",
+          country: "Saudi Arabia",
+          postal_code: "12345"
+        },
         verifiedAddress: isVerified ? {
-          ...order.shippingAddress,
+          ...(order.shippingAddress || {}),
           verified: true,
           method: `MOCK_${method}`,
           timestamp: new Date().toISOString()
