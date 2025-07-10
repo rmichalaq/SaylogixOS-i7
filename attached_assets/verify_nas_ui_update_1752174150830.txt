@@ -1,0 +1,90 @@
+## 📦 Verify NAS UI & Functionality Final Specification
+
+### 1. 🧭 UI Structure Changes
+- Replace the current card-style order list with a sortable **table layout**, matching the Inventory tab layout.
+- Table headers should be sortable:
+  - Order ID
+  - Customer
+  - NAS
+  - Address
+
+### 2. 🚫 Remove Redundant Column
+- **Remove** the `Action` column ("Verify" button per row).
+- Clicking the entire row will open the right-side **drawer** with full address verification details.
+
+---
+
+### 3. 📋 Drawer Behavior
+When any row is clicked:
+- Open the drawer from the right.
+- Show:
+  - Order Information (Order ID, Customer, Phone, NAS Code)
+  - Original Address (raw fetched address)
+  - Address Verification (as below)
+
+---
+
+### 4. ✅ Verification Output (Address Verification Box)
+Show all available fields returned by the NAS API:
+- `NAS Code`
+- `Full Address`
+- `Postal Code`
+- `Additional Code`
+- `Coordinates`
+- `City`
+- `District`
+- `Street`
+- `Building Number`
+- `Unit Number`
+- `Short Address`
+- `Municipality`
+- `Region`
+- `Landmark` (if any)
+- `Is Active` status (if available)
+
+Add a validation layer: Highlight in red if any expected fields are missing.
+
+---
+
+### 5. 🗺 Location Preview
+- Replace static "Map preview would be displayed here" with a **Google Maps embed**
+  - Use coordinates (`lat`, `lng`) returned from NAS response
+  - Display a red pin or location icon
+
+---
+
+### 6. 🧠 Functional Flow
+- Clicking "Verify with NAS":
+  - Call NAS API.
+  - Display full returned data.
+  - Store result in the following locations:
+    - ✅ Add to `Verified Address Database`
+    - ✅ Add the verified data into the current order object (`order.address_verified = true`, `order.verified_address = {...}`)
+    - ✅ Tag the order with `NAS Verified` flag
+
+---
+
+### 7. 🧼 Remove Irrelevant UI Elements
+- Remove `Verify Another Order` button.
+- Verification is contextual to the specific opened drawer.
+
+---
+
+### 8. 📊 Top Metrics Boxes
+(Keep for now, but make sure they update after each verification)
+- Total Verifications
+- Verified
+- Pending
+- Success Rate (%)
+
+---
+
+### ✅ Acceptance Criteria
+- [ ] Table layout matches Inventory styling
+- [ ] Sortable headers work
+- [ ] Row click opens correct drawer
+- [ ] Drawer displays all NAS response fields
+- [ ] Verified address saved in DB and order
+- [ ] Google Maps preview shows live
+- [ ] NAS Verified tag added to order
+- [ ] No more standalone Verify buttons or multi-order logic

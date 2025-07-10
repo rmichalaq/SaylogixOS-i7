@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { Search, MapPin, CheckCircle, XCircle, Loader2, Clock, Database, Package, X, User, Phone, Navigation } from "lucide-react";
+import { Search, MapPin, CheckCircle, XCircle, Loader2, Clock, Database, Package, X, User, Phone, Navigation, ArrowUpDown, Eye } from "lucide-react";
 import { apiRequest } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
@@ -22,6 +22,15 @@ interface SPLAddressData {
     lat?: number;
     lng?: number;
   };
+  city?: string;
+  district?: string;
+  street?: string;
+  buildingNumber?: string;
+  unitNumber?: string;
+  municipality?: string;
+  region?: string;
+  landmark?: string;
+  isActive?: boolean;
 }
 
 interface VerificationResult {
@@ -50,6 +59,8 @@ export default function AddressVerify() {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [verificationResult, setVerificationResult] = useState<SPLAddressData | null>(null);
+  const [sortField, setSortField] = useState<string>('');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -139,6 +150,55 @@ export default function AddressVerify() {
     setSelectedOrder(order);
     setVerificationResult(null);
     setDrawerOpen(true);
+  };
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortOrders = (orders: any[]) => {
+    if (!sortField) return orders;
+    
+    return [...orders].sort((a, b) => {
+      let aVal = '';
+      let bVal = '';
+      
+      switch (sortField) {
+        case 'orderId':
+          aVal = a.saylogixNumber || '';
+          bVal = b.saylogixNumber || '';
+          break;
+        case 'customer':
+          aVal = a.customerName || '';
+          bVal = b.customerName || '';
+          break;
+        case 'nas':
+          aVal = extractNasFromAddress(a.shippingAddress) || '';
+          bVal = extractNasFromAddress(b.shippingAddress) || '';
+          break;
+        case 'address':
+          aVal = typeof a.shippingAddress === 'string' 
+            ? a.shippingAddress 
+            : `${a.shippingAddress?.address1 || ''} ${a.shippingAddress?.city || ''}`;
+          bVal = typeof b.shippingAddress === 'string' 
+            ? b.shippingAddress 
+            : `${b.shippingAddress?.address1 || ''} ${b.shippingAddress?.city || ''}`;
+          break;
+        default:
+          return 0;
+      }
+      
+      if (sortDirection === 'asc') {
+        return aVal.localeCompare(bVal);
+      } else {
+        return bVal.localeCompare(aVal);
+      }
+    });
   };
 
   // Drawer verification mutation
@@ -362,18 +422,49 @@ export default function AddressVerify() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Order ID</TableHead>
-                          <TableHead>Customer</TableHead>
-                          <TableHead className="text-center">NAS</TableHead>
-                          <TableHead>Address</TableHead>
-                          <TableHead>Action</TableHead>
+                          <TableHead 
+                            className="cursor-pointer hover:bg-gray-50 select-none"
+                            onClick={() => handleSort('orderId')}
+                          >
+                            <div className="flex items-center gap-2">
+                              Order ID
+                              <ArrowUpDown className="h-4 w-4" />
+                            </div>
+                          </TableHead>
+                          <TableHead 
+                            className="cursor-pointer hover:bg-gray-50 select-none"
+                            onClick={() => handleSort('customer')}
+                          >
+                            <div className="flex items-center gap-2">
+                              Customer
+                              <ArrowUpDown className="h-4 w-4" />
+                            </div>
+                          </TableHead>
+                          <TableHead 
+                            className="cursor-pointer hover:bg-gray-50 select-none text-center"
+                            onClick={() => handleSort('nas')}
+                          >
+                            <div className="flex items-center gap-2 justify-center">
+                              NAS
+                              <ArrowUpDown className="h-4 w-4" />
+                            </div>
+                          </TableHead>
+                          <TableHead 
+                            className="cursor-pointer hover:bg-gray-50 select-none"
+                            onClick={() => handleSort('address')}
+                          >
+                            <div className="flex items-center gap-2">
+                              Address
+                              <ArrowUpDown className="h-4 w-4" />
+                            </div>
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {orders?.filter((order: any) => {
+                        {sortOrders(orders?.filter((order: any) => {
                           const nasCode = extractNasFromAddress(order.shippingAddress);
                           return nasCode && !order.addressVerified;
-                        }).map((order: any) => {
+                        }) || []).map((order: any) => {
                           const nasCode = extractNasFromAddress(order.shippingAddress);
                           return (
                             <TableRow 
@@ -383,26 +474,13 @@ export default function AddressVerify() {
                             >
                               <TableCell className="font-medium">{order.saylogixNumber}</TableCell>
                               <TableCell>{order.customerName}</TableCell>
-                              <TableCell>
+                              <TableCell className="text-center">
                                 <Badge variant="outline">{nasCode}</Badge>
                               </TableCell>
                               <TableCell className="max-w-xs truncate">
                                 {typeof order.shippingAddress === 'string' 
                                   ? order.shippingAddress 
                                   : `${order.shippingAddress?.address1 || ''} ${order.shippingAddress?.city || ''}`}
-                              </TableCell>
-                              <TableCell onClick={(e) => e.stopPropagation()}>
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleOrderVerification(order.id)}
-                                  disabled={orderVerification.isPending}
-                                >
-                                  {orderVerification.isPending ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    'Verify'
-                                  )}
-                                </Button>
                               </TableCell>
                             </TableRow>
                           );
@@ -493,21 +571,57 @@ export default function AddressVerify() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Order ID</TableHead>
-                          <TableHead>Customer</TableHead>
-                          <TableHead className="text-center">NAS</TableHead>
-                          <TableHead>Full SPL Address</TableHead>
+                          <TableHead 
+                            className="cursor-pointer hover:bg-gray-50 select-none"
+                            onClick={() => handleSort('orderId')}
+                          >
+                            <div className="flex items-center gap-2">
+                              Order ID
+                              <ArrowUpDown className="h-4 w-4" />
+                            </div>
+                          </TableHead>
+                          <TableHead 
+                            className="cursor-pointer hover:bg-gray-50 select-none"
+                            onClick={() => handleSort('customer')}
+                          >
+                            <div className="flex items-center gap-2">
+                              Customer
+                              <ArrowUpDown className="h-4 w-4" />
+                            </div>
+                          </TableHead>
+                          <TableHead 
+                            className="cursor-pointer hover:bg-gray-50 select-none text-center"
+                            onClick={() => handleSort('nas')}
+                          >
+                            <div className="flex items-center gap-2 justify-center">
+                              NAS
+                              <ArrowUpDown className="h-4 w-4" />
+                            </div>
+                          </TableHead>
+                          <TableHead 
+                            className="cursor-pointer hover:bg-gray-50 select-none"
+                            onClick={() => handleSort('address')}
+                          >
+                            <div className="flex items-center gap-2">
+                              Full SPL Address
+                              <ArrowUpDown className="h-4 w-4" />
+                            </div>
+                          </TableHead>
                           <TableHead>Timestamp</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {orders?.filter((order: any) => order.addressVerified).map((order: any) => {
+                        {sortOrders(orders?.filter((order: any) => order.addressVerified) || []).map((order: any) => {
                           const nasCode = extractNasFromAddress(order.shippingAddress);
                           return (
-                            <TableRow key={order.id}>
+                            <TableRow 
+                              key={order.id} 
+                              className="cursor-pointer hover:bg-gray-50"
+                              onClick={() => handleOrderClick(order)}
+                            >
                               <TableCell className="font-medium">{order.saylogixNumber}</TableCell>
                               <TableCell>{order.customerName}</TableCell>
-                              <TableCell>
+                              <TableCell className="text-center">
                                 <Badge variant="default">{nasCode || 'N/A'}</Badge>
                               </TableCell>
                               <TableCell className="max-w-md">
@@ -640,38 +754,106 @@ export default function AddressVerify() {
                         <h4 className="font-semibold text-green-800">Address Successfully Verified</h4>
                       </div>
                       
-                      <div className="space-y-2 text-sm">
-                        <div><strong>NAS Code:</strong> {verificationResult.shortCode}</div>
-                        <div><strong>Full Address:</strong> {verificationResult.fullAddress}</div>
-                        <div><strong>Postal Code:</strong> {verificationResult.postalCode}</div>
-                        {verificationResult.additionalCode && (
-                          <div><strong>Additional Code:</strong> {verificationResult.additionalCode}</div>
+                      <div className="grid grid-cols-1 gap-3 text-sm">
+                        <div className="flex justify-between">
+                          <span className="font-medium">NAS Code:</span> 
+                          <span className={verificationResult.shortCode ? "text-green-600" : "text-red-600"}>
+                            {verificationResult.shortCode || "Missing"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="font-medium">Full Address:</span> 
+                          <span className={verificationResult.fullAddress ? "text-green-600" : "text-red-600"}>
+                            {verificationResult.fullAddress || "Missing"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="font-medium">Postal Code:</span> 
+                          <span className={verificationResult.postalCode ? "text-green-600" : "text-red-600"}>
+                            {verificationResult.postalCode || "Missing"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="font-medium">Additional Code:</span> 
+                          <span className={verificationResult.additionalCode ? "text-green-600" : "text-red-600"}>
+                            {verificationResult.additionalCode || "Missing"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="font-medium">Coordinates:</span> 
+                          <span className={verificationResult.coordinates?.lat && verificationResult.coordinates?.lng ? "text-green-600" : "text-red-600"}>
+                            {verificationResult.coordinates?.lat && verificationResult.coordinates?.lng 
+                              ? `${verificationResult.coordinates.lat}, ${verificationResult.coordinates.lng}` 
+                              : "Missing"}
+                          </span>
+                        </div>
+                        {verificationResult.city && (
+                          <div className="flex justify-between">
+                            <span className="font-medium">City:</span> 
+                            <span className="text-green-600">{verificationResult.city}</span>
+                          </div>
                         )}
-                        {verificationResult.coordinates.lat && verificationResult.coordinates.lng && (
-                          <div><strong>Coordinates:</strong> {verificationResult.coordinates.lat}, {verificationResult.coordinates.lng}</div>
+                        {verificationResult.district && (
+                          <div className="flex justify-between">
+                            <span className="font-medium">District:</span> 
+                            <span className="text-green-600">{verificationResult.district}</span>
+                          </div>
+                        )}
+                        {verificationResult.street && (
+                          <div className="flex justify-between">
+                            <span className="font-medium">Street:</span> 
+                            <span className="text-green-600">{verificationResult.street}</span>
+                          </div>
+                        )}
+                        {verificationResult.buildingNumber && (
+                          <div className="flex justify-between">
+                            <span className="font-medium">Building Number:</span> 
+                            <span className="text-green-600">{verificationResult.buildingNumber}</span>
+                          </div>
+                        )}
+                        {verificationResult.unitNumber && (
+                          <div className="flex justify-between">
+                            <span className="font-medium">Unit Number:</span> 
+                            <span className="text-green-600">{verificationResult.unitNumber}</span>
+                          </div>
+                        )}
+                        {verificationResult.municipality && (
+                          <div className="flex justify-between">
+                            <span className="font-medium">Municipality:</span> 
+                            <span className="text-green-600">{verificationResult.municipality}</span>
+                          </div>
+                        )}
+                        {verificationResult.region && (
+                          <div className="flex justify-between">
+                            <span className="font-medium">Region:</span> 
+                            <span className="text-green-600">{verificationResult.region}</span>
+                          </div>
+                        )}
+                        {verificationResult.landmark && (
+                          <div className="flex justify-between">
+                            <span className="font-medium">Landmark:</span> 
+                            <span className="text-green-600">{verificationResult.landmark}</span>
+                          </div>
+                        )}
+                        {verificationResult.isActive !== undefined && (
+                          <div className="flex justify-between">
+                            <span className="font-medium">Is Active:</span> 
+                            <span className={verificationResult.isActive ? "text-green-600" : "text-red-600"}>
+                              {verificationResult.isActive ? "Yes" : "No"}
+                            </span>
+                          </div>
                         )}
                       </div>
                     </div>
                     
-                    <div className="flex gap-2">
-                      <Button 
-                        onClick={() => setDrawerOpen(false)}
-                        variant="outline"
-                        className="flex-1"
-                      >
-                        Close
-                      </Button>
-                      <Button 
-                        onClick={() => {
-                          setDrawerOpen(false);
-                          setSelectedOrder(null);
-                          setVerificationResult(null);
-                        }}
-                        className="flex-1"
-                      >
-                        Verify Another Order
-                      </Button>
-                    </div>
+                    <Button 
+                      onClick={() => setDrawerOpen(false)}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      Close Verification
+                    </Button>
                   </div>
                 )}
 
@@ -685,20 +867,29 @@ export default function AddressVerify() {
                 )}
               </div>
 
-              {/* Map Preview Placeholder */}
+              {/* Google Maps Location Preview */}
               {verificationResult?.coordinates.lat && verificationResult?.coordinates.lng && (
                 <>
                   <Separator />
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Location Preview</h3>
-                    <div className="p-8 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg text-center">
-                      <MapPin className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-600">
-                        Map preview would be displayed here
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Coordinates: {verificationResult.coordinates.lat}, {verificationResult.coordinates.lng}
-                      </p>
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <MapPin className="h-5 w-5" />
+                      Location Preview
+                    </h3>
+                    <div className="w-full h-64 rounded-lg overflow-hidden border border-gray-200">
+                      <iframe
+                        src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${verificationResult.coordinates.lat},${verificationResult.coordinates.lng}&zoom=16&maptype=roadmap`}
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0 }}
+                        allowFullScreen
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        title="Address Location"
+                      />
+                    </div>
+                    <div className="text-center text-xs text-gray-500">
+                      Coordinates: {verificationResult.coordinates.lat}, {verificationResult.coordinates.lng}
                     </div>
                   </div>
                 </>
