@@ -141,7 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Integration, webhook and settings routes
   app.use("/api/webhooks", webhookRoutes);
   app.use("/api/integrations", integrationRoutes);
-  app.use("/api", settingsRoutes);
+  app.use("/api/settings", settingsRoutes);
 
   // Orders API
   app.get("/api/orders", async (req, res) => {
