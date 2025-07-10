@@ -150,6 +150,10 @@ Changelog:
 - July 10, 2025. Completed comprehensive UI redesign for warehouse management modules
   - Redesigned Last Mile (LMS) screen with pixel-perfect alignment to Inventory layout
   - Added Map View toggle for Last Mile screen (Table/Map view switch)
+  - Implemented fully functional Google Maps integration with dynamic API key loading
+  - Fixed Google Maps API key access issue (config.apiKey vs credentials.apiKey)
+  - Map displays warehouse markers, route lines, and delivery zones with colored indicators
+  - Added interactive info windows for all map markers with detailed information
   - Created 4 KPI cards: Planned Routes, Active Routes, Completed Today, Total Stops
   - Implemented 4 section tabs: Pickup Overview, Active Routes, Completed, Exceptions
   - Added Excel-style table sorting with three-dot (MoreVertical) filter icons on all columns
