@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 
-const SPL_API_URL = 'https://api.splonline.com.sa/v1/addresses';
-const SPL_API_TOKEN = process.env.SPL_API_TOKEN;
+const SPL_API_URL = 'http://apina.address.gov.sa/NationalAddress/NationalAddressByShortAddress/NationalAddressByShortAddress';
+const SPL_API_KEY = process.env.SPL_API_KEY;
 
 export interface SPLAddressData {
   shortCode: string;
@@ -19,14 +19,22 @@ export async function fetchAddressFromSPL(shortcode: string): Promise<SPLAddress
     throw new Error('Missing NAS shortcode');
   }
 
-  if (!SPL_API_TOKEN) {
-    throw new Error('SPL API token not configured. Please set SPL_API_TOKEN environment variable.');
+  if (!SPL_API_KEY) {
+    throw new Error('SPL API key not configured. Please set SPL_API_KEY environment variable.');
   }
 
-  const url = `${SPL_API_URL}?shortcode=${shortcode}`;
+  // Validate NAS code format (8 characters: 4 letters + 4 digits)
+  const NAS_REGEX = /^[A-Z]{4}\d{4}$/i;
+  if (!NAS_REGEX.test(shortcode)) {
+    throw new Error('Invalid NAS code format. Expected format: ABCD1234');
+  }
+
+  // Build URL with query parameters as specified in Saudi Post API
+  const url = `${SPL_API_URL}?format=json&language=en&encode=utf8&shortaddress=${shortcode.toUpperCase()}&api_key=${SPL_API_KEY}`;
+
   const headers = {
-    'Authorization': `Bearer ${SPL_API_TOKEN}`,
-    'Accept': 'application/json'
+    'Accept': 'application/json',
+    'User-Agent': 'SaylogixOS/1.0'
   };
 
   try {
@@ -34,33 +42,44 @@ export async function fetchAddressFromSPL(shortcode: string): Promise<SPLAddress
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`SPL API Error: ${response.status} ${errorText}`);
+      throw new Error(`Saudi Post API Error: ${response.status} ${errorText}`);
     }
 
     const data = await response.json() as any;
 
+    // Parse Saudi Post API response format
     return {
-      shortCode: data.shortcode || shortcode,
-      fullAddress: `${data.buildingNumber || ''}, ${data.street || ''}, ${data.district || ''}, ${data.city || ''}`.replace(/^, |, $|, , /g, ', ').trim(),
-      postalCode: data.postalCode || '',
-      additionalCode: data.additionalCode || '',
+      shortCode: shortcode.toUpperCase(),
+      fullAddress: data.Address || '',
+      postalCode: data.PostCode || '',
+      additionalCode: data.AdditionalNumber || '',
       coordinates: {
-        lat: data.coordinates?.lat,
-        lng: data.coordinates?.lng
+        lat: data.Latitude ? parseFloat(data.Latitude) : undefined,
+        lng: data.Longitude ? parseFloat(data.Longitude) : undefined
       }
     };
   } catch (error) {
-    console.error('SPL API Error:', error);
-    throw new Error(`Failed to fetch address from SPL: ${error.message}`);
+    console.error('Saudi Post API Error:', error);
+    throw new Error(`Failed to fetch address from Saudi Post: ${error.message}`);
   }
+}
+
+export function extractNASFromAddress(address: string): string | null {
+  if (!address) return null;
+  
+  // RegEx to find 8-character NAS codes (4 letters + 4 digits)
+  const NAS_REGEX = /\b[A-Z]{4}\d{4}\b/i;
+  const match = address.match(NAS_REGEX);
+  
+  return match ? match[0].toUpperCase() : null;
 }
 
 export async function testSPLConnection(): Promise<{ success: boolean; message: string }> {
   try {
-    if (!SPL_API_TOKEN) {
+    if (!SPL_API_KEY) {
       return {
         success: false,
-        message: 'SPL API token not configured'
+        message: 'SPL API key not configured'
       };
     }
 
@@ -70,7 +89,7 @@ export async function testSPLConnection(): Promise<{ success: boolean; message: 
     
     return {
       success: true,
-      message: 'SPL connection successful'
+      message: 'Saudi Post API connection successful'
     };
   } catch (error) {
     return {

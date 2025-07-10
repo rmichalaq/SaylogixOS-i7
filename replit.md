@@ -207,6 +207,14 @@ Changelog:
   - Added comprehensive CRUD interfaces with dropdown menus, switches, and badges
   - Maintained reusable component architecture with skeleton loaders for async data
   - All views support in-place actions without redirects, following modern UX principles
+- July 10, 2025. Updated SPL National Address API integration
+  - Migrated from custom SPL API to official Saudi Post National Address API
+  - Updated API endpoint to http://apina.address.gov.sa/NationalAddress/...
+  - Changed authentication from Bearer token to api_key parameter/header
+  - Added NAS code format validation (4 letters + 4 digits)
+  - Implemented extractNASFromAddress utility function with RegEx pattern
+  - Updated response parsing for Saudi Post API response format
+  - Enhanced error handling with proper Saudi Post API error messages
 - July 10, 2025. Enhanced Saylogix branding with NASA-style font
   - Imported Orbitron font from Google Fonts (space-age, technical appearance)
   - Added custom font-orbitron class to Tailwind CSS configuration
