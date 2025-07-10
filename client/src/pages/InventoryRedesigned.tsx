@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { 
   Package, 
   Search, 
@@ -34,7 +35,10 @@ import {
   Timer,
   ChevronUp,
   ChevronDown,
-  MoreHorizontal
+  MoreHorizontal,
+  Upload,
+  FileSpreadsheet,
+  Settings
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
@@ -48,6 +52,328 @@ type SortConfig = {
 type ColumnFilters = {
   [key: string]: string;
 };
+
+// Inventory Actions Menu Component
+function InventoryActionsMenu() {
+  const [createProductOpen, setCreateProductOpen] = useState(false);
+
+  const handleDownloadInventory = () => {
+    // TODO: Implement Excel export functionality
+    console.log("Download inventory as Excel");
+  };
+
+  const handleUploadBulk = () => {
+    // TODO: Implement bulk upload functionality
+    console.log("Upload bulk products");
+  };
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" className="flex items-center space-x-2">
+            <Settings className="h-4 w-4" />
+            <span>Actions</span>
+            <ChevronDown className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuItem onClick={() => setCreateProductOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Create New Product
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleUploadBulk}>
+            <Upload className="mr-2 h-4 w-4" />
+            Upload Bulk Products
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleDownloadInventory}>
+            <Download className="mr-2 h-4 w-4" />
+            Download Inventory
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Create Product Drawer */}
+      <CreateProductDrawer 
+        open={createProductOpen}
+        onOpenChange={setCreateProductOpen}
+      />
+    </>
+  );
+}
+
+// Create Product Drawer Component
+function CreateProductDrawer({ open, onOpenChange }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [formData, setFormData] = useState({
+    productName: "",
+    category: "",
+    barcode: "",
+    sku: "",
+    description: "",
+    status: "active",
+    weight: "",
+    dimensions: "",
+    availableQty: "0",
+    reservedQty: "0",
+    onHandQty: "0",
+    reorderLevel: "10",
+    binLocation: ""
+  });
+
+  const queryClient = useQueryClient();
+
+  const createProductMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("/api/inventory", "POST", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      onOpenChange(false);
+      // Reset form
+      setFormData({
+        productName: "",
+        category: "",
+        barcode: "",
+        sku: "",
+        description: "",
+        status: "active",
+        weight: "",
+        dimensions: "",
+        availableQty: "0",
+        reservedQty: "0",
+        onHandQty: "0",
+        reorderLevel: "10",
+        binLocation: ""
+      });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Convert numeric fields to numbers
+    const submitData = {
+      ...formData,
+      availableQty: parseInt(formData.availableQty) || 0,
+      reservedQty: parseInt(formData.reservedQty) || 0,
+      onHandQty: parseInt(formData.onHandQty) || 0,
+      reorderLevel: parseInt(formData.reorderLevel) || 10,
+      weight: formData.weight ? parseFloat(formData.weight) : null,
+    };
+    
+    createProductMutation.mutate(submitData);
+  };
+
+  const handleCancel = () => {
+    setFormData({
+      productName: "",
+      category: "",
+      barcode: "",
+      sku: "",
+      description: "",
+      status: "active",
+      weight: "",
+      dimensions: "",
+      availableQty: "0",
+      reservedQty: "0",
+      onHandQty: "0",
+      reorderLevel: "10",
+      binLocation: ""
+    });
+    onOpenChange(false);
+  };
+
+  const statusOptions = [
+    { value: "active", label: "Active" },
+    { value: "inactive", label: "Inactive" },
+    { value: "low_stock", label: "Low Stock" },
+    { value: "out_of_stock", label: "Out of Stock" },
+    { value: "discontinued", label: "Discontinued" }
+  ];
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="w-[600px] sm:max-w-[600px]">
+        <SheetHeader>
+          <SheetTitle>Create New Product</SheetTitle>
+          <SheetDescription>
+            Add a new product to your inventory
+          </SheetDescription>
+        </SheetHeader>
+
+        <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="productName">Product Name *</Label>
+              <Input
+                id="productName"
+                value={formData.productName}
+                onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
+                placeholder="Enter product name..."
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="sku">SKU Code *</Label>
+              <Input
+                id="sku"
+                value={formData.sku}
+                onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                placeholder="Enter SKU..."
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Input
+                id="category"
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                placeholder="Enter category..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="barcode">Barcode</Label>
+              <Input
+                id="barcode"
+                value={formData.barcode}
+                onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+                placeholder="Enter barcode..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="status">Inventory Status</Label>
+              <Select 
+                value={formData.status} 
+                onValueChange={(value) => setFormData({ ...formData, status: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {statusOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="binLocation">Bin Location</Label>
+              <Input
+                id="binLocation"
+                value={formData.binLocation}
+                onChange={(e) => setFormData({ ...formData, binLocation: e.target.value })}
+                placeholder="e.g., A1-B2-C3"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="onHandQty">On Hand Quantity</Label>
+              <Input
+                id="onHandQty"
+                type="number"
+                min="0"
+                value={formData.onHandQty}
+                onChange={(e) => setFormData({ ...formData, onHandQty: e.target.value })}
+                placeholder="0"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="availableQty">Available Quantity</Label>
+              <Input
+                id="availableQty"
+                type="number"
+                min="0"
+                value={formData.availableQty}
+                onChange={(e) => setFormData({ ...formData, availableQty: e.target.value })}
+                placeholder="0"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="reservedQty">Reserved Quantity</Label>
+              <Input
+                id="reservedQty"
+                type="number"
+                min="0"
+                value={formData.reservedQty}
+                onChange={(e) => setFormData({ ...formData, reservedQty: e.target.value })}
+                placeholder="0"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="reorderLevel">Reorder Level</Label>
+              <Input
+                id="reorderLevel"
+                type="number"
+                min="0"
+                value={formData.reorderLevel}
+                onChange={(e) => setFormData({ ...formData, reorderLevel: e.target.value })}
+                placeholder="10"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="weight">Weight (kg)</Label>
+              <Input
+                id="weight"
+                type="number"
+                step="0.01"
+                value={formData.weight}
+                onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                placeholder="Enter weight..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="dimensions">Dimensions (L x W x H)</Label>
+              <Input
+                id="dimensions"
+                value={formData.dimensions}
+                onChange={(e) => setFormData({ ...formData, dimensions: e.target.value })}
+                placeholder="e.g., 10 x 5 x 2 cm"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Enter product description..."
+              rows={3}
+            />
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4 border-t">
+            <Button type="button" variant="outline" onClick={handleCancel}>
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              className="saylogix-primary"
+              disabled={createProductMutation.isPending}
+            >
+              {createProductMutation.isPending ? "Creating..." : "Create Product"}
+            </Button>
+          </div>
+        </form>
+      </SheetContent>
+    </Sheet>
+  );
+}
 
 // Sortable Column Header Component
 function SortableColumnHeader({ 
@@ -1757,10 +2083,15 @@ export default function InventoryRedesigned() {
         {/* View Tab */}
         <TabsContent value="view">
           <Tabs defaultValue="all-products" className="space-y-6">
-            <TabsList>
-              <TabsTrigger value="all-products">All Products</TabsTrigger>
-              <TabsTrigger value="stock-on-hand">Stock on Hand</TabsTrigger>
-            </TabsList>
+            <div className="flex items-center justify-between">
+              <TabsList>
+                <TabsTrigger value="all-products">All Products</TabsTrigger>
+                <TabsTrigger value="stock-on-hand">Stock on Hand</TabsTrigger>
+              </TabsList>
+              
+              {/* Contextual Action Button */}
+              <InventoryActionsMenu />
+            </div>
             
             <TabsContent value="all-products">
               <ViewAllProducts />
