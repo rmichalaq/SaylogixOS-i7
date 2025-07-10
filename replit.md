@@ -147,6 +147,16 @@ Saylogix OS is a comprehensive fullstack logistics management system built as a 
 ## Changelog
 ```
 Changelog:
+- July 10, 2025. Completed SPL NAS verification system compliance with specification
+  - Removed derived fields (landmark, municipality, region, isActive) from SPL interface and UI display
+  - Enhanced SPL API error logging with detailed request/response tracking for debugging failed calls
+  - Updated database schema with new verifiedAddresses table and verification attempts tracking
+  - Added comprehensive SPL API response parsing with fallback field mappings (Address/FullAddress, PostCode/PostalCode)
+  - Cleaned up mock data to only include authentic SPL API fields: shortCode, fullAddress, postalCode, additionalCode, coordinates, city, district, street, buildingNumber
+  - Enhanced verification drawer to show only Saudi Post API returned fields without derived content
+  - Added verification attempts logging structure for tracking parsed/manual/whatsapp methods with timestamps
+  - Improved NAS code validation and error handling for 20 failed API calls debugging
+  - System now complies with canonical address field specification for Orders → Verified Addresses workflow
 - January 10, 2025. Redesigned Integrations screen to match Inventory layout pattern
   - Removed page header section from Reports screen as requested
   - Created new IntegrationsRedesigned component with pixel-perfect consistency

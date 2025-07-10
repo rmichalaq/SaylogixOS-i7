@@ -102,12 +102,32 @@ export const addressVerifications = pgTable("address_verifications", {
   orderId: integer("order_id").notNull(),
   originalAddress: jsonb("original_address").notNull(),
   verifiedAddress: jsonb("verified_address"),
-  status: varchar("status", { length: 20 }).default("pending"),
-  verificationMethod: varchar("verification_method", { length: 50 }),
+  status: varchar("status", { length: 20 }).default("pending"), // pending, verified, failed
+  verificationMethod: varchar("verification_method", { length: 50 }), // parsed, manual, whatsapp
   nasCode: varchar("nas_code", { length: 10 }),
   whatsappMessageId: varchar("whatsapp_message_id", { length: 100 }),
   customerResponse: text("customer_response"),
+  verificationAttempts: jsonb("verification_attempts").default([]), // Array of attempt objects
+  usedAddressType: varchar("used_address_type", { length: 20 }), // verified, original
   verifiedAt: timestamp("verified_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Verified Addresses Database (SPL API responses)
+export const verifiedAddresses = pgTable("verified_addresses", {
+  id: serial("id").primaryKey(),
+  nasCode: varchar("nas_code", { length: 10 }).notNull().unique(),
+  fullAddress: text("full_address").notNull(),
+  postalCode: varchar("postal_code", { length: 10 }),
+  additionalCode: varchar("additional_code", { length: 10 }),
+  latitude: decimal("latitude", { precision: 10, scale: 7 }),
+  longitude: decimal("longitude", { precision: 10, scale: 7 }),
+  city: varchar("city", { length: 100 }),
+  district: varchar("district", { length: 100 }),
+  street: varchar("street", { length: 200 }),
+  buildingNumber: varchar("building_number", { length: 20 }),
+  isActive: boolean("is_active").default(true),
+  lastVerified: timestamp("last_verified").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

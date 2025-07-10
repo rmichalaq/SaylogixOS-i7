@@ -817,32 +817,7 @@ export default function AddressVerify() {
                             <span className="text-green-600">{verificationResult.unitNumber}</span>
                           </div>
                         )}
-                        {verificationResult.municipality && (
-                          <div className="flex justify-between">
-                            <span className="font-medium">Municipality:</span> 
-                            <span className="text-green-600">{verificationResult.municipality}</span>
-                          </div>
-                        )}
-                        {verificationResult.region && (
-                          <div className="flex justify-between">
-                            <span className="font-medium">Region:</span> 
-                            <span className="text-green-600">{verificationResult.region}</span>
-                          </div>
-                        )}
-                        {verificationResult.landmark && (
-                          <div className="flex justify-between">
-                            <span className="font-medium">Landmark:</span> 
-                            <span className="text-green-600">{verificationResult.landmark}</span>
-                          </div>
-                        )}
-                        {verificationResult.isActive !== undefined && (
-                          <div className="flex justify-between">
-                            <span className="font-medium">Is Active:</span> 
-                            <span className={verificationResult.isActive ? "text-green-600" : "text-red-600"}>
-                              {verificationResult.isActive ? "Yes" : "No"}
-                            </span>
-                          </div>
-                        )}
+
                       </div>
                     </div>
                     
