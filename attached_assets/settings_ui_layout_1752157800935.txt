@@ -1,0 +1,77 @@
+# Saylogix Settings Module - UI Layout Rework Instructions
+
+## Overview
+The Settings module must match the layout and user experience standards of the Inventory module—clean, tab-based, no KPI cards, and drawer-based interactions. This file describes the updated structure and behavior for each section.
+
+---
+
+## 1. General UI Guidelines
+- No KPI cards on the Settings page.
+- Use the same tabular layout and Action button positioning as Inventory.
+- All interactions (edit/view) should open a right-side drawer.
+- All drawers should contain logically grouped editable sections.
+
+---
+
+## 2. Primary Tabs
+- Warehouse
+- Users
+- Clients
+
+### 2.1 Warehouse Tab
+- **Sub-tabs:** Removed
+- Display: List of Warehouses / Hubs only
+- **Action Button:** "+ Add Warehouse" (aligned right)
+- **Click Behavior:** On clicking a warehouse card, open drawer with:
+  - Zones
+  - Locations
+  - Packaging Material
+  - Dock Settings
+
+### 2.2 Users Tab
+- **Sub-tabs:**
+  - User Roles
+  - Users
+- **Action Buttons:**
+  - In "User Roles": "+ Add Role"
+  - In "Users": "+ Add User"
+- **Click Behavior:**
+  - Clicking a role → drawer opens with permission editing interface
+  - Clicking a user → drawer opens with editable user details
+
+### 2.3 Clients Tab
+- **Sub-tabs:** Removed
+- Display: List of client companies only
+- **Action Button:** "+ Add Client" (aligned right)
+- **Click Behavior:** Clicking a client opens drawer with:
+  - Contract
+  - SLA
+  - Pricing
+  - Suppliers
+  - Connected Integrations
+  - Shipping Rules
+
+---
+
+## Mock Data Seeding
+- Seed the view with mock data to demonstrate functionality.
+- Each warehouse/client/user/role must have enough attributes to populate the drawer with real examples.
+- Prefix all mock data sources with `MOCK_` (e.g., MOCK_JeddahFC) for easy cleanup later.
+
+---
+
+## Design Consistency
+- Match UI components (toggle, status chips, drawer spacing) to Inventory module.
+- Consistent iconography and action positioning across all tabs.
+
+---
+
+## Acceptance Criteria
+- No sub-tabs unless specifically defined above.
+- All listed items must be clickable and drawer-enabled.
+- Settings UI must be clean, minimal, and instantly understandable.
+- No KPIs, charts, or statistics shown here.
+
+---
+
+This concludes the layout rework spec for the Settings module. Ensure this is implemented before moving to advanced configurations or automation inside drawers.
