@@ -133,6 +133,32 @@ export default function Packing() {
     refetchInterval: 30000,
   });
 
+  // Calculate KPI values from real data
+  const totalPackedOrders = completedTasks.length;
+  
+  // Calculate average packing time (in minutes)
+  const avgPackingTime = completedTasks.length > 0 
+    ? completedTasks.reduce((sum: number, task: any) => {
+        if (task.createdAt && task.packedAt) {
+          const startTime = new Date(task.createdAt).getTime();
+          const endTime = new Date(task.packedAt).getTime();
+          return sum + (endTime - startTime);
+        }
+        return sum;
+      }, 0) / completedTasks.length / 1000 / 60 // Convert to minutes
+    : 0;
+
+  // Calculate total weight packed today
+  const today = new Date().toDateString();
+  const todayTasks = completedTasks.filter((task: any) => {
+    return task.packedAt && new Date(task.packedAt).toDateString() === today;
+  });
+  const totalWeightToday = todayTasks.reduce((sum: number, task: any) => sum + (parseFloat(task.weight) || 0), 0);
+
+  // Calculate staff productivity (orders per staff member)
+  const uniqueStaff = new Set(completedTasks.map((task: any) => task.assignedTo).filter(Boolean));
+  const staffProductivity = uniqueStaff.size > 0 ? Math.round(totalPackedOrders / uniqueStaff.size) : 0;
+
   // Fetch order items for selected task
   const { data: orderItems = [] } = useQuery<OrderItem[]>({
     queryKey: ["/api/order-items", selectedTask?.orderId],
@@ -301,7 +327,7 @@ export default function Packing() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">3</div>
+            <div className="text-2xl font-bold text-gray-900">{totalPackedOrders}</div>
             <p className="text-xs text-gray-500 flex items-center mt-1">
               <span className="text-green-600 text-xs font-medium">↗</span>
               Ready for dispatch
@@ -317,7 +343,9 @@ export default function Packing() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">1m 24s</div>
+            <div className="text-2xl font-bold text-gray-900">
+              {avgPackingTime > 0 ? `${Math.floor(avgPackingTime)}m ${Math.floor((avgPackingTime % 1) * 60)}s` : "0m 0s"}
+            </div>
             <p className="text-xs text-gray-500 flex items-center mt-1">
               Per order
             </p>
@@ -332,7 +360,7 @@ export default function Packing() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">4.6kg</div>
+            <div className="text-2xl font-bold text-green-600">{totalWeightToday.toFixed(1)}kg</div>
             <p className="text-xs text-gray-500 flex items-center mt-1">
               <span className="text-green-600 text-xs font-medium">↗</span>
               Today's total
@@ -348,9 +376,9 @@ export default function Packing() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">3</div>
+            <div className="text-2xl font-bold text-orange-600">{staffProductivity}</div>
             <p className="text-xs text-gray-500 flex items-center mt-1">
-              Orders by 1 Staff
+              Orders by {uniqueStaff.size} Staff
             </p>
           </CardContent>
         </Card>
