@@ -9,7 +9,7 @@ import PickingPage from "@/pages/Picking";
 import PackingPage from "@/pages/Packing";
 import DispatchPage from "@/pages/Dispatch";
 import LastMilePage from "@/pages/LastMile";
-import ReportsPage from "@/pages/reports/ReportsPage";
+import ReportsPage from "@/pages/Reports";
 import Settings from "@/pages/Settings";
 import Integrations from "@/pages/Integrations";
 
@@ -111,49 +111,7 @@ export const screens: ScreenConfig[] = [
     label: "Reports",
     menuGroup: "Analytics",
     scan: { enabled: false },
-    icon: "fas fa-chart-bar",
-    children: [
-      {
-        path: "/reports/operations",
-        component: ReportsPage,
-        label: "Operations",
-        menuGroup: "Analytics",
-        scan: { enabled: false },
-        icon: "fas fa-cogs"
-      },
-      {
-        path: "/reports/courier-performance",
-        component: ReportsPage,
-        label: "Courier Performance",
-        menuGroup: "Analytics",
-        scan: { enabled: false },
-        icon: "fas fa-truck"
-      },
-      {
-        path: "/reports/returns",
-        component: ReportsPage,
-        label: "Returns",
-        menuGroup: "Analytics",
-        scan: { enabled: false },
-        icon: "fas fa-undo"
-      },
-      {
-        path: "/reports/address-quality",
-        component: ReportsPage,
-        label: "Address Quality",
-        menuGroup: "Analytics",
-        scan: { enabled: false },
-        icon: "fas fa-map-marked-alt"
-      },
-      {
-        path: "/reports/exceptions",
-        component: ReportsPage,
-        label: "Exceptions",
-        menuGroup: "Analytics",
-        scan: { enabled: false },
-        icon: "fas fa-exclamation-triangle"
-      }
-    ]
+    icon: "fas fa-chart-bar"
   },
   {
     path: "/integrations",

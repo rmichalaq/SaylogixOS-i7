@@ -40,7 +40,7 @@ const menuItems = [
   {
     section: "Analytics",
     items: [
-      { path: "/reports", label: "Reports", icon: BarChart3, hasSubmenu: true }
+      { path: "/reports", label: "Reports", icon: BarChart3 }
     ]
   }
 ];
