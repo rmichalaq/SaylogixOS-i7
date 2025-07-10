@@ -470,10 +470,6 @@ function UserRolesList() {
               <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">No user roles configured</h3>
               <p className="text-gray-600 mb-4">Create roles to manage user permissions and access levels</p>
-              <Button className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Add Role
-              </Button>
             </div>
           ) : (
             <div className="space-y-4">
