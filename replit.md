@@ -147,6 +147,16 @@ Saylogix OS is a comprehensive fullstack logistics management system built as a 
 ## Changelog
 ```
 Changelog:
+- January 10, 2025. Redesigned Integrations screen to match Inventory layout pattern
+  - Removed page header section from Reports screen as requested
+  - Created new IntegrationsRedesigned component with pixel-perfect consistency
+  - Added 4 KPI cards: Active Integrations, Errors Detected, Pending Syncs, API Latency
+  - Implemented major tabs: Marketplace and Connected Integrations
+  - Added sub-tabs for filtering by category (E-Commerce, Courier, Messaging, Payments, ERP, Analytics, Maps, Other)
+  - Maintained uniform card layout with fixed heights across both tabs
+  - Preserved existing Shopify integration functionality with 4-tab drawer
+  - Fixed missing RefreshCw icon import error
+  - All system modules now follow consistent visual structure
 - July 10, 2025. Completed comprehensive UI redesign for warehouse management modules
   - Redesigned Last Mile (LMS) screen with pixel-perfect alignment to Inventory layout
   - Added Map View toggle for Last Mile screen (Table/Map view switch)
