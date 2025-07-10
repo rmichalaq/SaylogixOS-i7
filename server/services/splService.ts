@@ -1,7 +1,11 @@
 import fetch from 'node-fetch';
 
-const SPL_API_URL = 'https://apina.address.gov.sa/NationalAddress/NationalAddressByShortAddress';
-const SPL_API_KEY = process.env.SPL_API_KEY;
+// Use configuration from environment variables with fallback to provided credentials
+const SPL_BASE_URL = process.env.SPL_BASE_URL || 'https://api.address.gov.sa';
+const SPL_PRODUCT_PATH = process.env.SPL_PRODUCT_PATH || '/NationalAddress/FullNAByShortAddressforSaylogix';
+const SPL_API_KEY = process.env.SPL_API_KEY || '932efe58b0ec40a1a9633a9ba9f19806';
+
+const SPL_API_URL = `${SPL_BASE_URL}${SPL_PRODUCT_PATH}`;
 
 export interface SPLAddressData {
   shortCode: string;

@@ -23,7 +23,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(stats);
     } catch (error) {
       console.error("Failed to get dashboard stats:", error);
-      res.status(500).json({ error: "Internal server error" });
+      if (error.message && error.message.includes('endpoint is disabled')) {
+        // Return empty stats when database is unavailable
+        res.json({
+          activeOrders: 0,
+          inPicking: 0,
+          readyToShip: 0,
+          deliveredToday: 0
+        });
+      } else {
+        res.status(500).json({ error: "Internal server error" });
+      }
     }
   });
 
@@ -53,7 +63,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json([]);
     } catch (error) {
       console.error("Failed to get alerts:", error);
-      res.status(500).json({ error: "Internal server error" });
+      if (error.message && error.message.includes('endpoint is disabled')) {
+        // Return empty alerts when database is unavailable
+        res.json([]);
+      } else {
+        res.status(500).json({ error: "Internal server error" });
+      }
     }
   });
 
@@ -125,6 +140,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Failed to get tasks:", error);
       res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // SPL API Test Endpoint
+  app.post("/api/test-spl", async (req, res) => {
+    try {
+      const { nasCode } = req.body;
+      
+      if (!nasCode) {
+        return res.status(400).json({ error: "NAS code is required" });
+      }
+      
+      console.log(`[TEST] Testing SPL API with NAS code: ${nasCode}`);
+      
+      const result = await splService.fetchAddressFromSPL(nasCode);
+      
+      res.json({
+        success: true,
+        nasCode,
+        result,
+        message: "SPL API test successful"
+      });
+    } catch (error) {
+      console.error(`[TEST] SPL API test failed:`, error);
+      res.status(500).json({
+        success: false,
+        error: error.message,
+        message: "SPL API test failed"
+      });
+    }
+  });
+
+  // SPL Connection Test Endpoint
+  app.get("/api/test-spl-connection", async (req, res) => {
+    try {
+      const result = await splService.testSPLConnection();
+      res.json(result);
+    } catch (error) {
+      console.error(`[TEST] SPL connection test failed:`, error);
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
     }
   });
 

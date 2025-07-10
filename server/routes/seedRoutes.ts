@@ -21,7 +21,14 @@ export function registerSeedRoutes(app: Express) {
       });
     } catch (error) {
       console.error("Error seeding mock data:", error);
-      res.status(500).json({ error: "Failed to seed mock data" });
+      if (error.message && error.message.includes('endpoint is disabled')) {
+        res.status(503).json({ 
+          error: "Database connection unavailable", 
+          message: "Cannot seed data while database is offline" 
+        });
+      } else {
+        res.status(500).json({ error: "Failed to seed mock data" });
+      }
     }
   });
 
@@ -41,7 +48,14 @@ export function registerSeedRoutes(app: Express) {
       });
     } catch (error) {
       console.error("Error clearing mock data:", error);
-      res.status(500).json({ error: "Failed to clear mock data" });
+      if (error.message && error.message.includes('endpoint is disabled')) {
+        res.status(503).json({ 
+          error: "Database connection unavailable", 
+          message: "Cannot clear data while database is offline" 
+        });
+      } else {
+        res.status(500).json({ error: "Failed to clear mock data" });
+      }
     }
   });
 
