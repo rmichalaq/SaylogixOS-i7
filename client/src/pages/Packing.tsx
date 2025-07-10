@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,10 +8,40 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Package, Printer, QrCode, AlertCircle, CheckCircle, Clock, Box, Search } from "lucide-react";
+import { 
+  Package, 
+  Printer, 
+  QrCode, 
+  AlertCircle, 
+  CheckCircle, 
+  Clock, 
+  Box, 
+  Search,
+  MoreHorizontal,
+  ArrowUpDown,
+  Filter,
+  RefreshCw,
+  Scan,
+  Weight,
+  PackageCheck,
+  Truck,
+  MapPin,
+  Plus,
+  Settings,
+  User,
+  Calendar,
+  Hash,
+  DollarSign,
+  FileText,
+  ClipboardList,
+  Users,
+  Archive
+} from "lucide-react";
 
 interface Order {
   id: number;
@@ -37,6 +67,7 @@ interface PackTask {
   completedAt?: string;
   completedBy?: number;
   createdAt: string;
+  order?: Order;
 }
 
 interface OrderItem {
@@ -53,20 +84,23 @@ interface OrderItem {
 
 export default function Packing() {
   const [activeTab, setActiveTab] = useState("queue");
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [selectedTask, setSelectedTask] = useState<PackTask | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortField, setSortField] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [scanInput, setScanInput] = useState("");
-  const [currentPackingOrder, setCurrentPackingOrder] = useState<Order | null>(null);
   const [scannedItems, setScannedItems] = useState<Record<string, number>>({});
   const [packagingType, setPackagingType] = useState("");
   const [weight, setWeight] = useState("");
+  const [notes, setNotes] = useState("");
   const scanInputRef = useRef<HTMLInputElement>(null);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch orders ready for packing (picked status)
-  const { data: packingQueue = [] } = useQuery({
+  // Fetch packing queue (picked orders)
+  const { data: packingQueue = [], isLoading: queueLoading } = useQuery<Order[]>({
     queryKey: ["/api/orders", { status: "picked" }],
     queryFn: async () => {
       const response = await fetch("/api/orders?status=picked");
@@ -76,8 +110,19 @@ export default function Packing() {
     refetchInterval: 30000,
   });
 
+  // Fetch in-progress pack tasks
+  const { data: inProgressTasks = [], isLoading: inProgressLoading } = useQuery<PackTask[]>({
+    queryKey: ["/api/pack-tasks", { status: "in_progress" }],
+    queryFn: async () => {
+      const response = await fetch("/api/pack-tasks?status=in_progress");
+      if (!response.ok) throw new Error("Failed to fetch pack tasks");
+      return response.json();
+    },
+    refetchInterval: 30000,
+  });
+
   // Fetch completed pack tasks
-  const { data: completedPacks = [] } = useQuery({
+  const { data: completedTasks = [], isLoading: completedLoading } = useQuery<PackTask[]>({
     queryKey: ["/api/pack-tasks", { status: "completed" }],
     queryFn: async () => {
       const response = await fetch("/api/pack-tasks?status=completed");
@@ -87,18 +132,92 @@ export default function Packing() {
     refetchInterval: 30000,
   });
 
-  // Fetch order items for current packing
-  const { data: orderItems = [] } = useQuery({
-    queryKey: ["/api/order-items", currentPackingOrder?.id],
-    enabled: !!currentPackingOrder,
+  // Fetch order items for selected task
+  const { data: orderItems = [] } = useQuery<OrderItem[]>({
+    queryKey: ["/api/order-items", selectedTask?.orderId],
+    enabled: !!selectedTask?.orderId,
   });
 
-  // Auto-focus scanner input
-  useEffect(() => {
-    if (activeTab === "scan" && scanInputRef.current) {
-      scanInputRef.current.focus();
+  // Handle table sorting
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
     }
-  }, [activeTab, currentPackingOrder]);
+  };
+
+  // Start packing mutation
+  const startPackingMutation = useMutation({
+    mutationFn: async (orderId: number) => {
+      return apiRequest('/api/pack-tasks', {
+        method: 'POST',
+        body: JSON.stringify({ orderId }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/pack-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      toast({
+        title: "Packing started",
+        description: "Order added to packing queue",
+      });
+    },
+  });
+
+  // Complete packing mutation
+  const completePackingMutation = useMutation({
+    mutationFn: async (taskId: number) => {
+      return apiRequest(`/api/pack-tasks/${taskId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ 
+          status: 'completed',
+          weight: parseFloat(weight) || undefined,
+          packagingType,
+          notes
+        }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/pack-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      setIsDrawerOpen(false);
+      toast({
+        title: "Packing completed",
+        description: "Order ready for dispatch",
+      });
+    },
+  });
+
+  // Filter and sort function
+  const filterAndSort = (items: any[], searchFields: string[]) => {
+    let filtered = items;
+    
+    if (searchTerm) {
+      filtered = items.filter(item =>
+        searchFields.some(field => 
+          item[field]?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      );
+    }
+
+    if (sortField) {
+      filtered.sort((a, b) => {
+        let aValue = a[sortField];
+        let bValue = b[sortField];
+        
+        if (typeof aValue === 'string') aValue = aValue.toLowerCase();
+        if (typeof bValue === 'string') bValue = bValue.toLowerCase();
+        
+        if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+        if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return filtered;
+  };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -115,454 +234,606 @@ export default function Packing() {
     }
   };
 
-  const handleScan = async (value: string) => {
-    if (!value) return;
-
-    try {
-      // Check if it's a tote ID (starts with TOTE-)
-      if (value.startsWith("TOTE-")) {
-        // Fetch order assigned to this tote
-        const response = await fetch(`/api/orders/by-tote/${value}`);
-        if (response.ok) {
-          const order = await response.json();
-          setCurrentPackingOrder(order);
-          setScannedItems({});
-          toast({
-            title: "Tote scanned",
-            description: `Order ${order.saylogixNumber} loaded for packing`,
-          });
-        } else {
-          toast({
-            title: "Tote not found",
-            description: "No order assigned to this tote",
-            variant: "destructive",
-          });
-        }
-      } else {
-        // It's a SKU barcode
-        if (!currentPackingOrder) {
-          // Find oldest unpacked order with this SKU
-          const response = await fetch(`/api/orders/by-sku/${value}?status=picked`);
-          if (response.ok) {
-            const order = await response.json();
-            setCurrentPackingOrder(order);
-            setScannedItems({ [value]: 1 });
-            toast({
-              title: "Order found",
-              description: `Starting to pack order ${order.saylogixNumber}`,
-            });
-          } else {
-            toast({
-              title: "No orders found",
-              description: "No unpacked orders contain this SKU",
-              variant: "destructive",
-            });
-          }
-        } else {
-          // Add to scanned items
-          const newScannedItems = { ...scannedItems };
-          newScannedItems[value] = (newScannedItems[value] || 0) + 1;
-          setScannedItems(newScannedItems);
-
-          // Check if all items are scanned
-          const allScanned = orderItems.every((item: OrderItem) => 
-            newScannedItems[item.barcode || item.sku] >= item.quantity
-          );
-
-          if (allScanned) {
-            await completePacking();
-          }
-        }
-      }
-    } catch (error) {
-      toast({
-        title: "Scan error",
-        description: "Failed to process scan",
-        variant: "destructive",
-      });
-    }
-
-    setScanInput("");
-  };
-
-  const completePacking = async () => {
-    if (!currentPackingOrder) return;
-
-    try {
-      // Create pack task and generate AWB
-      const response = await apiRequest("/api/pack-tasks", {
-        method: "POST",
-        body: JSON.stringify({
-          orderId: currentPackingOrder.id,
-          status: "completed",
-          packagingType: "standard",
-          weight: 1.5, // Default weight
-        }),
-      });
-
-      // Update order status
-      await apiRequest(`/api/orders/${currentPackingOrder.id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ status: "packed" }),
-      });
-
-      toast({
-        title: "Packing completed",
-        description: "AWB generated and label printed automatically",
-      });
-
-      // Reset for next order
-      setCurrentPackingOrder(null);
-      setScannedItems({});
-      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/pack-tasks"] });
-
-      // Auto-focus scanner input
-      if (scanInputRef.current) {
-        scanInputRef.current.focus();
-      }
-    } catch (error) {
-      toast({
-        title: "Packing failed",
-        description: "Failed to complete packing",
-        variant: "destructive",
-      });
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "completed":
+        return "bg-green-100 text-green-800";
+      case "in_progress":
+        return "bg-yellow-100 text-yellow-800";
+      case "pending":
+        return "bg-blue-100 text-blue-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
-  const manualCompletePacking = async () => {
-    if (!selectedOrder || !packagingType || !weight) {
-      toast({
-        title: "Missing information",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      await apiRequest("/api/pack-tasks", {
-        method: "POST",
-        body: JSON.stringify({
-          orderId: selectedOrder.id,
-          status: "completed",
-          packagingType,
-          weight: parseFloat(weight),
-        }),
-      });
-
-      await apiRequest(`/api/orders/${selectedOrder.id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ status: "packed" }),
-      });
-
-      toast({
-        title: "Packing completed",
-        description: "Order packed and AWB generated",
-      });
-
-      setIsDrawerOpen(false);
-      setSelectedOrder(null);
-      setPackagingType("");
-      setWeight("");
-      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/pack-tasks"] });
-    } catch (error) {
-      toast({
-        title: "Packing failed",
-        description: "Failed to complete packing",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const reprintLabel = async (packTask: PackTask) => {
-    try {
-      await apiRequest(`/api/pack-tasks/${packTask.id}/reprint`, {
-        method: "POST",
-      });
-
-      toast({
-        title: "Label reprinted",
-        description: `AWB ${packTask.awbNumber} sent to printer`,
-      });
-    } catch (error) {
-      toast({
-        title: "Reprint failed",
-        description: "Failed to reprint label",
-        variant: "destructive",
-      });
-    }
-  };
+  const SortableHeader = ({ field, children, className = "" }: { field: string; children: React.ReactNode; className?: string }) => (
+    <TableHead className={`cursor-pointer hover:bg-gray-50 ${className}`}>
+      <div className="flex items-center justify-between group">
+        <div className="flex items-center gap-2" onClick={() => handleSort(field)}>
+          <span>{children}</span>
+          <ArrowUpDown className="h-4 w-4 opacity-50 group-hover:opacity-100" />
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 opacity-50 hover:opacity-100">
+              <Filter className="h-3 w-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={() => handleSort(field)}>
+              Sort A → Z
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => { handleSort(field); setSortDirection('desc'); }}>
+              Sort Z → A
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </TableHead>
+  );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Packing</h1>
+    <div className="p-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Packing</h1>
+          <p className="text-gray-600 mt-1">
+            Manage order packing workflow from picked orders to ready for dispatch
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search orders..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 w-64"
+            />
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <MoreHorizontal className="h-4 w-4 mr-2" />
+                Actions
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem>
+                <Printer className="h-4 w-4 mr-2" />
+                Print Packing Lists
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <QrCode className="h-4 w-4 mr-2" />
+                Generate QR Codes
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Users className="h-4 w-4 mr-2" />
+                Assign Packer
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Settings className="h-4 w-4 mr-2" />
+                Packing Settings
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 max-w-[600px]">
-          <TabsTrigger value="queue">Packing Queue</TabsTrigger>
-          <TabsTrigger value="scan">Pack Orders</TabsTrigger>
-          <TabsTrigger value="completed">Completed</TabsTrigger>
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="queue" className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Queue ({packingQueue.length})
+          </TabsTrigger>
+          <TabsTrigger value="in-progress" className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            In Progress ({inProgressTasks.length})
+          </TabsTrigger>
+          <TabsTrigger value="completed" className="flex items-center gap-2">
+            <PackageCheck className="h-4 w-4" />
+            Completed ({completedTasks.length})
+          </TabsTrigger>
         </TabsList>
 
-        {/* Packing Queue Tab */}
-        <TabsContent value="queue" className="mt-6">
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Order Number</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Priority</TableHead>
-                    <TableHead>Items</TableHead>
-                    <TableHead>Value</TableHead>
-                    <TableHead>Created</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {packingQueue.map((order: Order) => (
-                    <TableRow
-                      key={order.id}
-                      className="cursor-pointer hover:bg-gray-50"
-                      onClick={() => {
-                        setSelectedOrder(order);
-                        setIsDrawerOpen(true);
-                      }}
-                    >
-                      <TableCell className="font-medium text-blue-600">
-                        {order.saylogixNumber}
-                      </TableCell>
-                      <TableCell>{order.customerName}</TableCell>
-                      <TableCell>
-                        <Badge className={getPriorityColor(order.priority)}>
-                          {order.priority}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{order.itemCount}</TableCell>
-                      <TableCell>
-                        {parseFloat(order.orderValue).toFixed(2)} {order.currency}
-                      </TableCell>
-                      <TableCell>
-                        {new Date(order.createdAt).toLocaleDateString()}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-
-              {packingQueue.length === 0 && (
-                <div className="text-center py-12">
-                  <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No orders to pack</h3>
-                  <p className="text-gray-500">All picked orders have been packed</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        {/* Queue Tab */}
+        <TabsContent value="queue" className="space-y-4">
+          <PackingQueueTable
+            orders={filterAndSort(packingQueue, ['saylogixNumber', 'sourceOrderNumber', 'customerName'])}
+            isLoading={queueLoading}
+            onStartPacking={(orderId) => startPackingMutation.mutate(orderId)}
+            onRowClick={(order) => {
+              setSelectedTask({ 
+                id: 0, 
+                orderId: order.id, 
+                status: 'pending', 
+                createdAt: new Date().toISOString(),
+                order
+              });
+              setIsDrawerOpen(true);
+            }}
+            SortableHeader={SortableHeader}
+          />
         </TabsContent>
 
-        {/* Pack Orders (Auto-Scan) Tab */}
-        <TabsContent value="scan" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <QrCode className="h-5 w-5" />
-                Scanner Mode
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="max-w-md mx-auto">
-                <Label htmlFor="scan-input">Scan SKU Barcode or Tote ID</Label>
-                <div className="relative mt-2">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    ref={scanInputRef}
-                    id="scan-input"
-                    placeholder="Waiting for scan..."
-                    value={scanInput}
-                    onChange={(e) => setScanInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        handleScan(scanInput);
-                      }
-                    }}
-                    className="pl-10 text-lg"
-                    autoFocus
-                  />
-                </div>
-              </div>
-
-              {currentPackingOrder && (
-                <Card className="mt-6">
-                  <CardHeader>
-                    <CardTitle>Packing Order {currentPackingOrder.saylogixNumber}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div>
-                        <p className="text-sm text-gray-500 mb-2">Expected Items:</p>
-                        <div className="space-y-2">
-                          {orderItems.map((item: OrderItem) => {
-                            const scannedQty = scannedItems[item.barcode || item.sku] || 0;
-                            const isComplete = scannedQty >= item.quantity;
-                            
-                            return (
-                              <div
-                                key={item.id}
-                                className={`flex items-center justify-between p-3 rounded-lg border ${
-                                  isComplete
-                                    ? "bg-green-50 border-green-200"
-                                    : "bg-gray-50 border-gray-200"
-                                }`}
-                              >
-                                <div>
-                                  <p className="font-medium">{item.productName}</p>
-                                  <p className="text-sm text-gray-500">
-                                    SKU: {item.sku} {item.barcode && `| Barcode: ${item.barcode}`}
-                                  </p>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className={`font-medium ${isComplete ? "text-green-600" : ""}`}>
-                                    {scannedQty} / {item.quantity}
-                                  </span>
-                                  {isComplete && <CheckCircle className="h-5 w-5 text-green-600" />}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {!currentPackingOrder && (
-                <div className="text-center py-12">
-                  <Box className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Ready to scan</h3>
-                  <p className="text-gray-500">Scan a SKU barcode or Tote ID to start packing</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        {/* In Progress Tab */}
+        <TabsContent value="in-progress" className="space-y-4">
+          <InProgressTasksTable
+            tasks={filterAndSort(inProgressTasks, ['orderId', 'toteId', 'status'])}
+            isLoading={inProgressLoading}
+            onRowClick={(task) => {
+              setSelectedTask(task);
+              setIsDrawerOpen(true);
+            }}
+            SortableHeader={SortableHeader}
+          />
         </TabsContent>
 
         {/* Completed Tab */}
-        <TabsContent value="completed" className="mt-6">
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Order Number</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>AWB Number</TableHead>
-                    <TableHead>Weight</TableHead>
-                    <TableHead>Packed At</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {completedPacks.map((task: PackTask & { order: Order }) => (
-                    <TableRow key={task.id}>
-                      <TableCell className="font-medium text-blue-600">
-                        {task.order?.saylogixNumber}
-                      </TableCell>
-                      <TableCell>{task.order?.customerName}</TableCell>
-                      <TableCell className="font-mono">
-                        {task.awbNumber || "Generating..."}
-                      </TableCell>
-                      <TableCell>{task.weight} kg</TableCell>
-                      <TableCell>
-                        {task.completedAt
-                          ? new Date(task.completedAt).toLocaleString()
-                          : "-"}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => reprintLabel(task)}
-                          disabled={!task.awbNumber}
-                        >
-                          <Printer className="h-4 w-4 mr-2" />
-                          Reprint
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-
-              {completedPacks.length === 0 && (
-                <div className="text-center py-12">
-                  <CheckCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No completed packs</h3>
-                  <p className="text-gray-500">Packed orders will appear here</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <TabsContent value="completed" className="space-y-4">
+          <CompletedTasksTable
+            tasks={filterAndSort(completedTasks, ['orderId', 'awbNumber', 'completedAt'])}
+            isLoading={completedLoading}
+            onRowClick={(task) => {
+              setSelectedTask(task);
+              setIsDrawerOpen(true);
+            }}
+            SortableHeader={SortableHeader}
+          />
         </TabsContent>
       </Tabs>
 
-      {/* Manual Packing Drawer */}
-      <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-        <SheetContent className="w-full sm:max-w-lg">
-          <SheetHeader>
-            <SheetTitle>Pack Order {selectedOrder?.saylogixNumber}</SheetTitle>
-          </SheetHeader>
-
-          {selectedOrder && (
-            <div className="mt-6 space-y-6">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="packaging-type">Packaging Type</Label>
-                  <Select value={packagingType} onValueChange={setPackagingType}>
-                    <SelectTrigger id="packaging-type" className="mt-2">
-                      <SelectValue placeholder="Select packaging type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="small-box">Small Box</SelectItem>
-                      <SelectItem value="medium-box">Medium Box</SelectItem>
-                      <SelectItem value="large-box">Large Box</SelectItem>
-                      <SelectItem value="envelope">Envelope</SelectItem>
-                      <SelectItem value="custom">Custom Packaging</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="weight">Weight (kg)</Label>
-                  <Input
-                    id="weight"
-                    type="number"
-                    step="0.1"
-                    placeholder="Enter weight"
-                    value={weight}
-                    onChange={(e) => setWeight(e.target.value)}
-                    className="mt-2"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-4">
-                <Button onClick={manualCompletePacking} className="flex-1">
-                  Complete Packing
-                </Button>
-                <Button variant="outline" onClick={() => setIsDrawerOpen(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
+      {/* Packing Details Drawer */}
+      <PackingDetailsDrawer
+        task={selectedTask}
+        open={isDrawerOpen}
+        onOpenChange={setIsDrawerOpen}
+        orderItems={orderItems}
+        weight={weight}
+        setWeight={setWeight}
+        packagingType={packagingType}
+        setPackagingType={setPackagingType}
+        notes={notes}
+        setNotes={setNotes}
+        onComplete={(taskId) => completePackingMutation.mutate(taskId)}
+        isCompleting={completePackingMutation.isPending}
+      />
     </div>
   );
 }
+
+// Packing Queue Table Component
+function PackingQueueTable({ 
+  orders, 
+  isLoading, 
+  onStartPacking, 
+  onRowClick, 
+  SortableHeader 
+}: {
+  orders: Order[];
+  isLoading: boolean;
+  onStartPacking: (orderId: number) => void;
+  onRowClick: (order: Order) => void;
+  SortableHeader: React.ComponentType<{ field: string; children: React.ReactNode; className?: string }>;
+}) {
+  if (isLoading) {
+    return (
+      <div className="text-center py-8">
+        <RefreshCw className="h-8 w-8 animate-spin mx-auto text-gray-400" />
+        <p className="text-gray-500 mt-2">Loading packing queue...</p>
+      </div>
+    );
+  }
+
+  if (orders.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <p className="text-gray-500">No orders ready for packing</p>
+        <p className="text-sm text-gray-400 mt-1">Orders will appear here when picking is completed</p>
+      </div>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Package className="h-5 w-5" />
+          Packing Queue
+        </CardTitle>
+        <CardDescription>
+          Orders ready for packing after picking completion
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <SortableHeader field="saylogixNumber">Order ID</SortableHeader>
+                <SortableHeader field="sourceOrderNumber">Source</SortableHeader>
+                <SortableHeader field="customerName">Customer</SortableHeader>
+                <SortableHeader field="priority">Priority</SortableHeader>
+                <SortableHeader field="orderValue">Value</SortableHeader>
+                <SortableHeader field="itemCount">Items</SortableHeader>
+                <SortableHeader field="createdAt">Created</SortableHeader>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {orders.map((order) => (
+                <TableRow 
+                  key={order.id} 
+                  className="cursor-pointer hover:bg-gray-50"
+                  onClick={() => onRowClick(order)}
+                >
+                  <TableCell className="font-medium">{order.saylogixNumber}</TableCell>
+                  <TableCell>{order.sourceOrderNumber}</TableCell>
+                  <TableCell>{order.customerName}</TableCell>
+                  <TableCell>
+                    <Badge className={getPriorityColor(order.priority)}>
+                      {order.priority}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{order.currency} {order.orderValue}</TableCell>
+                  <TableCell>{order.itemCount}</TableCell>
+                  <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// In Progress Tasks Table Component
+function InProgressTasksTable({ 
+  tasks, 
+  isLoading, 
+  onRowClick, 
+  SortableHeader 
+}: {
+  tasks: PackTask[];
+  isLoading: boolean;
+  onRowClick: (task: PackTask) => void;
+  SortableHeader: React.ComponentType<{ field: string; children: React.ReactNode; className?: string }>;
+}) {
+  if (isLoading) {
+    return (
+      <div className="text-center py-8">
+        <RefreshCw className="h-8 w-8 animate-spin mx-auto text-gray-400" />
+        <p className="text-gray-500 mt-2">Loading in-progress tasks...</p>
+      </div>
+    );
+  }
+
+  if (tasks.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <p className="text-gray-500">No tasks in progress</p>
+        <p className="text-sm text-gray-400 mt-1">Started packing tasks will appear here</p>
+      </div>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Clock className="h-5 w-5" />
+          In Progress
+        </CardTitle>
+        <CardDescription>
+          Currently being packed orders
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <SortableHeader field="orderId">Order ID</SortableHeader>
+                <SortableHeader field="toteId">Tote ID</SortableHeader>
+                <SortableHeader field="status">Status</SortableHeader>
+                <SortableHeader field="packagingType">Packaging</SortableHeader>
+                <SortableHeader field="weight">Weight</SortableHeader>
+                <SortableHeader field="createdAt">Started</SortableHeader>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tasks.map((task) => (
+                <TableRow 
+                  key={task.id} 
+                  className="cursor-pointer hover:bg-gray-50"
+                  onClick={() => onRowClick(task)}
+                >
+                  <TableCell className="font-medium">Order #{task.orderId}</TableCell>
+                  <TableCell>{task.toteId || 'N/A'}</TableCell>
+                  <TableCell>
+                    <Badge className={getStatusColor(task.status)}>
+                      {task.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{task.packagingType || 'TBD'}</TableCell>
+                  <TableCell>{task.weight ? `${task.weight}kg` : 'TBD'}</TableCell>
+                  <TableCell>{new Date(task.createdAt).toLocaleDateString()}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Completed Tasks Table Component
+function CompletedTasksTable({ 
+  tasks, 
+  isLoading, 
+  onRowClick, 
+  SortableHeader 
+}: {
+  tasks: PackTask[];
+  isLoading: boolean;
+  onRowClick: (task: PackTask) => void;
+  SortableHeader: React.ComponentType<{ field: string; children: React.ReactNode; className?: string }>;
+}) {
+  if (isLoading) {
+    return (
+      <div className="text-center py-8">
+        <RefreshCw className="h-8 w-8 animate-spin mx-auto text-gray-400" />
+        <p className="text-gray-500 mt-2">Loading completed tasks...</p>
+      </div>
+    );
+  }
+
+  if (tasks.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <PackageCheck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <p className="text-gray-500">No completed packing tasks</p>
+        <p className="text-sm text-gray-400 mt-1">Completed tasks will appear here</p>
+      </div>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <PackageCheck className="h-5 w-5" />
+          Completed Packing
+        </CardTitle>
+        <CardDescription>
+          Successfully packed orders ready for dispatch
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <SortableHeader field="orderId">Order ID</SortableHeader>
+                <SortableHeader field="awbNumber">AWB</SortableHeader>
+                <SortableHeader field="packagingType">Packaging</SortableHeader>
+                <SortableHeader field="weight">Weight</SortableHeader>
+                <SortableHeader field="completedBy">Packed By</SortableHeader>
+                <SortableHeader field="completedAt">Completed</SortableHeader>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tasks.map((task) => (
+                <TableRow 
+                  key={task.id} 
+                  className="cursor-pointer hover:bg-gray-50"
+                  onClick={() => onRowClick(task)}
+                >
+                  <TableCell className="font-medium">Order #{task.orderId}</TableCell>
+                  <TableCell>{task.awbNumber || 'Pending'}</TableCell>
+                  <TableCell>{task.packagingType || 'Standard'}</TableCell>
+                  <TableCell>{task.weight ? `${task.weight}kg` : 'N/A'}</TableCell>
+                  <TableCell>Staff #{task.completedBy || 'Unknown'}</TableCell>
+                  <TableCell>
+                    {task.completedAt ? new Date(task.completedAt).toLocaleDateString() : 'N/A'}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Packing Details Drawer Component
+function PackingDetailsDrawer({
+  task,
+  open,
+  onOpenChange,
+  orderItems,
+  weight,
+  setWeight,
+  packagingType,
+  setPackagingType,
+  notes,
+  setNotes,
+  onComplete,
+  isCompleting
+}: {
+  task: PackTask | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  orderItems: OrderItem[];
+  weight: string;
+  setWeight: (weight: string) => void;
+  packagingType: string;
+  setPackagingType: (type: string) => void;
+  notes: string;
+  setNotes: (notes: string) => void;
+  onComplete: (taskId: number) => void;
+  isCompleting: boolean;
+}) {
+  if (!task) return null;
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="sm:max-w-[600px] overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>Packing Details</SheetTitle>
+          <SheetDescription>
+            Complete packing for Order #{task.orderId}
+          </SheetDescription>
+        </SheetHeader>
+        
+        <div className="space-y-6 mt-6">
+          {/* Order Information */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Order ID</Label>
+              <Input value={`Order #${task.orderId}`} disabled className="bg-gray-50" />
+            </div>
+            <div className="space-y-2">
+              <Label>Tote ID</Label>
+              <Input value={task.toteId || 'Not assigned'} disabled className="bg-gray-50" />
+            </div>
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Badge className={getStatusColor(task.status)}>
+                {task.status}
+              </Badge>
+            </div>
+            <div className="space-y-2">
+              <Label>Started</Label>
+              <Input value={new Date(task.createdAt).toLocaleDateString()} disabled className="bg-gray-50" />
+            </div>
+          </div>
+
+          {/* Order Items */}
+          <div className="space-y-2">
+            <Label>Items to Pack</Label>
+            <div className="border rounded-lg p-4 space-y-2 max-h-32 overflow-y-auto">
+              {orderItems.map((item) => (
+                <div key={item.id} className="flex justify-between items-center py-1 border-b last:border-b-0">
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">{item.productName}</p>
+                    <p className="text-xs text-gray-500">SKU: {item.sku}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium">Qty: {item.quantity}</p>
+                    <p className="text-xs text-gray-500">{item.currency} {item.unitPrice}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Packing Details */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Packing Information</h3>
+            
+            <div className="space-y-2">
+              <Label>Packaging Type</Label>
+              <Select value={packagingType} onValueChange={setPackagingType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select packaging type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="standard-box">Standard Box</SelectItem>
+                  <SelectItem value="padded-envelope">Padded Envelope</SelectItem>
+                  <SelectItem value="tube">Tube</SelectItem>
+                  <SelectItem value="custom">Custom</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Weight (kg)</Label>
+              <Input
+                type="number"
+                step="0.1"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                placeholder="Enter package weight"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Packing Notes</Label>
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Add any special packing notes..."
+                rows={3}
+              />
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-2 pt-4 border-t">
+            <Button
+              onClick={() => onComplete(task.id)}
+              disabled={isCompleting || !packagingType}
+              className="flex-1"
+            >
+              {isCompleting ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Completing...
+                </>
+              ) : (
+                <>
+                  <PackageCheck className="h-4 w-4 mr-2" />
+                  Complete Packing
+                </>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isCompleting}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+// Helper functions
+const getPriorityColor = (priority: string) => {
+  switch (priority) {
+    case "urgent":
+      return "bg-red-100 text-red-800 border-red-200";
+    case "high":
+      return "bg-orange-100 text-orange-800 border-orange-200";
+    case "normal":
+      return "bg-blue-100 text-blue-800 border-blue-200";
+    case "low":
+      return "bg-gray-100 text-gray-800 border-gray-200";
+    default:
+      return "bg-gray-100 text-gray-800 border-gray-200";
+  }
+};
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case "completed":
+      return "bg-green-100 text-green-800";
+    case "in_progress":
+      return "bg-yellow-100 text-yellow-800";
+    case "pending":
+      return "bg-blue-100 text-blue-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+};

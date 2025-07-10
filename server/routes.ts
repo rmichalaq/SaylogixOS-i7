@@ -482,6 +482,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/pack-tasks/:id", async (req, res) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      const { status, packagingType, weight, notes } = req.body;
+      
+      // Update pack task
+      const updates: any = {};
+      if (status) updates.status = status;
+      if (packagingType) updates.packagingType = packagingType;
+      if (weight) updates.weight = weight;
+      if (notes) updates.notes = notes;
+      
+      if (status === "completed") {
+        updates.completedAt = new Date();
+        updates.completedBy = req.session?.user?.id || null;
+        
+        // Generate AWB number
+        const awbNumber = `AWB${Date.now()}`; // In production, use courier API
+        updates.awbNumber = awbNumber;
+        
+        // Update order status to packed
+        const tasks = await storage.getPackTasks();
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+          await storage.updateOrder(task.orderId, { status: "packed" });
+          
+          // Emit packing completed event
+          eventBus.emit("EV015", { 
+            type: "packing_completed", 
+            orderId: task.orderId, 
+            packTaskId: taskId,
+            awbNumber 
+          });
+        }
+      }
+      
+      await storage.updatePackTask(taskId, updates);
+      
+      res.json({ success: true, message: "Pack task updated successfully" });
+    } catch (error) {
+      console.error("Failed to update pack task:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   app.post("/api/pack-tasks/:id/reprint", async (req, res) => {
     try {
       const taskId = parseInt(req.params.id);
