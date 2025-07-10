@@ -7,7 +7,7 @@ import InventoryRedesigned from "@/pages/InventoryRedesigned";
 import InboundPage from "@/pages/Inbound";
 import PickingPage from "@/pages/Picking";
 import PackingPage from "@/pages/Packing";
-import DispatchPage from "@/pages/dispatch/DispatchPage";
+import DispatchPage from "@/pages/Dispatch";
 import LastMilePage from "@/pages/lastmile/LastMilePage";
 import ReportsPage from "@/pages/reports/ReportsPage";
 import Settings from "@/pages/Settings";
