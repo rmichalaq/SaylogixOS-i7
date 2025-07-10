@@ -25,6 +25,7 @@ import {
   MoreHorizontal,
   ArrowUpDown,
   MoreVertical,
+  ChevronDown,
   RefreshCw,
   Scan,
   Weight,
@@ -289,175 +290,206 @@ export default function Packing() {
   );
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Packing</h1>
-          <p className="text-gray-600 mt-1">
-            Manage order packing workflow from picked orders to ready for dispatch
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <MoreHorizontal className="h-4 w-4 mr-2" />
-                Actions
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem>
-                <Printer className="h-4 w-4 mr-2" />
-                Print Packing Lists
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <QrCode className="h-4 w-4 mr-2" />
-                Generate QR Codes
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Users className="h-4 w-4 mr-2" />
-                Assign Packer
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings className="h-4 w-4 mr-2" />
-                Packing Settings
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <Card>
+    <div className="space-y-6">
+      {/* KPI Cards - Match Inventory exact layout */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="relative overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Packed Orders</CardTitle>
-            <PackageCheck className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-gray-600">Total Packed Orders</CardTitle>
+            <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
+              <PackageCheck className="h-4 w-4 text-blue-600" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3</div>
-            <p className="text-xs text-muted-foreground">Ready for dispatch</p>
+            <div className="text-2xl font-bold text-gray-900">3</div>
+            <p className="text-xs text-gray-500 flex items-center mt-1">
+              <span className="text-green-600 text-xs font-medium">↗</span>
+              Ready for dispatch
+            </p>
           </CardContent>
         </Card>
-        <Card>
+        
+        <Card className="relative overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg. Packing Time</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-gray-600">Avg. Packing Time</CardTitle>
+            <div className="h-8 w-8 rounded-lg bg-yellow-100 flex items-center justify-center">
+              <Clock className="h-4 w-4 text-yellow-600" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1m 24s</div>
-            <p className="text-xs text-muted-foreground">Per order</p>
+            <div className="text-2xl font-bold text-gray-900">1m 24s</div>
+            <p className="text-xs text-gray-500 flex items-center mt-1">
+              Per order
+            </p>
           </CardContent>
         </Card>
-        <Card>
+        
+        <Card className="relative overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Weight Packed Today</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-gray-600">Total Weight Packed Today</CardTitle>
+            <div className="h-8 w-8 rounded-lg bg-green-100 flex items-center justify-center">
+              <Package className="h-4 w-4 text-green-600" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">4.6kg</div>
-            <p className="text-xs text-muted-foreground">Today's total</p>
+            <div className="text-2xl font-bold text-green-600">4.6kg</div>
+            <p className="text-xs text-gray-500 flex items-center mt-1">
+              <span className="text-green-600 text-xs font-medium">↗</span>
+              Today's total
+            </p>
           </CardContent>
         </Card>
-        <Card>
+        
+        <Card className="relative overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Staff Productivity</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-gray-600">Staff Productivity</CardTitle>
+            <div className="h-8 w-8 rounded-lg bg-orange-100 flex items-center justify-center">
+              <Users className="h-4 w-4 text-orange-600" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3</div>
-            <p className="text-xs text-muted-foreground">Orders by 1 Staff</p>
+            <div className="text-2xl font-bold text-orange-600">3</div>
+            <p className="text-xs text-gray-500 flex items-center mt-1">
+              Orders by 1 Staff
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Active Filters/Sorts */}
-      {(searchTerm || sortField) && (
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-sm text-gray-600">Active filters:</span>
-          {searchTerm && (
-            <Badge variant="secondary" className="flex items-center gap-1">
-              Search: {searchTerm}
-              <button onClick={() => setSearchTerm('')} className="ml-1 hover:bg-gray-300 rounded-full p-0.5">
-                ×
-              </button>
-            </Badge>
-          )}
-          {sortField && (
-            <Badge variant="secondary" className="flex items-center gap-1">
-              Sort: {sortField} {sortDirection === 'desc' ? '↓' : '↑'}
-              <button onClick={() => { setSortField(''); setSortDirection('asc'); }} className="ml-1 hover:bg-gray-300 rounded-full p-0.5">
-                ×
-              </button>
-            </Badge>
-          )}
-        </div>
-      )}
-
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="queue" className="flex items-center gap-2">
+      {/* Section Tabs - Match Inventory exact styling */}
+      <div className="flex items-center justify-between">
+        <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+          <button 
+            onClick={() => setActiveTab('queue')}
+            className={`flex items-center space-x-2 px-3 py-1.5 text-sm font-medium ${activeTab === 'queue' ? 'text-blue-600 bg-white rounded-md shadow-sm' : 'text-gray-500'}`}
+          >
             <Package className="h-4 w-4" />
-            Queue ({packingQueue.length})
-          </TabsTrigger>
-          <TabsTrigger value="in-progress" className="flex items-center gap-2">
+            <span>Queue ({packingQueue.length})</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('in-progress')}
+            className={`flex items-center space-x-2 px-3 py-1.5 text-sm font-medium ${activeTab === 'in-progress' ? 'text-blue-600 bg-white rounded-md shadow-sm' : 'text-gray-500'}`}
+          >
             <Clock className="h-4 w-4" />
-            In Progress ({inProgressTasks.length})
-          </TabsTrigger>
-          <TabsTrigger value="completed" className="flex items-center gap-2">
+            <span>In Progress ({inProgressTasks.length})</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('completed')}
+            className={`flex items-center space-x-2 px-3 py-1.5 text-sm font-medium ${activeTab === 'completed' ? 'text-blue-600 bg-white rounded-md shadow-sm' : 'text-gray-500'}`}
+          >
             <PackageCheck className="h-4 w-4" />
-            Completed ({completedTasks.length})
-          </TabsTrigger>
-        </TabsList>
+            <span>Completed ({completedTasks.length})</span>
+          </button>
+        </div>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="flex items-center space-x-2">
+              <Settings className="h-4 w-4" />
+              <span>Actions</span>
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem>
+              <Printer className="h-4 w-4 mr-2" />
+              Print Packing Lists
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <QrCode className="h-4 w-4 mr-2" />
+              Generate QR Codes
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Users className="h-4 w-4 mr-2" />
+              Assign Packer
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Settings className="h-4 w-4 mr-2" />
+              Packing Settings
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
-        {/* Queue Tab */}
-        <TabsContent value="queue" className="space-y-4">
-          <PackingQueueTable
-            orders={filterAndSort(packingQueue, ['saylogixNumber', 'sourceOrderNumber', 'customerName'])}
-            isLoading={queueLoading}
-            onStartPacking={(orderId) => startPackingMutation.mutate(orderId)}
-            onRowClick={(order) => {
-              setSelectedTask({ 
-                id: 0, 
-                orderId: order.id, 
-                status: 'pending', 
-                createdAt: new Date().toISOString(),
-                order
-              });
-              setIsDrawerOpen(true);
-            }}
-            SortableHeader={SortableHeader}
-          />
-        </TabsContent>
+      {/* Main Content Area - Match Inventory styling */}
+      <Card className="p-0 overflow-hidden">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">
+              {activeTab === 'queue' && `Queue (${packingQueue.length})`}
+              {activeTab === 'in-progress' && `In Progress (${inProgressTasks.length})`}
+              {activeTab === 'completed' && `Completed (${completedTasks.length})`}
+            </h2>
+          </div>
 
-        {/* In Progress Tab */}
-        <TabsContent value="in-progress" className="space-y-4">
-          <InProgressTasksTable
-            tasks={filterAndSort(inProgressTasks, ['orderId', 'toteId', 'status'])}
-            isLoading={inProgressLoading}
-            onRowClick={(task) => {
-              setSelectedTask(task);
-              setIsDrawerOpen(true);
-            }}
-            SortableHeader={SortableHeader}
-          />
-        </TabsContent>
+          {/* Active Filters/Sorts */}
+          {(searchTerm || sortField) && (
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-sm text-gray-600">Active filters:</span>
+              {searchTerm && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Search: {searchTerm}
+                  <button onClick={() => setSearchTerm('')} className="ml-1 hover:bg-gray-300 rounded-full p-0.5">
+                    ×
+                  </button>
+                </Badge>
+              )}
+              {sortField && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Sort: {sortField} {sortDirection === 'desc' ? '↓' : '↑'}
+                  <button onClick={() => { setSortField(''); setSortDirection('asc'); }} className="ml-1 hover:bg-gray-300 rounded-full p-0.5">
+                    ×
+                  </button>
+                </Badge>
+              )}
+            </div>
+          )}
 
-        {/* Completed Tab */}
-        <TabsContent value="completed" className="space-y-4">
-          <CompletedTasksTable
-            tasks={filterAndSort(completedTasks, ['orderId', 'awbNumber', 'completedAt'])}
-            isLoading={completedLoading}
-            onRowClick={(task) => {
-              setSelectedTask(task);
-              setIsDrawerOpen(true);
-            }}
-            SortableHeader={SortableHeader}
-          />
-        </TabsContent>
-      </Tabs>
+          {/* Content based on active tab */}
+          {activeTab === 'queue' && (
+            <PackingQueueTable
+              orders={filterAndSort(packingQueue, ['saylogixNumber', 'sourceOrderNumber', 'customerName'])}
+              isLoading={queueLoading}
+              onStartPacking={(orderId) => startPackingMutation.mutate(orderId)}
+              onRowClick={(order) => {
+                setSelectedTask({ 
+                  id: 0, 
+                  orderId: order.id, 
+                  status: 'pending', 
+                  createdAt: new Date().toISOString(),
+                  order
+                });
+                setIsDrawerOpen(true);
+              }}
+              SortableHeader={SortableHeader}
+            />
+          )}
+
+          {activeTab === 'in-progress' && (
+            <InProgressTasksTable
+              tasks={filterAndSort(inProgressTasks, ['orderId', 'toteId', 'status'])}
+              isLoading={inProgressLoading}
+              onRowClick={(task) => {
+                setSelectedTask(task);
+                setIsDrawerOpen(true);
+              }}
+              SortableHeader={SortableHeader}
+            />
+          )}
+
+          {activeTab === 'completed' && (
+            <CompletedTasksTable
+              tasks={filterAndSort(completedTasks, ['orderId', 'awbNumber', 'completedAt'])}
+              isLoading={completedLoading}
+              onRowClick={(task) => {
+                setSelectedTask(task);
+                setIsDrawerOpen(true);
+              }}
+              SortableHeader={SortableHeader}
+            />
+          )}
+        </div>
+      </Card>
 
       {/* Packing Details Drawer */}
       <PackingDetailsDrawer
@@ -512,55 +544,42 @@ function PackingQueueTable({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Package className="h-5 w-5" />
-          Packing Queue
-        </CardTitle>
-        <CardDescription>
-          Orders ready for packing after picking completion
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <SortableHeader field="saylogixNumber">Order ID</SortableHeader>
-                <SortableHeader field="sourceOrderNumber">Source</SortableHeader>
-                <SortableHeader field="customerName">Customer</SortableHeader>
-                <SortableHeader field="priority">Priority</SortableHeader>
-                <SortableHeader field="orderValue">Value</SortableHeader>
-                <SortableHeader field="itemCount">Items</SortableHeader>
-                <SortableHeader field="createdAt">Created</SortableHeader>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {orders.map((order) => (
-                <TableRow 
-                  key={order.id} 
-                  className="cursor-pointer hover:bg-gray-50"
-                  onClick={() => onRowClick(order)}
-                >
-                  <TableCell className="font-medium">{order.saylogixNumber}</TableCell>
-                  <TableCell>{order.sourceOrderNumber}</TableCell>
-                  <TableCell>{order.customerName}</TableCell>
-                  <TableCell>
-                    <Badge className={getPriorityColor(order.priority)}>
-                      {order.priority}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{order.currency} {order.orderValue}</TableCell>
-                  <TableCell>{order.itemCount}</TableCell>
-                  <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="border border-gray-200 rounded-lg overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <SortableHeader field="saylogixNumber">Order ID</SortableHeader>
+            <SortableHeader field="sourceOrderNumber">Source</SortableHeader>
+            <SortableHeader field="customerName">Customer</SortableHeader>
+            <SortableHeader field="priority">Priority</SortableHeader>
+            <SortableHeader field="orderValue">Value</SortableHeader>
+            <SortableHeader field="itemCount">Items</SortableHeader>
+            <SortableHeader field="createdAt">Created</SortableHeader>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {orders.map((order) => (
+            <TableRow 
+              key={order.id} 
+              className="cursor-pointer hover:bg-gray-50"
+              onClick={() => onRowClick(order)}
+            >
+              <TableCell className="font-medium">{order.saylogixNumber}</TableCell>
+              <TableCell>{order.sourceOrderNumber}</TableCell>
+              <TableCell>{order.customerName}</TableCell>
+              <TableCell>
+                <Badge className={getPriorityColor(order.priority)}>
+                  {order.priority}
+                </Badge>
+              </TableCell>
+              <TableCell>{order.currency} {order.orderValue}</TableCell>
+              <TableCell>{order.itemCount}</TableCell>
+              <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 }
 
@@ -596,53 +615,40 @@ function InProgressTasksTable({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Clock className="h-5 w-5" />
-          In Progress
-        </CardTitle>
-        <CardDescription>
-          Currently being packed orders
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <SortableHeader field="orderId">Order ID</SortableHeader>
-                <SortableHeader field="toteId">Tote ID</SortableHeader>
-                <SortableHeader field="status">Status</SortableHeader>
-                <SortableHeader field="packagingType">Packaging</SortableHeader>
-                <SortableHeader field="weight">Weight</SortableHeader>
-                <SortableHeader field="createdAt">Started</SortableHeader>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tasks.map((task) => (
-                <TableRow 
-                  key={task.id} 
-                  className="cursor-pointer hover:bg-gray-50"
-                  onClick={() => onRowClick(task)}
-                >
-                  <TableCell className="font-medium">Order #{task.orderId}</TableCell>
-                  <TableCell>{task.toteId || 'N/A'}</TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(task.status)}>
-                      {task.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{task.packagingType || 'TBD'}</TableCell>
-                  <TableCell>{task.weight ? `${task.weight}kg` : 'TBD'}</TableCell>
-                  <TableCell>{new Date(task.createdAt).toLocaleDateString()}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="border border-gray-200 rounded-lg overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <SortableHeader field="orderId">Order ID</SortableHeader>
+            <SortableHeader field="toteId">Tote ID</SortableHeader>
+            <SortableHeader field="status">Status</SortableHeader>
+            <SortableHeader field="packagingType">Packaging</SortableHeader>
+            <SortableHeader field="weight">Weight</SortableHeader>
+            <SortableHeader field="createdAt">Started</SortableHeader>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {tasks.map((task) => (
+            <TableRow 
+              key={task.id} 
+              className="cursor-pointer hover:bg-gray-50"
+              onClick={() => onRowClick(task)}
+            >
+              <TableCell className="font-medium">Order #{task.orderId}</TableCell>
+              <TableCell>{task.toteId || 'N/A'}</TableCell>
+              <TableCell>
+                <Badge className={getStatusColor(task.status)}>
+                  {task.status}
+                </Badge>
+              </TableCell>
+              <TableCell>{task.packagingType || 'TBD'}</TableCell>
+              <TableCell>{task.weight ? `${task.weight}kg` : 'TBD'}</TableCell>
+              <TableCell>{new Date(task.createdAt).toLocaleDateString()}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 }
 
@@ -678,51 +684,38 @@ function CompletedTasksTable({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <PackageCheck className="h-5 w-5" />
-          Completed Packing
-        </CardTitle>
-        <CardDescription>
-          Successfully packed orders ready for dispatch
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <SortableHeader field="orderId">Order ID</SortableHeader>
-                <SortableHeader field="awbNumber">AWB</SortableHeader>
-                <SortableHeader field="packagingType">Packaging</SortableHeader>
-                <SortableHeader field="weight">Weight</SortableHeader>
-                <SortableHeader field="completedBy">Packed By</SortableHeader>
-                <SortableHeader field="completedAt">Completed</SortableHeader>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tasks.map((task) => (
-                <TableRow 
-                  key={task.id} 
-                  className="cursor-pointer hover:bg-gray-50"
-                  onClick={() => onRowClick(task)}
-                >
-                  <TableCell className="font-medium">Order #{task.orderId}</TableCell>
-                  <TableCell>{task.awbNumber || 'Pending'}</TableCell>
-                  <TableCell>{task.packagingType || 'Standard'}</TableCell>
-                  <TableCell>{task.weight ? `${task.weight}kg` : 'N/A'}</TableCell>
-                  <TableCell>Staff #{task.completedBy || 'Unknown'}</TableCell>
-                  <TableCell>
-                    {task.completedAt ? new Date(task.completedAt).toLocaleDateString() : 'N/A'}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="border border-gray-200 rounded-lg overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <SortableHeader field="orderId">Order ID</SortableHeader>
+            <SortableHeader field="awbNumber">AWB</SortableHeader>
+            <SortableHeader field="packagingType">Packaging</SortableHeader>
+            <SortableHeader field="weight">Weight</SortableHeader>
+            <SortableHeader field="completedBy">Packed By</SortableHeader>
+            <SortableHeader field="completedAt">Completed</SortableHeader>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {tasks.map((task) => (
+            <TableRow 
+              key={task.id} 
+              className="cursor-pointer hover:bg-gray-50"
+              onClick={() => onRowClick(task)}
+            >
+              <TableCell className="font-medium">Order #{task.orderId}</TableCell>
+              <TableCell>{task.awbNumber || 'Pending'}</TableCell>
+              <TableCell>{task.packagingType || 'Standard'}</TableCell>
+              <TableCell>{task.weight ? `${task.weight}kg` : 'N/A'}</TableCell>
+              <TableCell>Staff #{task.completedBy || 'Unknown'}</TableCell>
+              <TableCell>
+                {task.completedAt ? new Date(task.completedAt).toLocaleDateString() : 'N/A'}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 }
 
