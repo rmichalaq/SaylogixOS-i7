@@ -1,4 +1,5 @@
 import { useState } from "react";
+import React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { 
   Package, 
   Search, 
@@ -37,6 +39,8 @@ import { format } from "date-fns";
 function ViewAllProducts() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
   const { data: inventory, isLoading } = useQuery({
     queryKey: ["/api/inventory"],
@@ -54,6 +58,11 @@ function ViewAllProducts() {
   }) || [];
 
   const categories = [...new Set(inventory?.map((item: any) => item.category).filter(Boolean))] || [];
+
+  const handleProductClick = (product: any) => {
+    setSelectedProduct(product);
+    setEditDrawerOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -102,7 +111,11 @@ function ViewAllProducts() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredInventory.map((item: any) => (
-                    <tr key={item.id} className="hover:bg-gray-50">
+                    <tr 
+                      key={item.id} 
+                      className="hover:bg-gray-50 cursor-pointer transition-colors"
+                      onClick={() => handleProductClick(item)}
+                    >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
@@ -140,7 +153,214 @@ function ViewAllProducts() {
           )}
         </CardContent>
       </Card>
+
+      {/* Product Edit Drawer */}
+      <ProductEditDrawer 
+        open={editDrawerOpen}
+        onOpenChange={setEditDrawerOpen}
+        product={selectedProduct}
+      />
     </div>
+  );
+}
+
+// Product Edit Drawer Component
+function ProductEditDrawer({ open, onOpenChange, product }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  product: any;
+}) {
+  const [formData, setFormData] = useState({
+    productName: "",
+    category: "",
+    barcode: "",
+    sku: "",
+    description: "",
+    status: "active",
+    weight: "",
+    dimensions: ""
+  });
+
+  const queryClient = useQueryClient();
+
+  // Initialize form data when product changes
+  React.useEffect(() => {
+    if (product) {
+      setFormData({
+        productName: product.productName || "",
+        category: product.category || "",
+        barcode: product.barcode || "",
+        sku: product.sku || "",
+        description: product.description || "",
+        status: product.status || "active",
+        weight: product.weight || "",
+        dimensions: product.dimensions || ""
+      });
+    }
+  }, [product]);
+
+  const updateProductMutation = useMutation({
+    mutationFn: (data: any) => apiRequest(`/api/inventory/${product?.id}`, "PATCH", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      onOpenChange(false);
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (product) {
+      updateProductMutation.mutate(formData);
+    }
+  };
+
+  const handleCancel = () => {
+    // Reset form data to original values
+    if (product) {
+      setFormData({
+        productName: product.productName || "",
+        category: product.category || "",
+        barcode: product.barcode || "",
+        sku: product.sku || "",
+        description: product.description || "",
+        status: product.status || "active",
+        weight: product.weight || "",
+        dimensions: product.dimensions || ""
+      });
+    }
+    onOpenChange(false);
+  };
+
+  const statusOptions = [
+    { value: "active", label: "Active" },
+    { value: "inactive", label: "Inactive" },
+    { value: "low_stock", label: "Low Stock" },
+    { value: "out_of_stock", label: "Out of Stock" },
+    { value: "discontinued", label: "Discontinued" }
+  ];
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="w-[600px] sm:max-w-[600px]">
+        <SheetHeader>
+          <SheetTitle>Edit Product</SheetTitle>
+          <SheetDescription>
+            Update product information and inventory details
+          </SheetDescription>
+        </SheetHeader>
+
+        <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="productName">Product Name *</Label>
+              <Input
+                id="productName"
+                value={formData.productName}
+                onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
+                placeholder="Enter product name..."
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="sku">SKU Code *</Label>
+              <Input
+                id="sku"
+                value={formData.sku}
+                onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                placeholder="Enter SKU..."
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Input
+                id="category"
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                placeholder="Enter category..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="barcode">Barcode</Label>
+              <Input
+                id="barcode"
+                value={formData.barcode}
+                onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+                placeholder="Enter barcode..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="status">Inventory Status</Label>
+              <Select 
+                value={formData.status} 
+                onValueChange={(value) => setFormData({ ...formData, status: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {statusOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="weight">Weight (kg)</Label>
+              <Input
+                id="weight"
+                type="number"
+                step="0.01"
+                value={formData.weight}
+                onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                placeholder="Enter weight..."
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Enter product description..."
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="dimensions">Dimensions (L x W x H)</Label>
+            <Input
+              id="dimensions"
+              value={formData.dimensions}
+              onChange={(e) => setFormData({ ...formData, dimensions: e.target.value })}
+              placeholder="e.g., 10 x 5 x 2 cm"
+            />
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4 border-t">
+            <Button type="button" variant="outline" onClick={handleCancel}>
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              className="saylogix-primary"
+              disabled={updateProductMutation.isPending}
+            >
+              {updateProductMutation.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
+        </form>
+      </SheetContent>
+    </Sheet>
   );
 }
 

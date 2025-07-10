@@ -368,6 +368,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/inventory/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid inventory ID" });
+      }
+      
+      // First check if the item exists
+      const existingItem = await storage.getInventoryById(id);
+      if (!existingItem) {
+        return res.status(404).json({ error: "Inventory item not found" });
+      }
+      
+      // Update the item
+      await storage.updateInventoryById(id, req.body);
+      res.json({ success: true, message: "Inventory item updated successfully" });
+    } catch (error) {
+      console.error("Failed to update inventory item:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Events API
   app.get("/api/events", async (req, res) => {
     try {
