@@ -482,12 +482,36 @@ export const putawayItems = pgTable("putaway_items", {
 });
 
 // Settings Tables
+export const warehouses = pgTable("warehouses", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  code: text("code").notNull().unique(),
+  city: text("city").notNull(),
+  type: text("type").notNull(), // 'hub' | 'fulfillment'
+  isActive: boolean("is_active").default(true),
+  address: text("address"),
+  coordinates: jsonb("coordinates"), // {lat: number, lng: number}
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  source: text("source").default("LIVE"),
+});
+
 export const warehouseZones = pgTable("warehouse_zones", {
   id: serial("id").primaryKey(),
-  name: varchar("name", { length: 100 }).notNull().unique(),
+  warehouseId: integer("warehouse_id").notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
   description: text("description"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const roles = pgTable("roles", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  permissions: jsonb("permissions"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  source: text("source").default("LIVE"),
 });
 
 export const staffRoles = pgTable("staff_roles", {
@@ -497,6 +521,29 @@ export const staffRoles = pgTable("staff_roles", {
   permissions: jsonb("permissions"), // Array of permission strings
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const systemUsers = pgTable("system_users", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  roleId: integer("role_id").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  source: text("source").default("LIVE"),
+});
+
+export const clients = pgTable("clients", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  contractStart: timestamp("contract_start"),
+  contractEnd: timestamp("contract_end"),
+  slaTemplate: text("sla_template"),
+  integrationRules: jsonb("integration_rules"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  source: text("source").default("LIVE"),
 });
 
 export const toteCartTypes = pgTable("tote_cart_types", {
@@ -517,14 +564,38 @@ export const insertIntegrationSchema = createInsertSchema(integrations).omit({
   name: z.string().optional(),
 });
 
+export const insertWarehouseSchema = createInsertSchema(warehouses).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertWarehouseZoneSchema = createInsertSchema(warehouseZones).omit({
   id: true,
   createdAt: true,
 });
 
+export const insertRoleSchema = createInsertSchema(roles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertStaffRoleSchema = createInsertSchema(staffRoles).omit({
   id: true,
   createdAt: true,
+});
+
+export const insertSystemUserSchema = createInsertSchema(systemUsers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertClientSchema = createInsertSchema(clients).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertToteCartTypeSchema = createInsertSchema(toteCartTypes).omit({
@@ -638,10 +709,18 @@ export type WebhookLog = typeof webhookLogs.$inferSelect;
 export type InsertWebhookLog = z.infer<typeof insertWebhookLogSchema>;
 export type Integration = typeof integrations.$inferSelect;
 export type InsertIntegration = z.infer<typeof insertIntegrationSchema>;
+export type Warehouse = typeof warehouses.$inferSelect;
+export type InsertWarehouse = z.infer<typeof insertWarehouseSchema>;
 export type WarehouseZone = typeof warehouseZones.$inferSelect;
 export type InsertWarehouseZone = z.infer<typeof insertWarehouseZoneSchema>;
+export type Role = typeof roles.$inferSelect;
+export type InsertRole = z.infer<typeof insertRoleSchema>;
 export type StaffRole = typeof staffRoles.$inferSelect;
 export type InsertStaffRole = z.infer<typeof insertStaffRoleSchema>;
+export type SystemUser = typeof systemUsers.$inferSelect;
+export type InsertSystemUser = z.infer<typeof insertSystemUserSchema>;
+export type Client = typeof clients.$inferSelect;
+export type InsertClient = z.infer<typeof insertClientSchema>;
 export type ToteCartType = typeof toteCartTypes.$inferSelect;
 export type InsertToteCartType = z.infer<typeof insertToteCartTypeSchema>;
 

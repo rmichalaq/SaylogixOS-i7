@@ -1,8 +1,8 @@
 import {
   users, orders, orderItems, inventory, events, addressVerifications,
   nasLookups, pickTasks, packTasks, manifests, manifestItems,
-  routes, routeStops, webhookLogs, integrations, warehouseZones, 
-  staffRoles, toteCartTypes, purchaseOrders, purchaseOrderItems,
+  routes, routeStops, webhookLogs, integrations, warehouses, warehouseZones, 
+  roles, staffRoles, systemUsers, clients, toteCartTypes, purchaseOrders, purchaseOrderItems,
   goodsReceiptNotes, grnItems, putawayTasks, putawayItems,
   inventoryAdjustments, cycleCountTasks, cycleCountItems, productExpiry,
   type User, type InsertUser, type Order, type InsertOrder,
@@ -12,8 +12,10 @@ import {
   type PackTask, type InsertPackTask, type Manifest, type InsertManifest,
   type ManifestItem, type InsertManifestItem, type Route, type InsertRoute,
   type RouteStop, type InsertRouteStop, type WebhookLog, type InsertWebhookLog,
-  type Integration, type InsertIntegration, type WarehouseZone, type InsertWarehouseZone,
-  type StaffRole, type InsertStaffRole, type ToteCartType, type InsertToteCartType,
+  type Integration, type InsertIntegration, type Warehouse, type InsertWarehouse,
+  type WarehouseZone, type InsertWarehouseZone, type Role, type InsertRole,
+  type StaffRole, type InsertStaffRole, type SystemUser, type InsertSystemUser,
+  type Client, type InsertClient, type ToteCartType, type InsertToteCartType,
   type PurchaseOrder, type InsertPurchaseOrder, type PurchaseOrderItem, type InsertPurchaseOrderItem,
   type GoodsReceiptNote, type InsertGoodsReceiptNote, type GrnItem, type InsertGrnItem,
   type PutawayTask, type InsertPutawayTask, type PutawayItem, type InsertPutawayItem,
@@ -92,13 +94,29 @@ export interface IStorage {
   getAllIntegrations(): Promise<Integration[]>;
   
   // Settings
+  getWarehouses(): Promise<Warehouse[]>;
+  createWarehouse(warehouse: InsertWarehouse): Promise<Warehouse>;
+  updateWarehouse(id: number, updates: Partial<InsertWarehouse>): Promise<void>;
+  
   getWarehouseZones(): Promise<WarehouseZone[]>;
   createWarehouseZone(zone: InsertWarehouseZone): Promise<WarehouseZone>;
   updateWarehouseZone(id: number, updates: Partial<InsertWarehouseZone>): Promise<void>;
   
+  getRoles(): Promise<Role[]>;
+  createRole(role: InsertRole): Promise<Role>;
+  updateRole(id: number, updates: Partial<InsertRole>): Promise<void>;
+  
   getStaffRoles(): Promise<StaffRole[]>;
   createStaffRole(role: InsertStaffRole): Promise<StaffRole>;
   updateStaffRole(id: number, updates: Partial<InsertStaffRole>): Promise<void>;
+  
+  getSystemUsers(): Promise<SystemUser[]>;
+  createSystemUser(user: InsertSystemUser): Promise<SystemUser>;
+  updateSystemUser(id: number, updates: Partial<InsertSystemUser>): Promise<void>;
+  
+  getClients(): Promise<Client[]>;
+  createClient(client: InsertClient): Promise<Client>;
+  updateClient(id: number, updates: Partial<InsertClient>): Promise<void>;
   
   getToteCartTypes(): Promise<ToteCartType[]>;
   createToteCartType(type: InsertToteCartType): Promise<ToteCartType>;
@@ -645,6 +663,70 @@ export class DatabaseStorage implements IStorage {
     await db.update(productExpiry)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(productExpiry.id, id));
+  }
+
+  // Settings - Warehouses
+  async getWarehouses(): Promise<Warehouse[]> {
+    return await db.select().from(warehouses).orderBy(warehouses.name);
+  }
+
+  async createWarehouse(warehouse: InsertWarehouse): Promise<Warehouse> {
+    const [result] = await db.insert(warehouses).values(warehouse).returning();
+    return result;
+  }
+
+  async updateWarehouse(id: number, updates: Partial<InsertWarehouse>): Promise<void> {
+    await db.update(warehouses)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(warehouses.id, id));
+  }
+
+  // Settings - Roles
+  async getRoles(): Promise<Role[]> {
+    return await db.select().from(roles).orderBy(roles.name);
+  }
+
+  async createRole(role: InsertRole): Promise<Role> {
+    const [result] = await db.insert(roles).values(role).returning();
+    return result;
+  }
+
+  async updateRole(id: number, updates: Partial<InsertRole>): Promise<void> {
+    await db.update(roles)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(roles.id, id));
+  }
+
+  // Settings - System Users
+  async getSystemUsers(): Promise<SystemUser[]> {
+    return await db.select().from(systemUsers).orderBy(systemUsers.name);
+  }
+
+  async createSystemUser(user: InsertSystemUser): Promise<SystemUser> {
+    const [result] = await db.insert(systemUsers).values(user).returning();
+    return result;
+  }
+
+  async updateSystemUser(id: number, updates: Partial<InsertSystemUser>): Promise<void> {
+    await db.update(systemUsers)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(systemUsers.id, id));
+  }
+
+  // Settings - Clients
+  async getClients(): Promise<Client[]> {
+    return await db.select().from(clients).orderBy(clients.name);
+  }
+
+  async createClient(client: InsertClient): Promise<Client> {
+    const [result] = await db.insert(clients).values(client).returning();
+    return result;
+  }
+
+  async updateClient(id: number, updates: Partial<InsertClient>): Promise<void> {
+    await db.update(clients)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(clients.id, id));
   }
 }
 

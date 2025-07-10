@@ -40,9 +40,25 @@ import {
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertWarehouseZoneSchema, insertStaffRoleSchema, insertToteCartTypeSchema } from "@shared/schema";
+import { 
+  insertWarehouseSchema,
+  insertWarehouseZoneSchema, 
+  insertRoleSchema,
+  insertStaffRoleSchema, 
+  insertSystemUserSchema,
+  insertClientSchema,
+  insertToteCartTypeSchema,
+  type Warehouse,
+  type WarehouseZone,
+  type Role,
+  type StaffRole,
+  type SystemUser,
+  type Client,
+  type ToteCartType
+} from "@shared/schema";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 // Main Settings Component
 export default function SettingsRedesigned() {
@@ -240,9 +256,39 @@ function ClientsSettings() {
 // Warehouses List Component
 function WarehousesList({ onWarehouseClick }: { onWarehouseClick: (warehouse: any) => void }) {
   const [createOpen, setCreateOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-  // No warehouses configured yet - show empty state
-  const warehouses: any[] = [];
+  const { data: warehouses = [], isLoading } = useQuery({
+    queryKey: ["/api/settings/warehouses"],
+  });
+
+  const createWarehouseMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("/api/settings/warehouses", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/settings/warehouses"] });
+      setCreateOpen(false);
+      toast({ title: "Warehouse created successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to create warehouse", variant: "destructive" });
+    }
+  });
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-8">
+          <div className="flex items-center justify-center">
+            <Loader className="h-6 w-6 animate-spin" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -297,7 +343,7 @@ function WarehousesList({ onWarehouseClick }: { onWarehouseClick: (warehouse: an
 // Zones List Component  
 function ZonesList() {
   const { data: zones = [], isLoading } = useQuery({
-    queryKey: ["/api/warehouse-zones"],
+    queryKey: ["/api/settings/warehouse-zones"],
   });
 
   const [createOpen, setCreateOpen] = useState(false);
@@ -445,14 +491,29 @@ function DockSettingsList() {
 function UserRolesList() {
   const [selectedRole, setSelectedRole] = useState<any>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const { data: roles = [], isLoading } = useQuery({
+    queryKey: ["/api/settings/roles"],
+  });
 
   const handleRoleClick = (role: any) => {
     setSelectedRole(role);
     setDrawerOpen(true);
   };
 
-  // No user roles configured yet - show empty state
-  const roles: any[] = [];
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-8">
+          <div className="flex items-center justify-center">
+            <Loader className="h-6 w-6 animate-spin" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <>
@@ -513,14 +574,29 @@ function UserRolesList() {
 function UsersList() {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const { data: users = [], isLoading } = useQuery({
+    queryKey: ["/api/settings/system-users"],
+  });
 
   const handleUserClick = (user: any) => {
     setSelectedUser(user);
     setDrawerOpen(true);
   };
 
-  // No users configured yet - show empty state
-  const users: any[] = [];
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-8">
+          <div className="flex items-center justify-center">
+            <Loader className="h-6 w-6 animate-spin" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <>
@@ -586,9 +662,24 @@ function UsersList() {
 // Client Details List Component
 function ClientDetailsList({ onClientClick }: { onClientClick: (client: any) => void }) {
   const [createOpen, setCreateOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-  // No clients configured yet - show empty state
-  const clients: any[] = [];
+  const { data: clients = [], isLoading } = useQuery({
+    queryKey: ["/api/settings/clients"],
+  });
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-8">
+          <div className="flex items-center justify-center">
+            <Loader className="h-6 w-6 animate-spin" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

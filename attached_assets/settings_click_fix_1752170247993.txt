@@ -1,0 +1,110 @@
+## Settings UI Interaction & Data Persistence Fix
+
+### 🛠 Problem
+All key actions in the **Settings** module (Add Warehouse, Add Role, Add User, Add Client) currently do not trigger any interaction, save state, or create database records. These buttons must be interactive and persist data correctly using PostgreSQL via Drizzle ORM.
+
+---
+
+### ✅ Objectives
+
+#### 1. **Enable All Action Buttons**
+- `Add Warehouse`
+- `Add Role`
+- `Add User`
+- `Add Client`
+
+Each button must open a drawer/form matching Inventory UX behavior, enabling record creation.
+
+#### 2. **Form Inputs per Entity**
+
+| Entity      | Required Fields (min)                                     |
+|-------------|-----------------------------------------------------------|
+| Warehouse   | Name, Code, City, Type (Hub/Fulfillment), Active toggle   |
+| Role        | Role Name, Permissions checklist                          |
+| User        | Name, Email, Role, Status toggle                          |
+| Client      | Name, Contract Dates, SLA Template, Integration Rules     |
+
+All fields must validate before submission.
+
+#### 3. **Data Persistence**
+Use **Drizzle ORM with PostgreSQL** to:
+- Insert data into respective tables
+- Validate schema mapping
+- Include `created_at`, `updated_at`, and `source = 'LIVE'` field
+
+#### 4. **UX Behavior**
+- Upon successful submission:
+  - Close drawer
+  - Refresh the table list
+  - Show toast `Created successfully`
+- On failure:
+  - Show toast `Creation failed: [error]`
+
+---
+
+### 🗃️ Database Tables (Drizzle ORM)
+
+You must ensure these tables exist and match schema:
+
+#### warehouses
+```ts
+id SERIAL PRIMARY KEY,
+name TEXT,
+code TEXT,
+city TEXT,
+type TEXT, -- 'hub' | 'fulfillment'
+is_active BOOLEAN,
+created_at TIMESTAMP,
+updated_at TIMESTAMP,
+source TEXT -- default 'LIVE'
+```
+
+#### roles
+```ts
+id SERIAL PRIMARY KEY,
+name TEXT,
+permissions JSONB,
+created_at TIMESTAMP,
+updated_at TIMESTAMP,
+source TEXT
+```
+
+#### users
+```ts
+id SERIAL PRIMARY KEY,
+name TEXT,
+email TEXT,
+role_id INT,
+is_active BOOLEAN,
+created_at TIMESTAMP,
+updated_at TIMESTAMP,
+source TEXT
+```
+
+#### clients
+```ts
+id SERIAL PRIMARY KEY,
+name TEXT,
+contract_start DATE,
+contract_end DATE,
+sla_template TEXT,
+integration_rules JSONB,
+created_at TIMESTAMP,
+updated_at TIMESTAMP,
+source TEXT
+```
+
+---
+
+### 🧪 Testing Checklist
+- [ ] Buttons open correct drawers with form fields
+- [ ] Submissions persist correctly into PostgreSQL
+- [ ] UI updates tables immediately post-creation
+- [ ] Errors are gracefully handled
+
+---
+
+### 🔄 Follow-Up
+- Implement Edit + Delete behavior in future phase
+- Add mock seeding script if necessary using `source = 'MOCK_seed'` flag
+- Confirm DB migrations synced with Drizzle schema

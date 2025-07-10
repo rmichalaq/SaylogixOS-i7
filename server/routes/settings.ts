@@ -1,8 +1,104 @@
 import { Router } from "express";
 import { storage } from "../storage";
-import { insertWarehouseZoneSchema, insertStaffRoleSchema, insertToteCartTypeSchema } from "@shared/schema";
+import { 
+  insertWarehouseSchema, 
+  insertWarehouseZoneSchema, 
+  insertRoleSchema, 
+  insertStaffRoleSchema, 
+  insertSystemUserSchema, 
+  insertClientSchema,
+  insertToteCartTypeSchema 
+} from "@shared/schema";
 
 const router = Router();
+
+// Warehouses
+router.get("/warehouses", async (req, res) => {
+  try {
+    const warehouses = await storage.getWarehouses();
+    res.json(warehouses);
+  } catch (error) {
+    console.error("Error fetching warehouses:", error);
+    res.status(500).json({ error: "Failed to fetch warehouses" });
+  }
+});
+
+router.post("/warehouses", async (req, res) => {
+  try {
+    const data = insertWarehouseSchema.parse(req.body);
+    const warehouse = await storage.createWarehouse(data);
+    res.json(warehouse);
+  } catch (error) {
+    console.error("Error creating warehouse:", error);
+    res.status(400).json({ error: "Failed to create warehouse" });
+  }
+});
+
+// Roles
+router.get("/roles", async (req, res) => {
+  try {
+    const roles = await storage.getRoles();
+    res.json(roles);
+  } catch (error) {
+    console.error("Error fetching roles:", error);
+    res.status(500).json({ error: "Failed to fetch roles" });
+  }
+});
+
+router.post("/roles", async (req, res) => {
+  try {
+    const data = insertRoleSchema.parse(req.body);
+    const role = await storage.createRole(data);
+    res.json(role);
+  } catch (error) {
+    console.error("Error creating role:", error);
+    res.status(400).json({ error: "Failed to create role" });
+  }
+});
+
+// System Users
+router.get("/system-users", async (req, res) => {
+  try {
+    const users = await storage.getSystemUsers();
+    res.json(users);
+  } catch (error) {
+    console.error("Error fetching system users:", error);
+    res.status(500).json({ error: "Failed to fetch system users" });
+  }
+});
+
+router.post("/system-users", async (req, res) => {
+  try {
+    const data = insertSystemUserSchema.parse(req.body);
+    const user = await storage.createSystemUser(data);
+    res.json(user);
+  } catch (error) {
+    console.error("Error creating system user:", error);
+    res.status(400).json({ error: "Failed to create system user" });
+  }
+});
+
+// Clients
+router.get("/clients", async (req, res) => {
+  try {
+    const clients = await storage.getClients();
+    res.json(clients);
+  } catch (error) {
+    console.error("Error fetching clients:", error);
+    res.status(500).json({ error: "Failed to fetch clients" });
+  }
+});
+
+router.post("/clients", async (req, res) => {
+  try {
+    const data = insertClientSchema.parse(req.body);
+    const client = await storage.createClient(data);
+    res.json(client);
+  } catch (error) {
+    console.error("Error creating client:", error);
+    res.status(400).json({ error: "Failed to create client" });
+  }
+});
 
 // Warehouse Zones
 router.get("/warehouse-zones", async (req, res) => {
