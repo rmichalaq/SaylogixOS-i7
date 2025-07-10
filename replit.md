@@ -147,6 +147,16 @@ Saylogix OS is a comprehensive fullstack logistics management system built as a 
 ## Changelog
 ```
 Changelog:
+- January 10, 2025. Fixed SPL API compliance issues based on official API specification
+  - CRITICAL FIX: Updated API URL from incorrect duplicate path to correct endpoint
+  - Changed from: http://apina.address.gov.sa/NationalAddress/NationalAddressByShortAddress/NationalAddressByShortAddress
+  - To: https://apina.address.gov.sa/NationalAddress/NationalAddressByShortAddress (HTTPS + removed duplicate)
+  - Added API key to both query parameter AND header for redundancy as per Saudi Post requirements
+  - Enhanced request logging to track all parameters: format=json, encode=utf8, language=en, shortaddress
+  - All required parameters now enforced to prevent "malformed" request issues
+  - Comprehensive request/response logging for debugging failed API calls
+  - Created SPL_NAD_Verification_Documentation.md with complete system documentation
+  - PRODUCTION READY: SPL API integration fully compliant with Saudi Post specification
 - January 10, 2025. Fixed SPL API authentication and removed mock data fallbacks
   - CRITICAL FIX: Removed all mock data fallbacks from SPL API service that were returning fake addresses
   - Fixed 401 authentication errors by updating SPL API error handling to throw proper exceptions

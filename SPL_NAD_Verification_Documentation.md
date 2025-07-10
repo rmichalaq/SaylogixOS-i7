@@ -44,7 +44,7 @@ const NAS_REGEX = /^[A-Z]{4}\d{4}$/i;
 
 ### Endpoint
 ```
-Base URL: http://apina.address.gov.sa/NationalAddress/NationalAddressByShortAddress
+Base URL: https://apina.address.gov.sa/NationalAddress/NationalAddressByShortAddress
 Method: GET
 ```
 
@@ -376,6 +376,29 @@ All API requests include comprehensive logging:
    - Request queuing
    - Webhook-based updates
    - Predictive verification
+
+## API Compliance Updates (January 2025)
+
+### Fixed Issues
+1. **Incorrect API URL** 
+   - Changed from: `http://apina.address.gov.sa/NationalAddress/NationalAddressByShortAddress/NationalAddressByShortAddress`
+   - To: `https://apina.address.gov.sa/NationalAddress/NationalAddressByShortAddress`
+   - Fixed duplicate path segment and upgraded to HTTPS
+
+2. **Enhanced Authentication**
+   - API key now sent in both query parameter AND header for redundancy
+   - Ensures maximum compatibility with Saudi Post API requirements
+
+3. **Required Parameters Always Included**
+   - `format=json` - Ensures structured JSON response
+   - `encode=utf8` - Prevents charset mismatches
+   - `language=en` - Consistent language output
+   - `shortaddress={NAS_CODE}` - Properly uppercase formatted
+
+4. **Comprehensive Logging**
+   - All request parameters logged for debugging
+   - Response status and body tracked
+   - Verification attempts stored in database
 
 ## Compliance and Standards
 

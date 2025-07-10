@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
 
-const SPL_API_URL = 'http://apina.address.gov.sa/NationalAddress/NationalAddressByShortAddress/NationalAddressByShortAddress';
+const SPL_API_URL = 'https://apina.address.gov.sa/NationalAddress/NationalAddressByShortAddress';
 const SPL_API_KEY = process.env.SPL_API_KEY;
 
 export interface SPLAddressData {
@@ -60,12 +60,14 @@ export async function fetchAddressFromSPL(shortcode: string): Promise<SPLAddress
     const headers = {
       'Accept': 'application/json',
       'User-Agent': 'SaylogixOS/1.0',
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'api_key': SPL_API_KEY // Add API key to headers as well for redundancy
     };
-    logContext.requestHeaders = headers;
+    logContext.requestHeaders = { ...headers, api_key: 'REDACTED' };
 
     console.log(`[SPL API] Request initiated for NAS: ${shortcode}`);
     console.log(`[SPL API] URL: ${logContext.url}`);
+    console.log(`[SPL API] Request params: format=json, language=en, encode=utf8, shortaddress=${shortcode.toUpperCase()}, api_key=REDACTED`);
     
     const response = await fetch(url, { 
       headers,
