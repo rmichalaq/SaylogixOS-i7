@@ -224,11 +224,12 @@ Changelog:
   - Created complete verification interface with clickable order rows and address preview
   - All verification endpoints fully operational with /api/orders/:id/verify backend integration
   - SPL verification system production-ready with seamless real/mock data switching
-- July 10, 2025. Enhanced Saylogix branding with NASA-style font
-  - Imported Orbitron font from Google Fonts (space-age, technical appearance)
-  - Added custom font-orbitron class to Tailwind CSS configuration
-  - Applied Orbitron font to SAYLOGIX brand text in sidebar for authentic NASA aesthetic
-  - Maintains uppercase styling and wide letter spacing for professional space technology look
+- July 10, 2025. Enhanced Saylogix branding with custom Nasalization font
+  - Installed custom Nasalization font (.otf file) for premium space-age branding
+  - Added @font-face definition and Tailwind CSS font-nasalization class
+  - Applied Nasalization font to all SAYLOGIX brand text in sidebar components
+  - Enhanced with uppercase styling and wide letter spacing for professional aerospace look
+  - Fallback chain: Nasalization → Orbitron → monospace for maximum compatibility
 - July 10, 2025. Navigation menu reordering completed
   - Rearranged Warehouse section navigation order to: Inbound, Inventory, Picking, Packing, Dispatch
   - Navigation now follows logical warehouse workflow sequence from receiving to shipping

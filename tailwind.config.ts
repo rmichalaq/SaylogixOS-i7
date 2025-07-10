@@ -7,6 +7,7 @@ export default {
     extend: {
       fontFamily: {
         'orbitron': ['Orbitron', 'monospace'],
+        'nasalization': ['Nasalization', 'Orbitron', 'monospace'],
       },
       borderRadius: {
         lg: "var(--radius)",

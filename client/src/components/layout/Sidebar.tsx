@@ -56,7 +56,7 @@ export function Sidebar() {
           <div className="w-8 h-8 saylogix-primary rounded-lg flex items-center justify-center">
             <Ungroup className="h-4 w-4 text-white" />
           </div>
-          <span className="text-xl font-bold text-gray-700">SaylogixOS</span>
+          <span className="text-xl font-bold text-gray-700 font-nasalization tracking-wider uppercase">SaylogixOS</span>
         </div>
       </div>
 
