@@ -24,7 +24,7 @@ import {
   Search,
   MoreHorizontal,
   ArrowUpDown,
-  Filter,
+  MoreVertical,
   RefreshCw,
   Scan,
   Weight,
@@ -248,25 +248,40 @@ export default function Packing() {
   };
 
   const SortableHeader = ({ field, children, className = "" }: { field: string; children: React.ReactNode; className?: string }) => (
-    <TableHead className={`cursor-pointer hover:bg-gray-50 ${className}`}>
+    <TableHead className={`cursor-pointer hover:bg-gray-50 ${className} ${sortField === field ? 'bg-blue-50' : ''}`}>
       <div className="flex items-center justify-between group">
         <div className="flex items-center gap-2" onClick={() => handleSort(field)}>
-          <span>{children}</span>
-          <ArrowUpDown className="h-4 w-4 opacity-50 group-hover:opacity-100" />
+          <span className={sortField === field ? 'font-semibold text-blue-700' : ''}>{children}</span>
+          <ArrowUpDown className={`h-4 w-4 ${sortField === field ? 'text-blue-700' : 'opacity-50 group-hover:opacity-100'}`} />
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-6 w-6 p-0 opacity-50 hover:opacity-100">
-              <Filter className="h-3 w-3" />
+              <MoreVertical className="h-3 w-3" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuContent align="end" className="w-56">
+            <div className="p-2">
+              <Input
+                placeholder={`Filter ${children}...`}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="mb-2"
+              />
+            </div>
             <DropdownMenuItem onClick={() => handleSort(field)}>
+              <ArrowUpDown className="h-4 w-4 mr-2" />
               Sort A → Z
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => { handleSort(field); setSortDirection('desc'); }}>
+              <ArrowUpDown className="h-4 w-4 mr-2" />
               Sort Z → A
             </DropdownMenuItem>
+            {searchTerm && (
+              <DropdownMenuItem onClick={() => setSearchTerm('')}>
+                Clear Filter
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -277,6 +292,12 @@ export default function Packing() {
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Packing</h1>
+          <p className="text-gray-600 mt-1">
+            Manage order packing workflow from picked orders to ready for dispatch
+          </p>
+        </div>
         <div className="flex items-center gap-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -306,6 +327,73 @@ export default function Packing() {
           </DropdownMenu>
         </div>
       </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Packed Orders</CardTitle>
+            <PackageCheck className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">3</div>
+            <p className="text-xs text-muted-foreground">Ready for dispatch</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg. Packing Time</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">1m 24s</div>
+            <p className="text-xs text-muted-foreground">Per order</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Weight Packed Today</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">4.6kg</div>
+            <p className="text-xs text-muted-foreground">Today's total</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Staff Productivity</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">3</div>
+            <p className="text-xs text-muted-foreground">Orders by 1 Staff</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Active Filters/Sorts */}
+      {(searchTerm || sortField) && (
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-sm text-gray-600">Active filters:</span>
+          {searchTerm && (
+            <Badge variant="secondary" className="flex items-center gap-1">
+              Search: {searchTerm}
+              <button onClick={() => setSearchTerm('')} className="ml-1 hover:bg-gray-300 rounded-full p-0.5">
+                ×
+              </button>
+            </Badge>
+          )}
+          {sortField && (
+            <Badge variant="secondary" className="flex items-center gap-1">
+              Sort: {sortField} {sortDirection === 'desc' ? '↓' : '↑'}
+              <button onClick={() => { setSortField(''); setSortDirection('asc'); }} className="ml-1 hover:bg-gray-300 rounded-full p-0.5">
+                ×
+              </button>
+            </Badge>
+          )}
+        </div>
+      )}
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
