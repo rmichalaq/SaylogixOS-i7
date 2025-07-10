@@ -26,11 +26,6 @@ interface SPLAddressData {
   district?: string;
   street?: string;
   buildingNumber?: string;
-  unitNumber?: string;
-  municipality?: string;
-  region?: string;
-  landmark?: string;
-  isActive?: boolean;
 }
 
 interface VerificationResult {
@@ -274,23 +269,94 @@ export default function AddressVerify() {
   const renderAddressCard = (data: SPLAddressData, source: string) => (
     <Card className="mt-4">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MapPin className="h-5 w-5" />
-          Address Verified ({source})
+        <CardTitle className="flex items-center justify-between">
+          <span className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            Saudi Post National Address
+          </span>
+          <Badge variant="default">{source}</Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
-          <div><strong>NAS Code:</strong> {data.shortCode}</div>
-          <div><strong>Full Address:</strong> {data.fullAddress}</div>
-          <div><strong>Postal Code:</strong> {data.postalCode}</div>
-          {data.additionalCode && (
-            <div><strong>Additional Code:</strong> {data.additionalCode}</div>
-          )}
-          {data.coordinates.lat && data.coordinates.lng && (
-            <div><strong>Coordinates:</strong> {data.coordinates.lat}, {data.coordinates.lng}</div>
-          )}
+      <CardContent className="space-y-4">
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800 mb-1">
+            ✓ Verified by Saudi Post National Address API
+          </p>
+          <p className="text-xs text-blue-600">
+            Showing only authentic fields returned by the Saudi Post API
+          </p>
         </div>
+        
+        {/* Primary Fields - Always present from SPL API */}
+        <div className="space-y-3">
+          <div>
+            <p className="text-sm text-gray-600">NAS Code</p>
+            <p className="font-semibold text-lg">{data.shortCode}</p>
+          </div>
+          
+          <div>
+            <p className="text-sm text-gray-600">Full Address</p>
+            <p className="font-medium">{data.fullAddress}</p>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-gray-600">Postal Code</p>
+              <p className="font-medium">{data.postalCode || 'Not provided'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Additional Code</p>
+              <p className="font-medium">{data.additionalCode || 'Not provided'}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Optional Fields from API - Show only if present */}
+        {(data.city || data.district || data.street || data.buildingNumber) && (
+          <div className="border-t pt-3 space-y-3">
+            <p className="text-sm text-gray-500">Additional details from Saudi Post:</p>
+            
+            <div className="grid grid-cols-2 gap-4">
+              {data.city && (
+                <div>
+                  <p className="text-sm text-gray-600">City</p>
+                  <p className="font-medium">{data.city}</p>
+                </div>
+              )}
+              
+              {data.district && (
+                <div>
+                  <p className="text-sm text-gray-600">District</p>
+                  <p className="font-medium">{data.district}</p>
+                </div>
+              )}
+              
+              {data.street && (
+                <div>
+                  <p className="text-sm text-gray-600">Street</p>
+                  <p className="font-medium">{data.street}</p>
+                </div>
+              )}
+              
+              {data.buildingNumber && (
+                <div>
+                  <p className="text-sm text-gray-600">Building Number</p>
+                  <p className="font-medium">{data.buildingNumber}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* GPS Coordinates if available */}
+        {data.coordinates && (data.coordinates.lat || data.coordinates.lng) && (
+          <div className="border-t pt-3">
+            <p className="text-sm text-gray-600">GPS Coordinates</p>
+            <p className="font-medium font-mono text-sm">
+              {data.coordinates.lat?.toFixed(6)}, {data.coordinates.lng?.toFixed(6)}
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -653,7 +719,7 @@ export default function AddressVerify() {
 
       {/* Order Verification Drawer */}
       <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <SheetContent className="w-[600px] sm:max-w-[600px]">
+        <SheetContent className="w-[600px] sm:max-w-[600px] h-[90vh] overflow-y-auto">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
               <Package className="h-5 w-5" />
@@ -811,14 +877,17 @@ export default function AddressVerify() {
                             <span className="text-green-600">{verificationResult.buildingNumber}</span>
                           </div>
                         )}
-                        {verificationResult.unitNumber && (
-                          <div className="flex justify-between">
-                            <span className="font-medium">Unit Number:</span> 
-                            <span className="text-green-600">{verificationResult.unitNumber}</span>
-                          </div>
-                        )}
-
                       </div>
+                    </div>
+                    
+                    {/* Display the full verified address card */}
+                    {renderAddressCard(verificationResult, 'Saudi Post API')}
+                    
+                    {/* Show update confirmation */}
+                    <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <p className="text-sm text-green-800">
+                        ✓ Order has been updated with the verified address
+                      </p>
                     </div>
                     
                     <Button 

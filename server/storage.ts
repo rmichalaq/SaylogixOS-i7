@@ -1,5 +1,5 @@
 import {
-  users, orders, orderItems, inventory, events, addressVerifications,
+  users, orders, orderItems, inventory, events, addressVerifications, verifiedAddresses,
   nasLookups, pickTasks, packTasks, manifests, manifestItems,
   routes, routeStops, webhookLogs, integrations, warehouses, warehouseZones, 
   roles, staffRoles, systemUsers, clients, toteCartTypes, purchaseOrders, purchaseOrderItems,
@@ -56,8 +56,10 @@ export interface IStorage {
 
   // Address Verifications
   createAddressVerification(verification: InsertAddressVerification): Promise<AddressVerification>;
-  updateAddressVerification(id: number, updates: Partial<InsertAddressVerification>): Promise<void>;
+  getAddressVerification(orderId: number): Promise<AddressVerification | undefined>;
+  updateAddressVerification(orderId: number, updates: Partial<InsertAddressVerification>): Promise<void>;
   getNasLookup(nasCode: string): Promise<NasLookup | undefined>;
+  createOrUpdateVerifiedAddress(data: any): Promise<void>;
 
   // Pick Tasks
   createPickTask(task: InsertPickTask): Promise<PickTask>;
@@ -290,10 +292,60 @@ export class DatabaseStorage implements IStorage {
     return newVerification;
   }
 
-  async updateAddressVerification(id: number, updates: Partial<InsertAddressVerification>): Promise<void> {
+  async getAddressVerification(orderId: number): Promise<AddressVerification | undefined> {
+    const [verification] = await db.select().from(addressVerifications).where(eq(addressVerifications.orderId, orderId));
+    return verification || undefined;
+  }
+
+  async updateAddressVerification(orderId: number, updates: Partial<InsertAddressVerification>): Promise<void> {
     await db.update(addressVerifications)
       .set(updates)
-      .where(eq(addressVerifications.id, id));
+      .where(eq(addressVerifications.orderId, orderId));
+  }
+
+  async createOrUpdateVerifiedAddress(data: any): Promise<void> {
+    const { nasCode, fullAddress, postalCode, additionalCode, coordinates, city, district, street, buildingNumber } = data;
+    
+    try {
+      // Check if address already exists
+      const [existing] = await db.select().from(verifiedAddresses).where(eq(verifiedAddresses.nasCode, nasCode));
+      
+      if (existing) {
+        // Update existing record
+        await db.update(verifiedAddresses)
+          .set({
+            fullAddress,
+            postalCode,
+            additionalCode,
+            latitude: coordinates?.lat?.toString(),
+            longitude: coordinates?.lng?.toString(),
+            city,
+            district,
+            street,
+            buildingNumber,
+            lastVerified: new Date()
+          })
+          .where(eq(verifiedAddresses.nasCode, nasCode));
+      } else {
+        // Create new record
+        await db.insert(verifiedAddresses).values({
+          nasCode,
+          fullAddress,
+          postalCode,
+          additionalCode,
+          latitude: coordinates?.lat?.toString(),
+          longitude: coordinates?.lng?.toString(),
+          city,
+          district,
+          street,
+          buildingNumber,
+          isActive: true
+        });
+      }
+    } catch (error) {
+      console.error('Error in createOrUpdateVerifiedAddress:', error);
+      throw error;
+    }
   }
 
   async getNasLookup(nasCode: string): Promise<NasLookup | undefined> {

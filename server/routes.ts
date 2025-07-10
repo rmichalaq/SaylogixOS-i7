@@ -918,19 +918,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // SPL Address Verification API
   app.post("/api/address/verify/spl", async (req, res) => {
     try {
-      const { shortcode } = req.body;
+      const { shortcode, orderId, method = 'manual' } = req.body;
       
       if (!shortcode) {
         return res.status(400).json({ error: "Shortcode is required" });
       }
 
       const result = await splService.fetchAddressFromSPL(shortcode);
+      
+      // Log verification attempt if orderId is provided
+      if (orderId) {
+        const verification = await storage.getAddressVerification(orderId);
+        const attempts = verification?.verificationAttempts || [];
+        attempts.push({
+          timestamp: new Date().toISOString(),
+          status: 'success',
+          method,
+          nasCode: shortcode
+        });
+        
+        await storage.updateAddressVerification(orderId, {
+          verificationAttempts: attempts,
+          status: 'verified',
+          verificationMethod: method,
+          nasCode: shortcode,
+          verifiedAddress: result,
+          verifiedAt: new Date()
+        });
+        
+        // Save to verifiedAddresses table
+        await storage.createOrUpdateVerifiedAddress({
+          nasCode: shortcode,
+          fullAddress: result.fullAddress,
+          postalCode: result.postalCode,
+          additionalCode: result.additionalCode,
+          latitude: result.coordinates?.lat,
+          longitude: result.coordinates?.lng,
+          city: result.city,
+          district: result.district,
+          street: result.street,
+          buildingNumber: result.buildingNumber
+        });
+      }
+      
       res.json({
         success: true,
         data: result
       });
     } catch (error) {
       console.error("SPL address verification failed:", error);
+      
+      // Log failed attempt if orderId is provided
+      if (req.body.orderId) {
+        try {
+          const verification = await storage.getAddressVerification(req.body.orderId);
+          const attempts = verification?.verificationAttempts || [];
+          attempts.push({
+            timestamp: new Date().toISOString(),
+            status: 'failed',
+            method: req.body.method || 'manual',
+            nasCode: req.body.shortcode,
+            error: error.message
+          });
+          
+          await storage.updateAddressVerification(req.body.orderId, {
+            verificationAttempts: attempts,
+            status: 'failed'
+          });
+        } catch (logError) {
+          console.error("Failed to log verification attempt:", logError);
+        }
+      }
+      
       res.status(500).json({ 
         error: "Address verification failed",
         details: error.message 
@@ -961,28 +1020,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Address validation endpoint (checks both SPL and NAS)
-  app.post("/api/address/validate", async (req, res) => {
-    try {
-      const { shortcode } = req.body;
-      
-      if (!shortcode) {
-        return res.status(400).json({ error: "Shortcode is required" });
-      }
 
-      const result = await nasService.verifyNasCode(shortcode);
-      res.json({
-        success: true,
-        data: result
-      });
-    } catch (error) {
-      console.error("Address validation failed:", error);
-      res.status(500).json({ 
-        error: "Address validation failed",
-        details: error.message 
-      });
-    }
-  });
 
   // Address verification status and pending verifications
   app.get("/api/address/pending", async (req, res) => {
@@ -1009,24 +1047,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // SPL verification endpoint
-  app.post("/api/address/verify/spl", async (req, res) => {
-    try {
-      const { shortcode } = req.body;
-      
-      if (!shortcode) {
-        return res.status(400).json({ error: 'Missing shortcode' });
-      }
 
-      const { fetchAddressFromSPL } = await import('./services/splService.js');
-      const result = await fetchAddressFromSPL(shortcode);
-      
-      res.json({ success: true, data: result });
-    } catch (error) {
-      console.error('SPL verification error:', error);
-      res.status(500).json({ error: error.message });
-    }
-  });
 
   // Unified address validation (SPL + NAS fallback)
   app.post("/api/address/validate", async (req, res) => {
@@ -1129,41 +1150,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'No NAS code found in shipping address' });
       }
 
+      // Check if we already have a verification record
+      let verificationRecord = await storage.getAddressVerification(orderId);
+      
+      if (!verificationRecord) {
+        // Create new verification record
+        verificationRecord = await storage.createAddressVerification({
+          orderId,
+          originalAddress: typeof order.shippingAddress === 'string' 
+            ? order.shippingAddress 
+            : JSON.stringify(order.shippingAddress),
+          status: 'pending',
+          nasCode,
+          verificationAttempts: []
+        });
+      }
+
       // Verify using SPL
       const { fetchAddressFromSPL } = await import('./services/splService.js');
+      const attemptTimestamp = new Date().toISOString();
+      
       try {
+        console.log(`[Verification] Attempting SPL verification for order ${orderId}, NAS: ${nasCode}`);
         const splResult = await fetchAddressFromSPL(nasCode);
+        
+        // Store verified address in database
+        await storage.createOrUpdateVerifiedAddress({
+          nasCode,
+          ...splResult
+        });
         
         // Update order with verified address
         await storage.updateOrder(orderId, {
           shippingAddress: typeof order.shippingAddress === 'string' 
             ? splResult.fullAddress 
             : { ...order.shippingAddress, address1: splResult.fullAddress },
-          addressVerified: true
+          nasCode,
+          nasVerified: true,
+          verifyCompleted: new Date()
         });
 
-        // Create address verification record
-        await storage.createAddressVerification({
-          orderId,
-          originalAddress: typeof order.shippingAddress === 'string' 
-            ? order.shippingAddress 
-            : JSON.stringify(order.shippingAddress),
+        // Update verification record with success
+        const attempts = verificationRecord.verificationAttempts || [];
+        attempts.push({
+          timestamp: attemptTimestamp,
+          method: 'SPL_API',
+          success: true,
+          response: splResult,
+          duration: Date.now() - new Date(attemptTimestamp).getTime()
+        });
+
+        await storage.updateAddressVerification(orderId, {
           verifiedAddress: splResult.fullAddress,
+          status: 'verified',
+          verificationMethod: 'SPL',
           nasCode,
-          isVerified: true,
-          verificationSource: 'SPL',
           latitude: splResult.coordinates.lat?.toString(),
-          longitude: splResult.coordinates.lng?.toString()
+          longitude: splResult.coordinates.lng?.toString(),
+          verificationAttempts: attempts,
+          verifiedAt: new Date()
+        });
+
+        // Create event log
+        await storage.createEvent({
+          eventId: `EV015-${Date.now()}`,
+          eventType: 'address_verified',
+          entityType: 'order',
+          entityId: orderId,
+          description: `Address verified via SPL API for NAS: ${nasCode}`,
+          status: 'success',
+          triggeredBy: 'verification_system',
+          sourceSystem: 'SPL_API',
+          eventData: splResult
         });
 
         res.json({ 
           success: true, 
           verifiedAddress: splResult.fullAddress,
-          source: 'SPL'
+          source: 'SPL',
+          data: splResult
         });
-      } catch (error) {
-        console.error('Order verification failed:', error);
-        res.status(500).json({ error: error.message });
+      } catch (splError) {
+        console.error(`[Verification] SPL verification failed for order ${orderId}:`, splError);
+        
+        // Log failed attempt
+        const attempts = verificationRecord.verificationAttempts || [];
+        attempts.push({
+          timestamp: attemptTimestamp,
+          method: 'SPL_API',
+          success: false,
+          error: splError.message,
+          duration: Date.now() - new Date(attemptTimestamp).getTime()
+        });
+
+        await storage.updateAddressVerification(orderId, {
+          status: 'failed',
+          verificationAttempts: attempts
+        });
+
+        // Create event log for failure
+        await storage.createEvent({
+          eventId: `EV016-${Date.now()}`,
+          eventType: 'address_verification_failed',
+          entityType: 'order',
+          entityId: orderId,
+          description: `Address verification failed for NAS: ${nasCode}`,
+          status: 'failed',
+          triggeredBy: 'verification_system',
+          sourceSystem: 'SPL_API',
+          errorMessage: splError.message
+        });
+
+        res.status(500).json({ 
+          error: 'Verification failed', 
+          details: splError.message,
+          nasCode 
+        });
       }
     } catch (error) {
       console.error('Order verification error:', error);

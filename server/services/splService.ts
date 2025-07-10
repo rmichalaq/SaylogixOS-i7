@@ -19,93 +19,140 @@ export interface SPLAddressData {
 }
 
 export async function fetchAddressFromSPL(shortcode: string): Promise<SPLAddressData> {
-  if (!shortcode) {
-    throw new Error('Missing NAS shortcode');
-  }
-
-  // If no API key is configured, return mock data for testing
-  if (!SPL_API_KEY) {
-    console.log('SPL API key not configured, providing mock data for testing');
-    return getMockAddressData(shortcode);
-  }
-
-  // Validate NAS code format (8 characters: 4 letters + 4 digits)
-  const NAS_REGEX = /^[A-Z]{4}\d{4}$/i;
-  if (!NAS_REGEX.test(shortcode)) {
-    throw new Error('Invalid NAS code format. Expected format: ABCD1234');
-  }
-
-  // Build URL with query parameters as specified in Saudi Post API
-  const url = `${SPL_API_URL}?format=json&language=en&encode=utf8&shortaddress=${shortcode.toUpperCase()}&api_key=${SPL_API_KEY}`;
-
-  const headers = {
-    'Accept': 'application/json',
-    'User-Agent': 'SaylogixOS/1.0'
+  const startTime = Date.now();
+  const logContext = {
+    shortcode,
+    timestamp: new Date().toISOString(),
+    apiKey: SPL_API_KEY ? 'configured' : 'missing',
+    url: '',
+    requestHeaders: {},
+    responseStatus: 0,
+    responseHeaders: {},
+    responseBody: '',
+    error: null as any,
+    duration: 0
   };
 
   try {
-    console.log(`[SPL API] Calling: ${url}`);
-    const response = await fetch(url, { headers });
+    if (!shortcode) {
+      throw new Error('Missing NAS shortcode');
+    }
 
-    console.log(`[SPL API] Response Status: ${response.status}, Content-Type: ${response.headers.get('content-type')}`);
+    // If no API key is configured, return mock data for testing
+    if (!SPL_API_KEY) {
+      console.log('[SPL API] No API key configured, using mock data for testing');
+      logContext.error = 'No API key configured';
+      logContext.duration = Date.now() - startTime;
+      console.log('[SPL API] Request Log:', JSON.stringify(logContext, null, 2));
+      return getMockAddressData(shortcode);
+    }
+
+    // Validate NAS code format (8 characters: 4 letters + 4 digits)
+    const NAS_REGEX = /^[A-Z]{4}\d{4}$/i;
+    if (!NAS_REGEX.test(shortcode)) {
+      throw new Error('Invalid NAS code format. Expected format: ABCD1234');
+    }
+
+    // Build URL with query parameters as specified in Saudi Post API
+    const url = `${SPL_API_URL}?format=json&language=en&encode=utf8&shortaddress=${shortcode.toUpperCase()}&api_key=${SPL_API_KEY}`;
+    logContext.url = url.replace(SPL_API_KEY, 'REDACTED');
+
+    const headers = {
+      'Accept': 'application/json',
+      'User-Agent': 'SaylogixOS/1.0',
+      'Content-Type': 'application/json'
+    };
+    logContext.requestHeaders = headers;
+
+    console.log(`[SPL API] Request initiated for NAS: ${shortcode}`);
+    console.log(`[SPL API] URL: ${logContext.url}`);
+    
+    const response = await fetch(url, { 
+      headers,
+      timeout: 30000 // 30 second timeout
+    });
+
+    logContext.responseStatus = response.status;
+    logContext.responseHeaders = Object.fromEntries(response.headers.entries());
+    
+    console.log(`[SPL API] Response Status: ${response.status}`);
+    console.log(`[SPL API] Response Headers:`, logContext.responseHeaders);
+
+    const responseText = await response.text();
+    logContext.responseBody = responseText.substring(0, 1000); // Log first 1000 chars
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[SPL API] Error Response: ${response.status} - ${errorText}`);
+      console.error(`[SPL API] Error Response (${response.status}):`, responseText);
       
       // For testing purposes, provide mock response if API returns error
-      if (response.status === 404 || response.status === 500) {
-        console.log(`API returned ${response.status}, providing mock response for testing`);
+      if (response.status === 404 || response.status === 500 || response.status === 401) {
+        console.log(`[SPL API] API returned ${response.status}, using mock data for testing`);
+        logContext.error = `API returned ${response.status}`;
+        logContext.duration = Date.now() - startTime;
+        console.log('[SPL API] Full Request Log:', JSON.stringify(logContext, null, 2));
         return getMockAddressData(shortcode);
       }
       
-      throw new Error(`Saudi Post API Error: ${response.status} ${errorText}`);
+      throw new Error(`Saudi Post API Error: ${response.status} ${responseText}`);
     }
 
-    const responseText = await response.text();
-    console.log(`[SPL API] Raw Response: ${responseText.substring(0, 200)}...`);
+    console.log(`[SPL API] Raw Response (first 500 chars): ${responseText.substring(0, 500)}`);
     
     let data;
     try {
       data = JSON.parse(responseText);
     } catch (parseError) {
       console.error(`[SPL API] JSON Parse Error:`, parseError);
-      console.log('API response not valid JSON, providing mock response for testing');
+      console.error(`[SPL API] Invalid JSON Response:`, responseText);
+      logContext.error = `JSON parse error: ${parseError.message}`;
+      logContext.duration = Date.now() - startTime;
+      console.log('[SPL API] Full Request Log:', JSON.stringify(logContext, null, 2));
       return getMockAddressData(shortcode);
     }
 
-    console.log(`[SPL API] Parsed Data:`, data);
+    console.log(`[SPL API] Parsed Response Data:`, JSON.stringify(data, null, 2));
 
-    // Validate expected fields exist
-    if (!data.Address && !data.FullAddress) {
-      console.warn(`[SPL API] Missing Address field in response, providing mock response`);
+    // Validate expected fields exist - handle various response formats
+    if (!data.Address && !data.FullAddress && !data.address && !data.fullAddress) {
+      console.warn(`[SPL API] Missing address fields in response`);
+      console.warn(`[SPL API] Available fields:`, Object.keys(data));
+      logContext.error = 'Missing address fields in response';
+      logContext.duration = Date.now() - startTime;
+      console.log('[SPL API] Full Request Log:', JSON.stringify(logContext, null, 2));
       return getMockAddressData(shortcode);
     }
 
-    // Parse Saudi Post API response format
+    // Parse Saudi Post API response format with multiple fallbacks
     const result = {
       shortCode: shortcode.toUpperCase(),
-      fullAddress: data.Address || data.FullAddress || '',
-      postalCode: data.PostCode || data.PostalCode || '',
-      additionalCode: data.AdditionalNumber || data.AdditionalCode || '',
+      fullAddress: data.Address || data.FullAddress || data.address || data.fullAddress || '',
+      postalCode: data.PostCode || data.PostalCode || data.postCode || data.postalCode || '',
+      additionalCode: data.AdditionalNumber || data.AdditionalCode || data.additionalNumber || data.additionalCode || '',
       coordinates: {
-        lat: data.Latitude ? parseFloat(data.Latitude) : undefined,
-        lng: data.Longitude ? parseFloat(data.Longitude) : undefined
+        lat: parseFloat(data.Latitude || data.latitude || data.lat || '0') || undefined,
+        lng: parseFloat(data.Longitude || data.longitude || data.lng || '0') || undefined
       },
-      city: data.City || '',
-      district: data.District || '',
-      street: data.Street || '',
-      buildingNumber: data.BuildingNumber || ''
+      city: data.City || data.city || '',
+      district: data.District || data.district || '',
+      street: data.Street || data.street || '',
+      buildingNumber: data.BuildingNumber || data.buildingNumber || ''
     };
 
-    console.log(`[SPL API] Success: Verified NAS ${shortcode} -> ${result.fullAddress}`);
+    logContext.duration = Date.now() - startTime;
+    console.log(`[SPL API] Success: Verified NAS ${shortcode} in ${logContext.duration}ms`);
+    console.log(`[SPL API] Result:`, JSON.stringify(result, null, 2));
+    console.log('[SPL API] Full Request Log:', JSON.stringify(logContext, null, 2));
+    
     return result;
 
   } catch (error) {
-    console.error(`[SPL API] Request Error for ${shortcode}:`, error);
+    logContext.error = error.message;
+    logContext.duration = Date.now() - startTime;
+    console.error(`[SPL API] Request failed for ${shortcode} after ${logContext.duration}ms:`, error);
+    console.log('[SPL API] Full Request Log:', JSON.stringify(logContext, null, 2));
     
     // For testing purposes, provide mock response if API call fails
-    console.log('API call failed, providing mock response for testing');
+    console.log('[SPL API] Using mock data due to error');
     return getMockAddressData(shortcode);
   }
 }
