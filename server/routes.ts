@@ -13,6 +13,7 @@ import { insertOrderSchema, insertOrderItemSchema, insertInventorySchema } from 
 import webhookRoutes from "./routes/webhooks";
 import integrationRoutes from "./routes/integrations";
 import settingsRoutes from "./routes/settings";
+import { registerSeedRoutes } from "./routes/seedRoutes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard API
@@ -1608,6 +1609,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Internal server error" });
     }
   });
+
+  // Register admin seed routes
+  registerSeedRoutes(app);
 
   const httpServer = createServer(app);
 

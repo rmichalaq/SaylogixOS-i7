@@ -1,0 +1,93 @@
+## Mock Data Seeding Strategy for Saylogix
+
+This document outlines the approach for seeding mock data throughout the Saylogix platform to support UI/UX testing and development. All mock data must be clearly identifiable in the database and removable with a single command.
+
+---
+
+### 🎯 Objective
+Seed every relevant module with mock data that matches expected real-use behavior while ensuring no conflicts with real/live data. The mock data must:
+- Be labeled consistently with the prefix: `MOCK_`
+- Be filterable by metadata flag: `source: MOCK`
+
+---
+
+### 🧪 Seeding by Module
+
+#### ✅ Orders Module
+- Show live orders from Shopify with real data.
+- Add mock orders in these statuses:
+  - Picked
+  - Packed
+  - Dispatched
+  - Delivered
+  - Cancelled
+- Include at least 2 mock orders per status with realistic timestamps and values.
+- Ensure these orders are flagged: `source: MOCK`
+
+#### ✅ Exceptions
+- Seed at least 2 mock exceptions (e.g., courier failed pickup, label print error).
+
+#### ✅ Returns
+- Seed 3 return records with different reasons (damaged item, customer refused, wrong product).
+
+#### ✅ Verify NAS
+- Retain current mock data. No change required.
+
+#### ✅ Dispatch
+- Show 2 mock manifests marked as ready for pickup.
+- Include 2 manifests with dispatch scheduled for today.
+
+#### ✅ Inbound
+- Show 2 mock Purchase Orders (POs).
+- Include mock GRNs (Goods Received Notes) linked to those POs.
+- Generate mock putaway tasks linked to GRNs.
+
+#### ✅ Inventory
+- No change to existing seeded inventory SKUs.
+- Add 2 SKUs with expired or near-expiry dates for testing expiry reports.
+
+#### ✅ Packing
+- Seed 3 mock orders in the Packing Queue.
+
+#### ✅ Picking
+- Seed 3 picking tasks for mock orders.
+- Include 1 in-progress and 2 completed.
+
+#### ✅ Last Mile
+- Keep current mock data including map markers.
+- Ensure all mock routes are tagged with `MOCK_` source.
+
+---
+
+### 🧹 Data Cleanup Strategy
+
+To remove all mock data from the database in one operation, use the following filter:
+```sql
+DELETE FROM <table_name> WHERE source = 'MOCK';
+```
+Apply this to all relevant tables:
+- orders
+- returns
+- exceptions
+- manifests
+- picking_tasks
+- packing_queue
+- grns
+- putaway_tasks
+- delivery_routes
+
+---
+
+### 🧾 Notes
+- Every mock record should include a `created_by: 'dev_seed'` or similar flag for traceability.
+- Avoid polluting live dashboards with fake data — ensure filtering is possible in production view modes.
+- Create one utility function `clearMockData()` in backend admin tooling to automate the purge.
+
+---
+
+### ✅ Seeding Complete When:
+- All modules display realistic, structured mock content.
+- Frontend renders all UI states (empty, partial, full, filtered).
+- `source: MOCK` used consistently across all data records.
+
+---

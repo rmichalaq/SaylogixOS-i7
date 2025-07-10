@@ -12,6 +12,7 @@ import LastMilePage from "@/pages/LastMile";
 import ReportsPage from "@/pages/Reports";
 import SettingsRedesigned from "@/pages/SettingsRedesigned";
 import IntegrationsRedesigned from "@/pages/IntegrationsRedesigned";
+import AdminPanel from "@/pages/AdminPanel";
 
 export interface ScreenConfig {
   path: string;
@@ -128,6 +129,14 @@ export const screens: ScreenConfig[] = [
     menuGroup: "System",
     scan: { enabled: false },
     icon: "fas fa-cog"
+  },
+  {
+    path: "/admin",
+    component: AdminPanel,
+    label: "Admin Panel",
+    menuGroup: "System",
+    scan: { enabled: false },
+    icon: "fas fa-shield-alt"
   }
 ];
 
