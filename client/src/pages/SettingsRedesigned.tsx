@@ -241,36 +241,8 @@ function ClientsSettings() {
 function WarehousesList({ onWarehouseClick }: { onWarehouseClick: (warehouse: any) => void }) {
   const [createOpen, setCreateOpen] = useState(false);
 
-  // Mock warehouses data
-  const warehouses = [
-    {
-      id: "MOCK_JeddahFC",
-      name: "Jeddah Fulfillment Center",
-      address: "King Fahd Industrial Port, Jeddah 23421",
-      active: true,
-      zones: 4,
-      locations: 120,
-      docks: 6
-    },
-    {
-      id: "MOCK_RiyadhHub", 
-      name: "Riyadh Distribution Hub",
-      address: "Industrial City, Riyadh 11564",
-      active: true,
-      zones: 3,
-      locations: 80,
-      docks: 4
-    },
-    {
-      id: "MOCK_DammamWH",
-      name: "Dammam Warehouse",
-      address: "2nd Industrial Area, Dammam 31422",
-      active: false,
-      zones: 2,
-      locations: 40,
-      docks: 2
-    }
-  ];
+  // No warehouses configured yet - show empty state
+  const warehouses: any[] = [];
 
   return (
     <Card>
@@ -282,33 +254,45 @@ function WarehousesList({ onWarehouseClick }: { onWarehouseClick: (warehouse: an
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {warehouses.map((warehouse) => (
-            <div 
-              key={warehouse.id} 
-              className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-              onClick={() => onWarehouseClick(warehouse)}
-            >
-              <div className="flex items-center gap-4">
-                <Building className="h-8 w-8 text-blue-500" />
-                <div>
-                  <h3 className="font-semibold">{warehouse.name}</h3>
-                  <p className="text-sm text-gray-600">{warehouse.address}</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {warehouse.zones} zones • {warehouse.locations} locations • {warehouse.docks} docks
-                  </p>
+        {warehouses.length === 0 ? (
+          <div className="text-center py-12">
+            <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No warehouses configured</h3>
+            <p className="text-gray-600 mb-4">Add your first warehouse to start managing operations</p>
+            <Button onClick={() => setCreateOpen(true)} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Add Warehouse
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {warehouses.map((warehouse) => (
+              <div 
+                key={warehouse.id} 
+                className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => onWarehouseClick(warehouse)}
+              >
+                <div className="flex items-center gap-4">
+                  <Building className="h-8 w-8 text-blue-500" />
+                  <div>
+                    <h3 className="font-semibold">{warehouse.name}</h3>
+                    <p className="text-sm text-gray-600">{warehouse.address}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {warehouse.zones} zones • {warehouse.locations} locations • {warehouse.docks} docks
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <Badge variant={warehouse.active ? "outline" : "secondary"} 
+                         className={warehouse.active ? "bg-green-50 text-green-700" : ""}>
+                    {warehouse.active ? "Active" : "Inactive"}
+                  </Badge>
+                  <Switch checked={warehouse.active} onClick={(e) => e.stopPropagation()} />
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <Badge variant={warehouse.active ? "outline" : "secondary"} 
-                       className={warehouse.active ? "bg-green-50 text-green-700" : ""}>
-                  {warehouse.active ? "Active" : "Inactive"}
-                </Badge>
-                <Switch checked={warehouse.active} onClick={(e) => e.stopPropagation()} />
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -395,18 +379,14 @@ function LocationsList() {
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {["A-01", "A-02", "A-03", "B-01", "B-02", "B-03"].map((location) => (
-              <div key={location} className="p-4 border rounded-lg">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold">{location}</span>
-                  <Badge variant="outline" className="bg-green-50 text-green-700">Available</Badge>
-                </div>
-                <p className="text-sm text-gray-600 mt-2">Zone A, Aisle 1</p>
-              </div>
-            ))}
-          </div>
+        <div className="text-center py-12">
+          <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No storage locations defined</h3>
+          <p className="text-gray-600 mb-4">Configure warehouse zones and locations for inventory management</p>
+          <Button className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Add Location
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -425,47 +405,14 @@ function PackagingMaterialList() {
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {[
-            { name: "Polybag", description: "Small plastic protective bags", active: true },
-            { name: "Cardboard Box", description: "Standard shipping boxes", active: true },
-            { name: "Ice Pack", description: "Temperature-sensitive items", active: true },
-            { name: "Bubble Wrap", description: "Fragile item protection", active: false }
-          ].map((material, index) => (
-            <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-4">
-                <Package className="h-6 w-6 text-blue-500" />
-                <div>
-                  <h3 className="font-semibold">{material.name}</h3>
-                  <p className="text-sm text-gray-600">{material.description}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Badge variant={material.active ? "outline" : "secondary"} 
-                       className={material.active ? "bg-green-50 text-green-700" : ""}>
-                  {material.active ? "Active" : "Inactive"}
-                </Badge>
-                <Switch checked={material.active} />
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Deactivate
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-          ))}
+        <div className="text-center py-12">
+          <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No packaging materials configured</h3>
+          <p className="text-gray-600 mb-4">Add packaging materials for order fulfillment operations</p>
+          <Button className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Add Material
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -484,48 +431,14 @@ function DockSettingsList() {
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {[
-            { name: "Dock A1", vehicles: ["Truck", "Van"], equipment: "Barcode Scanner", active: true },
-            { name: "Dock A2", vehicles: ["Truck"], equipment: "RFID Reader", active: true },
-            { name: "Dock B1", vehicles: ["Van", "Motorcycle"], equipment: "Mobile Scanner", active: false }
-          ].map((dock, index) => (
-            <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-4">
-                <Truck className="h-6 w-6 text-blue-500" />
-                <div>
-                  <h3 className="font-semibold">{dock.name}</h3>
-                  <p className="text-sm text-gray-600">
-                    Vehicles: {dock.vehicles.join(", ")} • Equipment: {dock.equipment}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Badge variant={dock.active ? "outline" : "secondary"} 
-                       className={dock.active ? "bg-green-50 text-green-700" : ""}>
-                  {dock.active ? "Active" : "Inactive"}
-                </Badge>
-                <Switch checked={dock.active} />
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Eye className="h-4 w-4 mr-2" />
-                      View Details
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-          ))}
+        <div className="text-center py-12">
+          <Truck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No docks configured</h3>
+          <p className="text-gray-600 mb-4">Configure loading docks for inbound and outbound operations</p>
+          <Button className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Add Dock
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -542,37 +455,8 @@ function UserRolesList() {
     setDrawerOpen(true);
   };
 
-  // Mock roles data
-  const roles = [
-    { 
-      id: "MOCK_WM",
-      name: "Warehouse Manager", 
-      description: "Full access to warehouse operations", 
-      permissions: 15,
-      users: 3
-    },
-    { 
-      id: "MOCK_Picker",
-      name: "Picker", 
-      description: "Access to picking tasks only", 
-      permissions: 3,
-      users: 12
-    },
-    { 
-      id: "MOCK_Packer",
-      name: "Packer", 
-      description: "Access to packing tasks only", 
-      permissions: 3,
-      users: 8
-    },
-    { 
-      id: "MOCK_Admin",
-      name: "Admin", 
-      description: "System administrator access", 
-      permissions: 25,
-      users: 2
-    }
-  ];
+  // No user roles configured yet - show empty state
+  const roles: any[] = [];
 
   return (
     <>
@@ -585,24 +469,36 @@ function UserRolesList() {
           </Button>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {roles.map((role) => (
-              <div 
-                key={role.id} 
-                className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-                onClick={() => handleRoleClick(role)}
-              >
-                <div className="flex items-center gap-4">
-                  <Shield className="h-6 w-6 text-blue-500" />
-                  <div>
-                    <h3 className="font-semibold">{role.name}</h3>
-                    <p className="text-sm text-gray-600">{role.description}</p>
-                    <p className="text-xs text-gray-500">{role.permissions} permissions • {role.users} users</p>
+          {roles.length === 0 ? (
+            <div className="text-center py-12">
+              <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No user roles configured</h3>
+              <p className="text-gray-600 mb-4">Create roles to manage user permissions and access levels</p>
+              <Button className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add Role
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {roles.map((role) => (
+                <div 
+                  key={role.id} 
+                  className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => handleRoleClick(role)}
+                >
+                  <div className="flex items-center gap-4">
+                    <Shield className="h-6 w-6 text-blue-500" />
+                    <div>
+                      <h3 className="font-semibold">{role.name}</h3>
+                      <p className="text-sm text-gray-600">{role.description}</p>
+                      <p className="text-xs text-gray-500">{role.permissions} permissions • {role.users} users</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -631,49 +527,8 @@ function UsersList() {
     setDrawerOpen(true);
   };
 
-  // Mock users data
-  const users = [
-    { 
-      id: "MOCK_User1",
-      name: "Ahmed Al-Rashid", 
-      email: "ahmed@saylogix.com", 
-      role: "Warehouse Manager", 
-      warehouse: "Jeddah FC", 
-      active: true,
-      phone: "+966 50 123 4567",
-      joinDate: "2023-01-15"
-    },
-    { 
-      id: "MOCK_User2",
-      name: "Fatima Hassan", 
-      email: "fatima@saylogix.com", 
-      role: "Picker", 
-      warehouse: "Riyadh Hub", 
-      active: true,
-      phone: "+966 50 234 5678",
-      joinDate: "2023-03-20"
-    },
-    { 
-      id: "MOCK_User3",
-      name: "Mohammed Said", 
-      email: "mohammed@saylogix.com", 
-      role: "Admin", 
-      warehouse: "All", 
-      active: true,
-      phone: "+966 50 345 6789",
-      joinDate: "2022-11-05"
-    },
-    { 
-      id: "MOCK_User4",
-      name: "Sarah Abdullah", 
-      email: "sarah@saylogix.com", 
-      role: "Packer", 
-      warehouse: "Jeddah FC", 
-      active: false,
-      phone: "+966 50 456 7890",
-      joinDate: "2023-06-10"
-    }
-  ];
+  // No users configured yet - show empty state
+  const users: any[] = [];
 
   return (
     <>
@@ -686,30 +541,42 @@ function UsersList() {
           </Button>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {users.map((user) => (
-              <div 
-                key={user.id} 
-                className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-                onClick={() => handleUserClick(user)}
-              >
-                <div className="flex items-center gap-4">
-                  <User className="h-6 w-6 text-blue-500" />
-                  <div>
-                    <h3 className="font-semibold">{user.name}</h3>
-                    <p className="text-sm text-gray-600">{user.email}</p>
-                    <p className="text-xs text-gray-500">{user.role} • {user.warehouse}</p>
+          {users.length === 0 ? (
+            <div className="text-center py-12">
+              <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No users added</h3>
+              <p className="text-gray-600 mb-4">Add team members to manage system access and roles</p>
+              <Button className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add User
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {users.map((user) => (
+                <div 
+                  key={user.id} 
+                  className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => handleUserClick(user)}
+                >
+                  <div className="flex items-center gap-4">
+                    <User className="h-6 w-6 text-blue-500" />
+                    <div>
+                      <h3 className="font-semibold">{user.name}</h3>
+                      <p className="text-sm text-gray-600">{user.email}</p>
+                      <p className="text-xs text-gray-500">{user.role} • {user.warehouse}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Badge variant={user.active ? "outline" : "secondary"} 
+                           className={user.active ? "bg-green-50 text-green-700" : ""}>
+                      {user.active ? "Active" : "Inactive"}
+                    </Badge>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <Badge variant={user.active ? "outline" : "secondary"} 
-                         className={user.active ? "bg-green-50 text-green-700" : ""}>
-                    {user.active ? "Active" : "Inactive"}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -732,42 +599,8 @@ function UsersList() {
 function ClientDetailsList({ onClientClick }: { onClientClick: (client: any) => void }) {
   const [createOpen, setCreateOpen] = useState(false);
 
-  // Mock clients data
-  const clients = [
-    { 
-      id: "MOCK_TechCorp",
-      name: "TechCorp Solutions", 
-      contact: "John Smith", 
-      type: "3PL Fulfillment", 
-      logo: "TC",
-      active: true,
-      contractEnd: "2025-12-31",
-      slaCount: 4,
-      integrations: 3
-    },
-    { 
-      id: "MOCK_FashionFwd",
-      name: "Fashion Forward", 
-      contact: "Sarah Johnson", 
-      type: "E-commerce", 
-      logo: "FF",
-      active: true,
-      contractEnd: "2025-05-31",
-      slaCount: 3,
-      integrations: 2
-    },
-    { 
-      id: "MOCK_ElecPlus",
-      name: "Electronics Plus", 
-      contact: "Ahmed Hassan", 
-      type: "Marketplace", 
-      logo: "EP",
-      active: true,
-      contractEnd: "2024-08-31",
-      slaCount: 5,
-      integrations: 4
-    }
-  ];
+  // No clients configured yet - show empty state
+  const clients: any[] = [];
 
   return (
     <Card>
@@ -779,31 +612,43 @@ function ClientDetailsList({ onClientClick }: { onClientClick: (client: any) => 
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {clients.map((client) => (
-            <div 
-              key={client.id} 
-              className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-              onClick={() => onClientClick(client)}
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <span className="text-sm font-semibold text-blue-600">{client.logo}</span>
+        {clients.length === 0 ? (
+          <div className="text-center py-12">
+            <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No clients onboarded</h3>
+            <p className="text-gray-600 mb-4">Add client companies to manage their fulfillment operations</p>
+            <Button onClick={() => setCreateOpen(true)} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Add Client
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {clients.map((client) => (
+              <div 
+                key={client.id} 
+                className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => onClientClick(client)}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <span className="text-sm font-semibold text-blue-600">{client.logo}</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">{client.name}</h3>
+                    <p className="text-sm text-gray-600">Primary Contact: {client.contact}</p>
+                    <p className="text-xs text-gray-500">
+                      {client.type} • Contract ends {client.contractEnd} • {client.slaCount} SLAs
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold">{client.name}</h3>
-                  <p className="text-sm text-gray-600">Primary Contact: {client.contact}</p>
-                  <p className="text-xs text-gray-500">
-                    {client.type} • Contract ends {client.contractEnd} • {client.slaCount} SLAs
-                  </p>
+                <div className="flex items-center gap-4">
+                  <Badge variant="outline" className="bg-green-50 text-green-700">Active</Badge>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <Badge variant="outline" className="bg-green-50 text-green-700">Active</Badge>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -821,48 +666,14 @@ function ContractList() {
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {[
-            { client: "TechCorp Solutions", start: "2024-01-01", end: "2025-12-31", status: "Active", renewal: true },
-            { client: "Fashion Forward", start: "2024-06-01", end: "2025-05-31", status: "Active", renewal: false },
-            { client: "Electronics Plus", start: "2023-09-01", end: "2024-08-31", status: "Expired", renewal: true }
-          ].map((contract, index) => (
-            <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-4">
-                <FileText className="h-6 w-6 text-blue-500" />
-                <div>
-                  <h3 className="font-semibold">{contract.client}</h3>
-                  <p className="text-sm text-gray-600">{contract.start} to {contract.end}</p>
-                  <p className="text-xs text-gray-500">
-                    Auto-renewal: {contract.renewal ? "Enabled" : "Disabled"}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Badge variant={contract.status === "Active" ? "outline" : "secondary"} 
-                       className={contract.status === "Active" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}>
-                  {contract.status}
-                </Badge>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit Contract
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Eye className="h-4 w-4 mr-2" />
-                      View Document
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-          ))}
+        <div className="text-center py-12">
+          <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No contracts configured</h3>
+          <p className="text-gray-600 mb-4">Add client contracts to manage service agreements</p>
+          <Button className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Add Contract
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -881,48 +692,14 @@ function SLAsList() {
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {[
-            { type: "Order Processing", timeLimit: "2 hours", orders: "All orders", alerts: true },
-            { type: "Picking Completion", timeLimit: "4 hours", orders: "Standard orders", alerts: true },
-            { type: "Packing Completion", timeLimit: "1 hour", orders: "Express orders", alerts: false },
-            { type: "Dispatch Cutoff", timeLimit: "6 PM", orders: "Same-day delivery", alerts: true }
-          ].map((sla, index) => (
-            <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-4">
-                <Clock className="h-6 w-6 text-blue-500" />
-                <div>
-                  <h3 className="font-semibold">{sla.type}</h3>
-                  <p className="text-sm text-gray-600">Time Limit: {sla.timeLimit}</p>
-                  <p className="text-xs text-gray-500">Applies to: {sla.orders}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Badge variant={sla.alerts ? "outline" : "secondary"} 
-                       className={sla.alerts ? "bg-green-50 text-green-700" : ""}>
-                  {sla.alerts ? "Alerts On" : "Alerts Off"}
-                </Badge>
-                <Switch checked={sla.alerts} />
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit SLA
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Eye className="h-4 w-4 mr-2" />
-                      View Performance
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-          ))}
+        <div className="text-center py-12">
+          <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No SLAs configured</h3>
+          <p className="text-gray-600 mb-4">Define service level agreements for performance monitoring</p>
+          <Button className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Add SLA
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -941,48 +718,14 @@ function PricingList() {
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {[
-            { name: "Standard Fulfillment", type: "Per Order", rate: "SAR 15.00", active: true },
-            { name: "Express Processing", type: "Per Order", rate: "SAR 25.00", active: true },
-            { name: "Storage Fee", type: "Per SKU/Month", rate: "SAR 2.50", active: true },
-            { name: "Returns Processing", type: "Per Return", rate: "SAR 8.00", active: false }
-          ].map((pricing, index) => (
-            <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-4">
-                <DollarSign className="h-6 w-6 text-green-500" />
-                <div>
-                  <h3 className="font-semibold">{pricing.name}</h3>
-                  <p className="text-sm text-gray-600">Billing: {pricing.type}</p>
-                  <p className="text-lg font-bold text-green-600">{pricing.rate}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Badge variant={pricing.active ? "outline" : "secondary"} 
-                       className={pricing.active ? "bg-green-50 text-green-700" : ""}>
-                  {pricing.active ? "Active" : "Inactive"}
-                </Badge>
-                <Switch checked={pricing.active} />
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit Rate
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Eye className="h-4 w-4 mr-2" />
-                      View History
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-          ))}
+        <div className="text-center py-12">
+          <DollarSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No pricing configured</h3>
+          <p className="text-gray-600 mb-4">Set up rate cards and pricing structures for client billing</p>
+          <Button className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Add Rate Card
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -1001,45 +744,14 @@ function SuppliersList() {
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {[
-            { name: "Global Tech Supplies", contact: "Ahmed Al-Mansouri", client: "TechCorp Solutions", items: 150 },
-            { name: "Fashion Wholesale", contact: "Sarah Al-Zahra", client: "Fashion Forward", items: 89 },
-            { name: "Electronics Direct", contact: "Mohammed Khalil", client: "Electronics Plus", items: 220 }
-          ].map((supplier, index) => (
-            <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-4">
-                <Building className="h-6 w-6 text-blue-500" />
-                <div>
-                  <h3 className="font-semibold">{supplier.name}</h3>
-                  <p className="text-sm text-gray-600">Contact: {supplier.contact}</p>
-                  <p className="text-xs text-gray-500">
-                    Linked to: {supplier.client} • {supplier.items} approved items
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Badge variant="outline" className="bg-green-50 text-green-700">Active</Badge>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit Supplier
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Eye className="h-4 w-4 mr-2" />
-                      View Items
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-          ))}
+        <div className="text-center py-12">
+          <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No suppliers added</h3>
+          <p className="text-gray-600 mb-4">Connect with suppliers to manage procurement and sourcing</p>
+          <Button className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Add Supplier
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -1058,46 +770,14 @@ function ConnectedIntegrationsList() {
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {[
-            { name: "Shopify Store", client: "Fashion Forward", type: "E-commerce", status: "Connected", sync: "Real-time" },
-            { name: "WooCommerce", client: "Electronics Plus", type: "E-commerce", status: "Connected", sync: "Hourly" },
-            { name: "Magento", client: "TechCorp Solutions", type: "E-commerce", status: "Error", sync: "Failed" }
-          ].map((integration, index) => (
-            <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-4">
-                <Link className="h-6 w-6 text-blue-500" />
-                <div>
-                  <h3 className="font-semibold">{integration.name}</h3>
-                  <p className="text-sm text-gray-600">Client: {integration.client}</p>
-                  <p className="text-xs text-gray-500">Type: {integration.type} • Sync: {integration.sync}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Badge variant={integration.status === "Connected" ? "outline" : "destructive"} 
-                       className={integration.status === "Connected" ? "bg-green-50 text-green-700" : ""}>
-                  {integration.status}
-                </Badge>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Configure
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Eye className="h-4 w-4 mr-2" />
-                      View Logs
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-          ))}
+        <div className="text-center py-12">
+          <Link className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No client integrations</h3>
+          <p className="text-gray-600 mb-4">Connect client systems for automated data synchronization</p>
+          <Button className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Connect Integration
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -1116,46 +796,14 @@ function ShippingRulesList() {
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {[
-            { region: "Riyadh", preferred: "Aramex", weight: "< 5kg", fallback: "SMSA" },
-            { region: "Jeddah", preferred: "SMSA", weight: "< 10kg", fallback: "Naqel" },
-            { region: "Eastern Province", preferred: "Naqel", weight: "Any", fallback: "Aramex" },
-            { region: "Remote Areas", preferred: "Saudi Post", weight: "< 2kg", fallback: "None" }
-          ].map((rule, index) => (
-            <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-4">
-                <Truck className="h-6 w-6 text-blue-500" />
-                <div>
-                  <h3 className="font-semibold">{rule.region}</h3>
-                  <p className="text-sm text-gray-600">Preferred: {rule.preferred}</p>
-                  <p className="text-xs text-gray-500">
-                    Weight: {rule.weight} • Fallback: {rule.fallback}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Badge variant="outline" className="bg-green-50 text-green-700">Active</Badge>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit Rule
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Eye className="h-4 w-4 mr-2" />
-                      View Performance
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-          ))}
+        <div className="text-center py-12">
+          <Truck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No shipping rules configured</h3>
+          <p className="text-gray-600 mb-4">Set up shipping preferences and rules by region</p>
+          <Button className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Add Rule
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -1166,112 +814,61 @@ function ShippingRulesList() {
 
 // Warehouse Drawer Content Components
 function ZonesDrawerContent({ warehouseId }: { warehouseId: string }) {
-  const zones = [
-    { name: "Zone A", description: "Floor level storage", active: true },
-    { name: "Zone B", description: "Mezzanine level", active: true },
-    { name: "Zone C", description: "Cold storage", active: true },
-    { name: "Zone D", description: "Hazmat storage", active: false }
-  ];
-
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-semibold">Warehouse Zones</h3>
         <Button size="sm"><Plus className="h-4 w-4 mr-1" /> Add Zone</Button>
       </div>
-      {zones.map((zone, index) => (
-        <div key={index} className="p-3 border rounded-lg">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="font-medium">{zone.name}</p>
-              <p className="text-sm text-gray-600">{zone.description}</p>
-            </div>
-            <Switch checked={zone.active} />
-          </div>
-        </div>
-      ))}
+      <div className="text-center py-8">
+        <MapPin className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+        <p className="text-gray-600">No zones configured for this warehouse</p>
+      </div>
     </div>
   );
 }
 
 function LocationsDrawerContent({ warehouseId }: { warehouseId: string }) {
-  const locations = [
-    "A-01", "A-02", "A-03", "A-04",
-    "B-01", "B-02", "B-03", "B-04",
-    "C-01", "C-02", "C-03", "C-04"
-  ];
-
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-semibold">Storage Locations</h3>
         <Button size="sm"><Plus className="h-4 w-4 mr-1" /> Add Location</Button>
       </div>
-      <div className="grid grid-cols-3 gap-2">
-        {locations.map((loc) => (
-          <div key={loc} className="p-2 border rounded text-center text-sm hover:bg-gray-50 cursor-pointer">
-            {loc}
-          </div>
-        ))}
+      <div className="text-center py-8">
+        <MapPin className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+        <p className="text-gray-600">No storage locations configured</p>
       </div>
     </div>
   );
 }
 
 function PackagingDrawerContent({ warehouseId }: { warehouseId: string }) {
-  const materials = [
-    { name: "Polybag", stock: 5000, unit: "pcs" },
-    { name: "Cardboard Box S", stock: 1200, unit: "pcs" },
-    { name: "Cardboard Box M", stock: 800, unit: "pcs" },
-    { name: "Bubble Wrap", stock: 50, unit: "rolls" }
-  ];
-
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-semibold">Packaging Materials</h3>
         <Button size="sm"><Plus className="h-4 w-4 mr-1" /> Add Material</Button>
       </div>
-      {materials.map((material, index) => (
-        <div key={index} className="p-3 border rounded-lg">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="font-medium">{material.name}</p>
-              <p className="text-sm text-gray-600">Stock: {material.stock} {material.unit}</p>
-            </div>
-            <Button size="sm" variant="outline">Reorder</Button>
-          </div>
-        </div>
-      ))}
+      <div className="text-center py-8">
+        <Package className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+        <p className="text-gray-600">No packaging materials added</p>
+      </div>
     </div>
   );
 }
 
 function DocksDrawerContent({ warehouseId }: { warehouseId: string }) {
-  const docks = [
-    { name: "Dock A1", type: "Inbound", vehicles: ["Truck", "Van"] },
-    { name: "Dock A2", type: "Inbound", vehicles: ["Truck"] },
-    { name: "Dock B1", type: "Outbound", vehicles: ["Van", "Motorcycle"] },
-    { name: "Dock B2", type: "Outbound", vehicles: ["Truck", "Van"] }
-  ];
-
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-semibold">Loading Docks</h3>
         <Button size="sm"><Plus className="h-4 w-4 mr-1" /> Add Dock</Button>
       </div>
-      {docks.map((dock, index) => (
-        <div key={index} className="p-3 border rounded-lg">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="font-medium">{dock.name}</p>
-              <p className="text-sm text-gray-600">{dock.type} • {dock.vehicles.join(", ")}</p>
-            </div>
-            <Badge variant="outline">{dock.type}</Badge>
-          </div>
-        </div>
-      ))}
+      <div className="text-center py-8">
+        <Truck className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+        <p className="text-gray-600">No loading docks configured</p>
+      </div>
     </div>
   );
 }
@@ -1280,200 +877,98 @@ function DocksDrawerContent({ warehouseId }: { warehouseId: string }) {
 function ContractDrawerContent({ clientId }: { clientId: string }) {
   return (
     <div className="space-y-4">
-      <div className="p-4 border rounded-lg">
-        <h3 className="font-semibold mb-2">Current Contract</h3>
-        <div className="space-y-2 text-sm">
-          <p><span className="text-gray-600">Start Date:</span> January 1, 2024</p>
-          <p><span className="text-gray-600">End Date:</span> December 31, 2025</p>
-          <p><span className="text-gray-600">Contract Value:</span> SAR 1,200,000</p>
-          <p><span className="text-gray-600">Auto-renewal:</span> <Switch defaultChecked className="inline-flex ml-2" /></p>
-        </div>
-        <Button className="mt-4" variant="outline" size="sm">
-          <FileText className="h-4 w-4 mr-2" /> View Document
-        </Button>
+      <div className="text-center py-8">
+        <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+        <p className="text-gray-600">No contract details available</p>
       </div>
     </div>
   );
 }
 
 function SLADrawerContent({ clientId }: { clientId: string }) {
-  const slas = [
-    { type: "Order Processing", timeLimit: "2 hours", breach: false },
-    { type: "Picking", timeLimit: "4 hours", breach: true },
-    { type: "Packing", timeLimit: "1 hour", breach: false },
-    { type: "Dispatch", timeLimit: "Same day by 6 PM", breach: false }
-  ];
-
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-semibold">Service Level Agreements</h3>
         <Button size="sm"><Plus className="h-4 w-4 mr-1" /> Add SLA</Button>
       </div>
-      {slas.map((sla, index) => (
-        <div key={index} className="p-3 border rounded-lg">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="font-medium">{sla.type}</p>
-              <p className="text-sm text-gray-600">Time Limit: {sla.timeLimit}</p>
-            </div>
-            <Badge variant={sla.breach ? "destructive" : "outline"} 
-                   className={!sla.breach ? "bg-green-50 text-green-700" : ""}>
-              {sla.breach ? "Breach Alert" : "On Track"}
-            </Badge>
-          </div>
-        </div>
-      ))}
+      <div className="text-center py-8">
+        <Clock className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+        <p className="text-gray-600">No SLAs configured</p>
+      </div>
     </div>
   );
 }
 
 function PricingDrawerContent({ clientId }: { clientId: string }) {
-  const pricing = [
-    { service: "Standard Fulfillment", rate: "SAR 15.00", unit: "per order" },
-    { service: "Express Processing", rate: "SAR 25.00", unit: "per order" },
-    { service: "Storage", rate: "SAR 2.50", unit: "per SKU/month" },
-    { service: "Returns", rate: "SAR 8.00", unit: "per return" }
-  ];
-
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-semibold">Pricing & Rate Card</h3>
         <Button size="sm" variant="outline">Export Rates</Button>
       </div>
-      {pricing.map((price, index) => (
-        <div key={index} className="p-3 border rounded-lg">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="font-medium">{price.service}</p>
-              <p className="text-sm text-gray-600">{price.unit}</p>
-            </div>
-            <p className="font-semibold text-green-600">{price.rate}</p>
-          </div>
-        </div>
-      ))}
+      <div className="text-center py-8">
+        <DollarSign className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+        <p className="text-gray-600">No pricing configured</p>
+      </div>
     </div>
   );
 }
 
 function SuppliersDrawerContent({ clientId }: { clientId: string }) {
-  const suppliers = [
-    { name: "Tech Supplier Co", contact: "John Doe", items: 45 },
-    { name: "Fashion Wholesale", contact: "Jane Smith", items: 89 },
-    { name: "Electronics Direct", contact: "Ahmed Ali", items: 120 }
-  ];
-
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-semibold">Approved Suppliers</h3>
         <Button size="sm"><Plus className="h-4 w-4 mr-1" /> Add Supplier</Button>
       </div>
-      {suppliers.map((supplier, index) => (
-        <div key={index} className="p-3 border rounded-lg">
-          <p className="font-medium">{supplier.name}</p>
-          <p className="text-sm text-gray-600">Contact: {supplier.contact}</p>
-          <p className="text-sm text-gray-600">{supplier.items} approved items</p>
-        </div>
-      ))}
+      <div className="text-center py-8">
+        <Building className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+        <p className="text-gray-600">No suppliers linked</p>
+      </div>
     </div>
   );
 }
 
 function IntegrationsDrawerContent({ clientId }: { clientId: string }) {
-  const integrations = [
-    { name: "Shopify", status: "Connected", lastSync: "2 mins ago" },
-    { name: "WhatsApp Business", status: "Connected", lastSync: "Active" },
-    { name: "Aramex API", status: "Error", lastSync: "Failed" }
-  ];
-
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-semibold">Connected Integrations</h3>
         <Button size="sm"><Link className="h-4 w-4 mr-1" /> Connect</Button>
       </div>
-      {integrations.map((integration, index) => (
-        <div key={index} className="p-3 border rounded-lg">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="font-medium">{integration.name}</p>
-              <p className="text-sm text-gray-600">Last sync: {integration.lastSync}</p>
-            </div>
-            <Badge variant={integration.status === "Connected" ? "outline" : "destructive"}
-                   className={integration.status === "Connected" ? "bg-green-50 text-green-700" : ""}>
-              {integration.status}
-            </Badge>
-          </div>
-        </div>
-      ))}
+      <div className="text-center py-8">
+        <Link className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+        <p className="text-gray-600">No integrations connected</p>
+      </div>
     </div>
   );
 }
 
 function ShippingDrawerContent({ clientId }: { clientId: string }) {
-  const rules = [
-    { region: "Riyadh", courier: "Aramex", weight: "< 5kg" },
-    { region: "Jeddah", courier: "SMSA", weight: "< 10kg" },
-    { region: "Eastern", courier: "Naqel", weight: "Any" }
-  ];
-
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-semibold">Shipping Rules</h3>
         <Button size="sm"><Plus className="h-4 w-4 mr-1" /> Add Rule</Button>
       </div>
-      {rules.map((rule, index) => (
-        <div key={index} className="p-3 border rounded-lg">
-          <p className="font-medium">{rule.region}</p>
-          <p className="text-sm text-gray-600">Courier: {rule.courier} • Weight: {rule.weight}</p>
-        </div>
-      ))}
+      <div className="text-center py-8">
+        <Truck className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+        <p className="text-gray-600">No shipping rules configured</p>
+      </div>
     </div>
   );
 }
 
 // User Drawer Content Components
 function RolePermissionsDrawerContent({ role }: { role: any }) {
-  const permissions = [
-    { module: "Orders", view: true, create: true, edit: true, delete: false },
-    { module: "Inventory", view: true, create: false, edit: false, delete: false },
-    { module: "Picking", view: true, create: true, edit: true, delete: false },
-    { module: "Packing", view: true, create: true, edit: true, delete: false },
-    { module: "Reports", view: true, create: false, edit: false, delete: false }
-  ];
-
   return (
     <div className="space-y-4 mt-6">
       <h3 className="font-semibold">Role Permissions</h3>
-      <div className="space-y-2">
-        {permissions.map((perm, index) => (
-          <div key={index} className="p-3 border rounded-lg">
-            <p className="font-medium mb-2">{perm.module}</p>
-            <div className="grid grid-cols-4 gap-2 text-sm">
-              <label className="flex items-center gap-2">
-                <input type="checkbox" checked={perm.view} className="rounded" />
-                View
-              </label>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" checked={perm.create} className="rounded" />
-                Create
-              </label>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" checked={perm.edit} className="rounded" />
-                Edit
-              </label>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" checked={perm.delete} className="rounded" />
-                Delete
-              </label>
-            </div>
-          </div>
-        ))}
+      <div className="text-center py-8">
+        <Shield className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+        <p className="text-gray-600">No permissions configured</p>
       </div>
-      <Button className="w-full">Save Permissions</Button>
     </div>
   );
 }
