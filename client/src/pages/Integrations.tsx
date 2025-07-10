@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Settings, TestTube, CheckCircle, XCircle, Clock, Zap, Plus, ChevronDown, ChevronRight, Store, Package, FileText, Activity, AlertTriangle, ShoppingCart, Truck, MessageSquare, CreditCard, Building2, BarChart3, MapPin, Box } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
@@ -111,6 +112,8 @@ export default function Integrations() {
   const [selectedStore, setSelectedStore] = useState<string | null>(null);
   const [shopifyModalOpen, setShopifyModalOpen] = useState(false);
   const [shopifyActiveTab, setShopifyActiveTab] = useState("credentials");
+  const [shopifyDrawerOpen, setShopifyDrawerOpen] = useState(false);
+  const [shopifyDrawerTab, setShopifyDrawerTab] = useState("credentials");
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -622,6 +625,150 @@ export default function Integrations() {
     const integration = getIntegration(config.name);
     if (!integration?.isEnabled) return null;
 
+    // Special handling for Shopify to match new design requirements
+    if (config.name === "shopify") {
+      return (
+        <Card key={config.name} className="h-56 flex flex-col">
+          <CardHeader className="pb-3 flex-shrink-0">
+            <div className="flex items-center justify-between mb-2">
+              <div className="h-8 w-8 flex items-center justify-center">
+                {config.logo ? (
+                  <img 
+                    src={config.logo} 
+                    alt={config.title} 
+                    className="h-8 w-8 object-contain"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
+                    }}
+                  />
+                ) : null}
+                <Box className={`h-8 w-8 text-gray-400 fallback-icon ${config.logo ? 'hidden' : ''}`} />
+              </div>
+            </div>
+            <CardTitle className="text-lg">{config.title}</CardTitle>
+            <CardDescription>
+              {mockShopifyStores.length} Connected Store{mockShopifyStores.length !== 1 ? 's' : ''}
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent className="flex-1 flex flex-col justify-end">
+            <Sheet open={shopifyDrawerOpen} onOpenChange={setShopifyDrawerOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" className="w-full">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Configure
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="w-[600px] sm:max-w-[600px]">
+                <SheetHeader>
+                  <SheetTitle>Shopify Integration</SheetTitle>
+                  <SheetDescription>
+                    Manage your Shopify store connections and view sync activity
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="mt-6">
+                  <Tabs value={shopifyDrawerTab} onValueChange={setShopifyDrawerTab} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="credentials">Credentials</TabsTrigger>
+                      <TabsTrigger value="sync-logs">Sync Logs</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="credentials" className="space-y-4 mt-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-lg font-medium">Connected Stores</h4>
+                        <Button size="sm">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add New Store
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        {mockShopifyStores.map((store) => (
+                          <Card key={store.id}>
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h5 className="font-medium">{store.name}</h5>
+                                  <p className="text-sm text-gray-600">{store.storeUrl}</p>
+                                  <div className="flex items-center gap-4 mt-2 text-sm">
+                                    <span className="text-gray-600">
+                                      {store.orderCount} orders synced
+                                    </span>
+                                    <span className="text-gray-600">
+                                      {store.skuCount} SKUs synced
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant={store.isEnabled ? "default" : "secondary"}>
+                                    {store.isEnabled ? "Active" : "Inactive"}
+                                  </Badge>
+                                  <Button variant="outline" size="sm">
+                                    Edit
+                                  </Button>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                        
+                        {mockShopifyStores.length === 0 && (
+                          <div className="text-center py-8">
+                            <p className="text-gray-500 mb-4">No stores connected yet</p>
+                            <Button>
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add New Store
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="sync-logs" className="space-y-4 mt-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-lg font-medium">Sync Activity Log</h4>
+                        <Button variant="outline" size="sm">
+                          <FileText className="h-4 w-4 mr-2" />
+                          Export Logs
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {mockShopifyStores[0]?.syncLogs.map((log, idx) => (
+                          <div key={idx} className="flex items-start gap-3 p-3 border rounded">
+                            <Badge variant={log.status === 'success' ? 'default' : 'destructive'}>
+                              {log.status === 'success' ? (
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                              ) : (
+                                <XCircle className="h-3 w-3 mr-1" />
+                              )}
+                              {log.status}
+                            </Badge>
+                            <div className="flex-1">
+                              <p className="text-sm">{log.message}</p>
+                              <p className="text-xs text-gray-500">{new Date(log.timestamp).toLocaleString()}</p>
+                            </div>
+                          </div>
+                        ))}
+                        
+                        {(!mockShopifyStores[0]?.syncLogs || mockShopifyStores[0].syncLogs.length === 0) && (
+                          <div className="text-center py-8">
+                            <p className="text-gray-500">No sync activity yet</p>
+                          </div>
+                        )}
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    // Default card for other integrations
     const statusColor = getStatusColor(integration);
     const statusIcon = getStatusIcon(integration);
 
@@ -652,58 +799,20 @@ export default function Integrations() {
                   </Badge>
                 </div>
               </div>
-              {config.name === "shopify" && integration?.config && (
-                <div className="text-sm text-gray-600">
-                  {integration.config.storeName || integration.config.storeUrl || "Connected Store"}
-                </div>
-              )}
             </div>
           </div>
         </CardHeader>
         
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4 text-sm">
-            {/* Shopify specific stats */}
-            {config.name === "shopify" && (
-              <>
-                <Button
-                  variant="ghost"
-                  className="flex flex-col items-center justify-center h-16 hover:bg-gray-50"
-                  onClick={() => {
-                    setShopifyModalOpen(true);
-                    setShopifyActiveTab("orders");
-                  }}
-                >
-                  <div className="text-2xl font-semibold">{shopifyOrders?.length || 0}</div>
-                  <div className="text-xs text-gray-600">Synced Orders</div>
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="flex flex-col items-center justify-center h-16 hover:bg-gray-50"
-                  onClick={() => {
-                    setShopifyModalOpen(true);
-                    setShopifyActiveTab("skus");
-                  }}
-                >
-                  <div className="text-2xl font-semibold">{shopifySkus?.length || 0}</div>
-                  <div className="text-xs text-gray-600">Synced SKUs</div>
-                </Button>
-              </>
-            )}
-            
-            {/* Default stats for other integrations */}
-            {config.name !== "shopify" && (
-              <>
-                <div className="flex flex-col items-center justify-center h-16 bg-gray-50 rounded">
-                  <div className="text-2xl font-semibold">0</div>
-                  <div className="text-xs text-gray-600">Processed</div>
-                </div>
-                <div className="flex flex-col items-center justify-center h-16 bg-gray-50 rounded">
-                  <div className="text-2xl font-semibold">0</div>
-                  <div className="text-xs text-gray-600">Pending</div>
-                </div>
-              </>
-            )}
+            <div className="flex flex-col items-center justify-center h-16 bg-gray-50 rounded">
+              <div className="text-2xl font-semibold">0</div>
+              <div className="text-xs text-gray-600">Processed</div>
+            </div>
+            <div className="flex flex-col items-center justify-center h-16 bg-gray-50 rounded">
+              <div className="text-2xl font-semibold">0</div>
+              <div className="text-xs text-gray-600">Pending</div>
+            </div>
           </div>
           
           {/* Action buttons */}
@@ -728,38 +837,13 @@ export default function Integrations() {
                 />
               </DialogContent>
             </Dialog>
-
-            {config.name === "shopify" && (
-              <>
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setShopifyModalOpen(true);
-                    setShopifyActiveTab("orders");
-                  }}
-                >
-                  View Orders
-                </Button>
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setShopifyModalOpen(true);
-                    setShopifyActiveTab("skus");
-                  }}
-                >
-                  View SKUs
-                </Button>
-              </>
-            )}
             
             <Button
               variant="outline"
               size="sm"
               onClick={async () => {
                 try {
-                  const endpoint = config.name === "shopify" ? `/api/integrations/shopify/test` : `/api/integrations/${config.name}/test`;
+                  const endpoint = `/api/integrations/${config.name}/test`;
                   const response = await fetch(endpoint);
                   const result = await response.json();
                   if (result.success) {
@@ -776,35 +860,6 @@ export default function Integrations() {
             </Button>
           </div>
 
-          {/* Sync logs section */}
-          {config.name === "shopify" && integration?.isEnabled && (
-            <div className="border-t pt-3">
-              <Collapsible>
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="sm" className="w-full justify-between">
-                    <span className="text-sm font-medium">Sync Logs</span>
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-2">
-                  <div className="space-y-2 max-h-32 overflow-y-auto">
-                    {mockShopifyStores[0]?.syncLogs.map((log, idx) => (
-                      <div key={idx} className="flex items-start gap-2 text-xs">
-                        <Badge variant={log.status === 'success' ? 'default' : 'destructive'} className="text-xs">
-                          {log.status}
-                        </Badge>
-                        <div className="flex-1">
-                          <div className="text-gray-600">{new Date(log.timestamp).toLocaleString()}</div>
-                          <div>{log.message}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            </div>
-          )}
-
           <div className="flex justify-between items-center pt-2 border-t">
             <div className="text-xs text-gray-600">
               {integration.lastSyncAt && `Last sync: ${new Date(integration.lastSyncAt).toLocaleString()}`}
@@ -819,8 +874,6 @@ export default function Integrations() {
             </Button>
           </div>
         </CardContent>
-        
-        {config.name === "shopify" && <ShopifyConfigModal />}
       </Card>
     );
   };
