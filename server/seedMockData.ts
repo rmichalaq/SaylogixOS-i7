@@ -38,6 +38,8 @@ export async function seedMockData() {
   console.log("🌱 Starting mock data seeding...");
 
   try {
+    // Clear existing mock data first to avoid duplicates
+    await clearMockData();
     // 1. Seed mock orders with different statuses
     const mockOrderStatuses = [
       { status: "picked", count: 2, priority: "normal" },
@@ -187,7 +189,7 @@ export async function seedMockData() {
       const { status, eta } = poData[i];
       
       const poResult = await db.insert(purchaseOrders).values({
-        poNumber: `MOCK_PO_${new Date().getFullYear()}_${String(i + 100).padStart(4, '0')}`,
+        poNumber: `MOCK_PO_${new Date().getFullYear()}_${String(Date.now() + i).slice(-6)}`,
         supplier: `Mock Supplier ${i + 1}`,
         status,
         eta,
@@ -201,7 +203,7 @@ export async function seedMockData() {
       // Create GRN for arrived POs
       if (status === "arrived") {
         const grnResult = await db.insert(goodsReceiptNotes).values({
-          grnNumber: `MOCK_GRN_${new Date().getFullYear()}_${String(i + 100).padStart(4, '0')}`,
+          grnNumber: `MOCK_GRN_${new Date().getFullYear()}_${String(Date.now() + i).slice(-6)}`,
           poId: po.id,
           poNumber: po.poNumber,
           supplier: po.supplier,
@@ -240,28 +242,32 @@ export async function seedMockData() {
     console.log("✅ Created mock purchase orders and GRNs");
 
     // 5. Seed Inventory - Add expiry items
-    const expiryItems = [
-      { daysUntilExpiry: 5, status: "near_expiry" },
-      { daysUntilExpiry: -2, status: "expired" }
-    ];
+    try {
+      const expiryItems = [
+        { daysUntilExpiry: 5, status: "near_expiry" },
+        { daysUntilExpiry: -2, status: "expired" }
+      ];
 
-    for (let i = 0; i < expiryItems.length; i++) {
-      const { daysUntilExpiry, status } = expiryItems[i];
-      
-      await db.insert(productExpiry).values({
-        sku: `MOCK_EXP_SKU_${i + 1}`,
-        batchNumber: `MOCK_BATCH_${nanoid(6)}`,
-        expiryDate: daysFromNow(daysUntilExpiry),
-        quantity: Math.floor(Math.random() * 50) + 10,
-        binLocation: `MOCK_BIN_${Math.floor(Math.random() * 100)}`,
-        status,
-        daysToExpiry: daysUntilExpiry,
-        alertLevel: daysUntilExpiry <= 0 ? "red" : daysUntilExpiry <= 7 ? "yellow" : "green",
-        createdAt: new Date()
-      });
+      for (let i = 0; i < expiryItems.length; i++) {
+        const { daysUntilExpiry, status } = expiryItems[i];
+        
+        await db.insert(productExpiry).values({
+          sku: `MOCK_EXP_SKU_${i + 1}`,
+          batchNumber: `MOCK_BATCH_${nanoid(6)}`,
+          expiryDate: daysFromNow(daysUntilExpiry),
+          quantity: Math.floor(Math.random() * 50) + 10,
+          binLocation: `MOCK_BIN_${Math.floor(Math.random() * 100)}`,
+          status,
+          daysToExpiry: daysUntilExpiry,
+          alertLevel: daysUntilExpiry <= 0 ? "red" : daysUntilExpiry <= 7 ? "yellow" : "green",
+          createdAt: new Date()
+        });
+      }
+
+      console.log("✅ Created mock expiry items");
+    } catch (error) {
+      console.log("⚠️  Skipped expiry items - table may need migration");
     }
-
-    console.log("✅ Created mock expiry items");
 
     // 6. Seed Packing Queue
     const packingOrders = createdOrders.filter(o => o.status === "picked").slice(0, 3);
@@ -269,6 +275,7 @@ export async function seedMockData() {
     for (const order of packingOrders) {
       await db.insert(packTasks).values({
         orderId: order.id,
+        toteId: `MOCK_TOTE_${Math.floor(Math.random() * 100)}`,
         status: "pending",
         assignedTo: null,
         boxType: null,
