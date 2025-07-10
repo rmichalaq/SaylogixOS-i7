@@ -26,8 +26,8 @@ const menuItems = [
     items: [
       { path: "/inbound", label: "Inbound", icon: ArrowDown },
       { path: "/inventory", label: "Inventory", icon: Package, hasSubmenu: true },
-      { path: "/packing", label: "Packing", icon: Box },
       { path: "/picking", label: "Picking", icon: Hand },
+      { path: "/packing", label: "Packing", icon: Box },
       { path: "/dispatch", label: "Dispatch", icon: FastForward }
     ]
   },
