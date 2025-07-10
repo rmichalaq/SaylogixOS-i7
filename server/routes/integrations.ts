@@ -86,31 +86,6 @@ router.post("/shopify/fetch-orders", async (req, res) => {
   }
 });
 
-// Fetch Shopify SKUs
-router.get("/shopify/skus", async (req, res) => {
-  try {
-    console.log("Fetching SKUs from Shopify");
-    
-    const products = await shopifyService.fetchProducts();
-    const skus = products.flatMap(product => 
-      product.variants.map((variant: any) => ({
-        id: variant.id,
-        sku: variant.sku,
-        title: `${product.title} - ${variant.title}`,
-        price: variant.price,
-        inventoryQuantity: variant.inventory_quantity,
-        productType: product.product_type,
-        vendor: product.vendor
-      }))
-    ).filter(sku => sku.sku); // Only include variants with SKUs
-    
-    res.json(skus);
-  } catch (error) {
-    console.error("Failed to fetch SKUs from Shopify:", error);
-    res.status(500).json({ error: "Failed to fetch SKUs" });
-  }
-});
-
 // Get orders for map
 router.get("/maps/orders", async (req, res) => {
   try {
