@@ -145,6 +145,26 @@ function ViewAllProducts() {
     refetchInterval: 30000
   });
 
+  // Helper function to get column values for sorting and filtering
+  const getColumnValue = (item: any, column: string) => {
+    switch (column) {
+      case 'product':
+        return item.sku + ' ' + item.productName;
+      case 'category':
+        return item.category || '';
+      case 'available':
+        return item.availableQty || 0;
+      case 'reserved':
+        return item.reservedQty || 0;
+      case 'onHand':
+        return item.onHandQty || 0;
+      case 'status':
+        return item.status || '';
+      default:
+        return '';
+    }
+  };
+
   const filteredInventory = React.useMemo(() => {
     if (!inventory) return [];
 
@@ -185,26 +205,6 @@ function ViewAllProducts() {
   }, [inventory, searchTerm, categoryFilter, columnFilters, sortConfig]);
 
   const categories = [...new Set(inventory?.map((item: any) => item.category).filter(Boolean))] || [];
-
-  // Helper function to get column values for sorting and filtering
-  const getColumnValue = (item: any, column: string) => {
-    switch (column) {
-      case 'product':
-        return item.sku + ' ' + item.productName;
-      case 'category':
-        return item.category || '';
-      case 'available':
-        return item.availableQty || 0;
-      case 'reserved':
-        return item.reservedQty || 0;
-      case 'onHand':
-        return item.onHandQty || 0;
-      case 'status':
-        return item.status || '';
-      default:
-        return '';
-    }
-  };
 
   // Handle column sorting
   const handleSort = (column: string) => {
