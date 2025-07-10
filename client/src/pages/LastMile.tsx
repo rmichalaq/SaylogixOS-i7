@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -366,23 +367,199 @@ function MapView({ activeTab, pickupLocations, routes, onSelectRoute }: {
   routes: DeliveryRoute[];
   onSelectRoute: (route: DeliveryRoute) => void;
 }) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const googleMapRef = useRef<google.maps.Map | null>(null);
+  const markersRef = useRef<google.maps.Marker[]>([]);
+  const { isLoaded, apiKey } = useGoogleMaps();
+
+  useEffect(() => {
+    if (!mapRef.current || !isLoaded || !window.google) return;
+
+    // Initialize map
+    const map = new google.maps.Map(mapRef.current, {
+      center: { lat: 24.7136, lng: 46.6753 }, // Riyadh center
+      zoom: 11,
+      styles: [
+        {
+          featureType: "poi",
+          elementType: "labels",
+          stylers: [{ visibility: "off" }]
+        }
+      ]
+    });
+
+    googleMapRef.current = map;
+
+    // Clear existing markers
+    markersRef.current.forEach(marker => marker.setMap(null));
+    markersRef.current = [];
+
+    const bounds = new google.maps.LatLngBounds();
+
+    // Add pickup location markers
+    pickupLocations.forEach((location) => {
+      const position = getLocationCoordinates(location.fcName);
+      
+      const marker = new google.maps.Marker({
+        position,
+        map,
+        title: location.fcName,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 10,
+          fillColor: location.fcName.includes('Hub') ? '#f59e0b' : '#3b82f6',
+          fillOpacity: 0.9,
+          strokeColor: '#ffffff',
+          strokeWeight: 2,
+        }
+      });
+
+      const infoWindow = new google.maps.InfoWindow({
+        content: `
+          <div class="p-2">
+            <h3 class="font-semibold">${location.fcName}</h3>
+            <p class="text-sm">Packages Ready: ${location.packagesReady}</p>
+            <p class="text-sm">Courier: ${location.courierAssigned}</p>
+            <p class="text-sm">Status: ${location.status}</p>
+          </div>
+        `
+      });
+
+      marker.addListener('click', () => {
+        infoWindow.open(map, marker);
+      });
+
+      markersRef.current.push(marker);
+      bounds.extend(position);
+    });
+
+    // Add route markers based on active tab
+    const filteredRoutes = activeTab === 'active' 
+      ? routes.filter(r => r.status === 'in_progress')
+      : activeTab === 'completed'
+      ? routes.filter(r => r.status === 'completed')
+      : activeTab === 'exceptions'
+      ? routes.filter(r => r.status === 'exception')
+      : routes;
+
+    filteredRoutes.forEach((route) => {
+      const position = getRoutePosition(route.zone);
+      
+      const marker = new google.maps.Marker({
+        position,
+        map,
+        title: `Route ${route.routeNumber}`,
+        icon: {
+          path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+          scale: 6,
+          fillColor: route.status === 'in_progress' ? '#10b981' : 
+                     route.status === 'completed' ? '#6b7280' : 
+                     route.status === 'exception' ? '#ef4444' : '#3b82f6',
+          fillOpacity: 0.9,
+          strokeColor: '#ffffff',
+          strokeWeight: 2,
+          rotation: 45
+        }
+      });
+
+      const infoWindow = new google.maps.InfoWindow({
+        content: `
+          <div class="p-2">
+            <h3 class="font-semibold">Route ${route.routeNumber}</h3>
+            <p class="text-sm">Driver: ${route.driverName}</p>
+            <p class="text-sm">Vehicle: ${route.vehicleNumber}</p>
+            <p class="text-sm">Progress: ${route.completedStops}/${route.totalStops} stops</p>
+            <p class="text-sm">Zone: ${route.zone}</p>
+          </div>
+        `
+      });
+
+      marker.addListener('click', () => {
+        infoWindow.open(map, marker);
+        onSelectRoute(route);
+      });
+
+      markersRef.current.push(marker);
+      bounds.extend(position);
+    });
+
+    // Fit map to show all markers
+    if (markersRef.current.length > 0) {
+      map.fitBounds(bounds);
+    }
+
+    return () => {
+      markersRef.current.forEach(marker => marker.setMap(null));
+    };
+  }, [activeTab, pickupLocations, routes, onSelectRoute]);
+
+  // Helper function to get coordinates for pickup locations
+  const getLocationCoordinates = (fcName: string): google.maps.LatLngLiteral => {
+    const locations: Record<string, google.maps.LatLngLiteral> = {
+      'MOCK_FC_Riyadh_Central': { lat: 24.7136, lng: 46.6753 },
+      'MOCK_FC_Riyadh_East': { lat: 24.7500, lng: 46.7700 },
+      'MOCK_Sortation_Hub_Main': { lat: 24.6800, lng: 46.7200 }
+    };
+    return locations[fcName] || { lat: 24.7136, lng: 46.6753 };
+  };
+
+  // Helper function to get route positions based on zone
+  const getRoutePosition = (zone: string): google.maps.LatLngLiteral => {
+    const zones: Record<string, google.maps.LatLngLiteral> = {
+      'Riyadh Central': { lat: 24.7136, lng: 46.6753 },
+      'Riyadh East': { lat: 24.7500, lng: 46.7700 },
+      'Riyadh North': { lat: 24.7800, lng: 46.6900 },
+      'Riyadh West': { lat: 24.7000, lng: 46.6200 },
+      'Riyadh South': { lat: 24.6500, lng: 46.7100 }
+    };
+    return zones[zone] || { lat: 24.7136, lng: 46.6753 };
+  };
+
+  if (!isLoaded) {
+    return (
+      <div className="relative bg-gray-100 rounded-lg h-[600px] flex items-center justify-center">
+        <div className="text-center">
+          <Map className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Google Maps Not Configured</h3>
+          <p className="text-gray-600 mb-4">
+            To enable the map view, please configure Google Maps:
+          </p>
+          <ol className="text-sm text-gray-500 space-y-2 text-left max-w-md mx-auto">
+            <li>1. Go to Settings → Integrations</li>
+            <li>2. Find Google Maps in the marketplace</li>
+            <li>3. Click Configure and add your API key</li>
+            <li>4. Return here to see the map view</li>
+          </ol>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="relative bg-gray-100 rounded-lg h-[600px] flex items-center justify-center">
-      <div className="text-center">
-        <Map className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Map View</h3>
-        <p className="text-gray-600 mb-4">
-          Google Maps integration will show:
-        </p>
-        <ul className="text-sm text-gray-500 space-y-1">
-          <li>• Fulfillment Centers (pickup origins)</li>
-          <li>• Sortation Hubs (intermediate nodes)</li>
-          <li>• Delivery Zones (final hubs)</li>
-          <li>• Real-time routes and driver locations</li>
-        </ul>
-        <p className="text-xs text-gray-400 mt-4">
-          Map integration pending Google Maps API setup
-        </p>
+    <div className="relative rounded-lg overflow-hidden h-[600px]">
+      <div ref={mapRef} className="w-full h-full" />
+      
+      {/* Map Legend */}
+      <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-3">
+        <h4 className="font-medium text-sm mb-2">Legend</h4>
+        <div className="space-y-1 text-xs">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+            <span>Fulfillment Centers</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
+            <span>Sortation Hubs</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+            <span>Active Routes</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+            <span>Exception Routes</span>
+          </div>
+        </div>
       </div>
     </div>
   );
