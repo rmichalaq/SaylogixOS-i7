@@ -239,6 +239,10 @@ class WebhookService {
         }
       }
     } catch (error) {
+      if (error.message && error.message.includes('endpoint is disabled')) {
+        console.log("⚠️ Database connection unavailable - skipping webhook processing");
+        return;
+      }
       console.error("Failed to process pending webhooks:", error);
     }
   }
