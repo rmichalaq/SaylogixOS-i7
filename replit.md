@@ -181,6 +181,16 @@ Changelog:
   - Conditionally show Live Activity Feed only when real-time data exists
   - Enhanced mock data with DASHBOARD_MOCK=true flag for easy production removal
   - Dashboard now provides critical information visibility within 5 seconds of load
+- July 10, 2025. Completed comprehensive Settings layout redesign matching Inventory structure
+  - Restructured Settings into 3 major tabs: Warehouse, Users, Clients (removed KPI cards as requested)
+  - Warehouse sub-tabs: Warehouses/Hubs, Zones, Locations, Packaging Material, Dock Settings
+  - Users sub-tabs: User Roles (permissions management), Users (full user list with role assignments)
+  - Clients sub-tabs: Client Details, Contract, SLAs, Pricing, Suppliers, Connected Integrations, Shipping Rules
+  - Applied consistent Inventory-style card layouts with proper spacing, borders, and typography
+  - Implemented pill-style tab navigation with secondary sub-tab rows
+  - Added comprehensive CRUD interfaces with dropdown menus, switches, and badges
+  - Maintained reusable component architecture with skeleton loaders for async data
+  - All views support in-place actions without redirects, following modern UX principles
 - July 09, 2025. Enhanced Purchase Orders interface with drawer-based workflow
   - Removed Actions column from Purchase Orders table for cleaner interface
   - Made PO Numbers clickable to open detailed processing drawer

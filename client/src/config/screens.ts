@@ -10,7 +10,7 @@ import PackingPage from "@/pages/Packing";
 import DispatchPage from "@/pages/Dispatch";
 import LastMilePage from "@/pages/LastMile";
 import ReportsPage from "@/pages/Reports";
-import Settings from "@/pages/Settings";
+import SettingsRedesigned from "@/pages/SettingsRedesigned";
 import IntegrationsRedesigned from "@/pages/IntegrationsRedesigned";
 
 export interface ScreenConfig {
@@ -123,7 +123,7 @@ export const screens: ScreenConfig[] = [
   },
   {
     path: "/settings",
-    component: Settings,
+    component: SettingsRedesigned,
     label: "Settings",
     menuGroup: "System",
     scan: { enabled: false },
