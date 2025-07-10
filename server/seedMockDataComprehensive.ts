@@ -19,25 +19,25 @@ import {
   integrations, warehouseZones, staffRoles, toteCartTypes
 } from "@shared/schema";
 import { nanoid } from "nanoid";
-import { eq, like } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 
 // Helper functions
 const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 const hoursAgo = (hours: number) => new Date(Date.now() - hours * 60 * 60 * 1000);
 const daysFromNow = (days: number) => new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 
-let orderCounter = 600;
+let orderCounter = 700;
 const getNextOrderNumber = () => {
   const year = new Date().getFullYear() % 100;
   return `SL${year}-${String(orderCounter++).padStart(3, '0')}`;
 };
 
-export async function seedComprehensiveData() {
+export async function seedMockDataComprehensive() {
   console.log("🌱 Starting comprehensive mock data seeding for all 28+ tables...");
   
   try {
-    // Clear existing mock data first
-    await clearComprehensiveMockData();
+    // Clear existing mock data first using SQL
+    await clearMockDataComprehensive();
     
     // 1. CONFIGURATION TABLES (seed first as they're referenced by others)
     console.log("Seeding configuration tables...");
@@ -57,11 +57,11 @@ export async function seedComprehensiveData() {
     
     // Staff roles
     const roles = [
-      { roleName: "MOCK_Picker", permissions: { pick: true, pack: false }, description: "Can perform picking operations" },
-      { roleName: "MOCK_Packer", permissions: { pick: false, pack: true }, description: "Can perform packing operations" },
-      { roleName: "MOCK_Supervisor", permissions: { pick: true, pack: true, manage: true }, description: "Full warehouse access" },
-      { roleName: "MOCK_Driver", permissions: { deliver: true }, description: "Delivery operations" },
-      { roleName: "MOCK_Receiver", permissions: { receive: true }, description: "Inbound operations" }
+      { title: "MOCK_Picker", permissions: { pick: true, pack: false }, description: "Can perform picking operations", isActive: true },
+      { title: "MOCK_Packer", permissions: { pick: false, pack: true }, description: "Can perform packing operations", isActive: true },
+      { title: "MOCK_Supervisor", permissions: { pick: true, pack: true, manage: true }, description: "Full warehouse access", isActive: true },
+      { title: "MOCK_Driver", permissions: { deliver: true }, description: "Delivery operations", isActive: true },
+      { title: "MOCK_Receiver", permissions: { receive: true }, description: "Inbound operations", isActive: true }
     ];
     
     for (const role of roles) {
@@ -70,11 +70,11 @@ export async function seedComprehensiveData() {
     
     // Tote cart types
     const cartTypes = [
-      { typeName: "MOCK_Small_Tote", capacity: 10, dimensions: { length: 40, width: 30, height: 20 } },
-      { typeName: "MOCK_Medium_Tote", capacity: 25, dimensions: { length: 60, width: 40, height: 30 } },
-      { typeName: "MOCK_Large_Tote", capacity: 50, dimensions: { length: 80, width: 60, height: 40 } },
-      { typeName: "MOCK_Cart_A", capacity: 100, dimensions: { length: 120, width: 80, height: 100 } },
-      { typeName: "MOCK_Cart_B", capacity: 150, dimensions: { length: 150, width: 100, height: 120 } }
+      { name: "MOCK_Small_Tote", type: "tote", capacity: 10, dimensions: { length: 40, width: 30, height: 20 }, isActive: true },
+      { name: "MOCK_Medium_Tote", type: "tote", capacity: 25, dimensions: { length: 60, width: 40, height: 30 }, isActive: true },
+      { name: "MOCK_Large_Tote", type: "tote", capacity: 50, dimensions: { length: 80, width: 60, height: 40 }, isActive: true },
+      { name: "MOCK_Cart_A", type: "cart", capacity: 100, dimensions: { length: 120, width: 80, height: 100 }, isActive: true },
+      { name: "MOCK_Cart_B", type: "cart", capacity: 150, dimensions: { length: 150, width: 100, height: 120 }, isActive: true }
     ];
     
     for (const cartType of cartTypes) {
@@ -122,7 +122,7 @@ export async function seedComprehensiveData() {
       const status = orderStatuses[i];
       const [order] = await db.insert(orders).values({
         saylogixNumber: getNextOrderNumber(),
-        sourceOrderNumber: `MOCK_ORD_${2000 + i}`,
+        sourceOrderNumber: `MOCK_ORD_${3000 + i}`,
         sourceChannel: "shopify",
         sourceChannelData: { id: `MOCK_${nanoid(10)}`, source: "MOCK_SHOPIFY" },
         status,
@@ -181,20 +181,35 @@ export async function seedComprehensiveData() {
     // 3. WAREHOUSE MANAGEMENT TABLES
     console.log("Seeding warehouse management tables...");
     
+    // First, get all order items
+    const allOrderItems = await db.select().from(orderItems).where(sql`order_id IN ${sql.raw(`(${createdOrders.map(o => o.id).join(',')})`)}`);;
+
     // Pick tasks
     for (const order of createdOrders.filter(o => ["verified", "picked", "packed", "dispatched", "delivered"].includes(o.status))) {
       const picker = createdUsers.find(u => u.role === "picker");
-      await db.insert(pickTasks).values({
-        orderId: order.id,
-        saylogixNumber: order.saylogixNumber,
-        status: ["picked", "packed", "dispatched", "delivered"].includes(order.status) ? "completed" : "assigned",
-        priority: "normal",
-        assignedTo: picker?.username || "MOCK_picker_comp",
-        toteId: `MOCK_TOTE_${nanoid(4)}`,
-        cartId: `MOCK_CART_${nanoid(3)}`,
-        startedAt: ["picked", "packed", "dispatched", "delivered"].includes(order.status) ? daysAgo(8) : null,
-        completedAt: ["picked", "packed", "dispatched", "delivered"].includes(order.status) ? daysAgo(7) : null
-      });
+      const orderItemsForOrder = allOrderItems.filter(item => item.orderId === order.id);
+      
+      for (const item of orderItemsForOrder) {
+        const inventoryItem = createdInventory.find(inv => inv.sku === item.sku);
+        if (inventoryItem) {
+          await db.insert(pickTasks).values({
+            orderId: order.id,
+            orderItemId: item.id,
+            inventoryId: inventoryItem.id,
+            sku: item.sku,
+            binLocation: inventoryItem.binLocation,
+            saylogixNumber: order.saylogixNumber,
+            status: ["picked", "packed", "dispatched", "delivered"].includes(order.status) ? "completed" : "assigned",
+            priority: "normal",
+            assignedTo: picker?.username || "MOCK_picker_comp",
+            quantity: item.quantity,
+            toteId: `MOCK_TOTE_${nanoid(4)}`,
+            cartId: `MOCK_CART_${nanoid(3)}`,
+            startedAt: ["picked", "packed", "dispatched", "delivered"].includes(order.status) ? daysAgo(8) : null,
+            completedAt: ["picked", "packed", "dispatched", "delivered"].includes(order.status) ? daysAgo(7) : null
+          });
+        }
+      }
     }
     
     // Pack tasks
@@ -220,7 +235,7 @@ export async function seedComprehensiveData() {
       const courier = ["aramex", "smsa", "naqel"][i];
       const [manifest] = await db.insert(manifests).values({
         manifestNumber: `MOCK_MAN_${new Date().getFullYear()}_${String(i + 1).padStart(4, '0')}`,
-        courier,
+        courierName: courier,
         status: i === 0 ? "handed_over" : "generated",
         orderCount: 2,
         generatedBy: "MOCK_supervisor_comp",
@@ -268,7 +283,7 @@ export async function seedComprehensiveData() {
         await db.insert(routeStops).values({
           routeId: route.id,
           orderId: createdOrders[j].id,
-          stopNumber: j + 1,
+          stopSequence: j + 1,
           address: createdOrders[j].shippingAddress || { line1: "Mock address" },
           coordinates: createdOrders[j].coordinates,
           status: stopStatus,
@@ -388,16 +403,18 @@ export async function seedComprehensiveData() {
       const zone = zones[i];
       const counter = createdUsers[i % createdUsers.length];
       const [task] = await db.insert(cycleCountTasks).values({
-        cycleCountNumber: `MOCK_CC_${String(i + 1).padStart(3, '0')}`,
-        zone: zone.name,
-        status: i === 0 ? "completed" : i === 1 ? "in_progress" : "scheduled",
+        taskNumber: `MOCK_CC_${String(i + 1).padStart(3, '0')}`,
+        countType: "zone",
+        criteria: { zone: zone.name },
+        status: i === 0 ? "completed" : i === 1 ? "in_progress" : "created",
         assignedTo: counter.username,
-        scheduledDate: daysFromNow(i),
+        expectedItemCount: 10,
+        completedItemCount: i === 0 ? 10 : i === 1 ? 5 : 0,
+        discrepancyCount: i === 0 ? 2 : 0,
         startedAt: i < 2 ? daysAgo(i) : null,
         completedAt: i === 0 ? daysAgo(0) : null,
-        itemsToCount: 10,
-        itemsCounted: i === 0 ? 10 : i === 1 ? 5 : 0,
-        discrepanciesFound: i === 0 ? 2 : 0
+        dueDate: daysFromNow(7),
+        notes: `MOCK_Cycle count for ${zone.name}`
       }).returning();
       
       // Cycle count items
@@ -405,7 +422,7 @@ export async function seedComprehensiveData() {
         for (let j = 0; j < 3; j++) {
           const randomInventory = createdInventory[j];
           await db.insert(cycleCountItems).values({
-            cycleCountTaskId: task.id,
+            taskId: task.id,
             sku: randomInventory.sku,
             binLocation: randomInventory.binLocation,
             systemQty: 50,
@@ -531,7 +548,7 @@ export async function seedComprehensiveData() {
     }
     
     console.log("\n🎉 COMPREHENSIVE MOCK DATA SEEDING COMPLETED!");
-    console.log("📊 Successfully populated all 28+ database tables with 5 records each");
+    console.log("📊 Successfully populated all 28+ database tables with rich test data");
     console.log("💡 All mock data uses MOCK_ prefixes for easy identification");
     console.log("🧹 To remove all mock data, use the 'Clear All Mock Data' button");
     
@@ -541,45 +558,45 @@ export async function seedComprehensiveData() {
   }
 }
 
-// Clear function
-async function clearComprehensiveMockData() {
+// Clear function using raw SQL to avoid LIKE issues
+export async function clearMockDataComprehensive() {
   console.log("🧹 Clearing existing comprehensive mock data...");
   
   try {
-    // Clear in reverse order of dependencies
-    await db.delete(webhookLogs).where(like(webhookLogs.url, "%mock%"));
-    await db.delete(events).where(eq(events.sourceSystem, "MOCK_SaylogixOS"));
-    await db.delete(addressVerifications).where(like(addressVerifications.verificationMethod, "MOCK\\_%"));
-    await db.delete(nasLookups).where(like(nasLookups.nasCode, "MOCK%"));
+    // Use raw SQL for clearing to avoid LIKE syntax issues
+    await db.execute(sql`DELETE FROM webhook_logs WHERE url LIKE '%mock%'`);
+    await db.execute(sql`DELETE FROM events WHERE source_system = 'MOCK_SaylogixOS'`);
+    await db.execute(sql`DELETE FROM address_verifications WHERE verification_method LIKE 'MOCK_%'`);
+    await db.execute(sql`DELETE FROM nas_lookups WHERE nas_code LIKE 'MOCK%'`);
     
-    await db.delete(productExpiry).where(like(productExpiry.batchNumber, "MOCK\\_%"));
-    await db.delete(cycleCountItems);
-    await db.delete(cycleCountTasks).where(like(cycleCountTasks.cycleCountNumber, "MOCK\\_%"));
-    await db.delete(inventoryAdjustments).where(like(inventoryAdjustments.adjustmentNumber, "MOCK\\_%"));
+    await db.execute(sql`DELETE FROM product_expiry WHERE batch_number LIKE 'MOCK_%'`);
+    await db.execute(sql`DELETE FROM cycle_count_items`);
+    await db.execute(sql`DELETE FROM cycle_count_tasks WHERE task_number LIKE 'MOCK_%'`);
+    await db.execute(sql`DELETE FROM inventory_adjustments WHERE adjustment_number LIKE 'MOCK_%'`);
     
-    await db.delete(putawayItems);
-    await db.delete(putawayTasks).where(like(putawayTasks.cartId, "MOCK\\_%"));
-    await db.delete(grnItems);
-    await db.delete(goodsReceiptNotes).where(like(goodsReceiptNotes.grnNumber, "MOCK\\_%"));
-    await db.delete(purchaseOrderItems);
-    await db.delete(purchaseOrders).where(like(purchaseOrders.poNumber, "MOCK\\_%"));
+    await db.execute(sql`DELETE FROM putaway_items`);
+    await db.execute(sql`DELETE FROM putaway_tasks WHERE cart_id LIKE 'MOCK_%'`);
+    await db.execute(sql`DELETE FROM grn_items`);
+    await db.execute(sql`DELETE FROM goods_receipt_notes WHERE grn_number LIKE 'MOCK_%'`);
+    await db.execute(sql`DELETE FROM purchase_order_items`);
+    await db.execute(sql`DELETE FROM purchase_orders WHERE po_number LIKE 'MOCK_%'`);
     
-    await db.delete(routeStops);
-    await db.delete(routes).where(like(routes.routeNumber, "MOCK\\_%"));
-    await db.delete(manifestItems);
-    await db.delete(manifests).where(like(manifests.manifestNumber, "MOCK\\_%"));
-    await db.delete(packTasks).where(like(packTasks.toteId, "MOCK\\_%"));
-    await db.delete(pickTasks).where(like(pickTasks.toteId, "MOCK\\_%"));
+    await db.execute(sql`DELETE FROM route_stops`);
+    await db.execute(sql`DELETE FROM routes WHERE route_number LIKE 'MOCK_%'`);
+    await db.execute(sql`DELETE FROM manifest_items`);
+    await db.execute(sql`DELETE FROM manifests WHERE manifest_number LIKE 'MOCK_%'`);
+    await db.execute(sql`DELETE FROM pack_tasks WHERE tote_id LIKE 'MOCK_%'`);
+    await db.execute(sql`DELETE FROM pick_tasks WHERE tote_id LIKE 'MOCK_%'`);
     
-    await db.delete(orderItems).where(like(orderItems.sku, "MOCK\\_%"));
-    await db.delete(orders).where(like(orders.sourceOrderNumber, "MOCK\\_%"));
-    await db.delete(inventory).where(like(inventory.sku, "MOCK\\_%"));
-    await db.delete(users).where(like(users.username, "MOCK\\_%"));
+    await db.execute(sql`DELETE FROM order_items WHERE sku LIKE 'MOCK_%'`);
+    await db.execute(sql`DELETE FROM orders WHERE source_order_number LIKE 'MOCK_%'`);
+    await db.execute(sql`DELETE FROM inventory WHERE sku LIKE 'MOCK_%'`);
+    await db.execute(sql`DELETE FROM users WHERE username LIKE 'MOCK_%'`);
     
-    await db.delete(integrations).where(like(integrations.name, "MOCK\\_%"));
-    await db.delete(toteCartTypes).where(like(toteCartTypes.typeName, "MOCK\\_%"));
-    await db.delete(staffRoles).where(like(staffRoles.roleName, "MOCK\\_%"));
-    await db.delete(warehouseZones).where(like(warehouseZones.name, "MOCK\\_%"));
+    await db.execute(sql`DELETE FROM integrations WHERE name LIKE 'MOCK_%'`);
+    await db.execute(sql`DELETE FROM tote_cart_types WHERE name LIKE 'MOCK_%'`);
+    await db.execute(sql`DELETE FROM staff_roles WHERE title LIKE 'MOCK_%'`);
+    await db.execute(sql`DELETE FROM warehouse_zones WHERE name LIKE 'MOCK_%'`);
     
     console.log("✅ Mock data cleared successfully");
   } catch (error) {
