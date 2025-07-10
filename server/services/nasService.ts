@@ -1,7 +1,7 @@
 import { storage } from "../storage";
 import { eventBus } from "./eventBus";
 import { whatsappService } from "./whatsappService";
-import { fetchAddressFromSPL } from "./splService";
+import * as splService from "./splService";
 import fetch from "node-fetch";
 
 interface NasVerificationResult {

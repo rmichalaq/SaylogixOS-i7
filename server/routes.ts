@@ -230,6 +230,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create event for address verification
       await storage.createEvent({
+        eventId: `EV_ADDR_VERIFY_${orderId}_${Date.now()}`,
         entityType: 'order',
         entityId: orderId,
         eventType: 'order.address.verified',
