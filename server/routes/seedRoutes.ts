@@ -1,6 +1,7 @@
 import { Express } from "express";
 import { seedMockData, clearMockData } from "../seedMockData";
 import { seedBasicData } from "../seedBasicData";
+import { seedComprehensiveData } from "../seedComprehensiveData";
 
 export function registerSeedRoutes(app: Express) {
   // Seed mock data endpoint
@@ -12,10 +13,10 @@ export function registerSeedRoutes(app: Express) {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      await seedMockData();
+      await seedComprehensiveData();
       res.json({ 
         success: true, 
-        message: "Mock data seeded successfully",
+        message: "Comprehensive mock data seeded successfully for all 28+ tables",
         tip: "To clear mock data, use DELETE /api/admin/clear-mock-data"
       });
     } catch (error) {
@@ -48,23 +49,34 @@ export function registerSeedRoutes(app: Express) {
   app.get("/api/admin/mock-data-status", async (req, res) => {
     try {
       const { db } = await import("../db");
-      const { orders, manifests, purchaseOrders, pickTasks, packTasks, routes } = await import("@shared/schema");
-      const { like, sql } = await import("drizzle-orm");
+      const { 
+        orders, orderItems, inventory,
+        manifests, manifestItems, routes, routeStops,
+        purchaseOrders, purchaseOrderItems, goodsReceiptNotes, grnItems, putawayTasks, putawayItems,
+        pickTasks, packTasks,
+        inventoryAdjustments, cycleCountTasks, cycleCountItems, productExpiry,
+        addressVerifications, events, webhookLogs, nasLookups,
+        integrations, warehouseZones, staffRoles, toteCartTypes
+      } = await import("@shared/schema");
+      const { like, sql, eq } = await import("drizzle-orm");
 
       // Count mock records in each table
       const mockCounts = {
+        // Core Business
         orders: await db.select({ count: sql<number>`count(*)` })
           .from(orders)
           .where(like(orders.sourceOrderNumber, "MOCK_%"))
           .then(r => r[0]?.count || 0),
-        manifests: await db.select({ count: sql<number>`count(*)` })
-          .from(manifests)
-          .where(like(manifests.manifestNumber, "MOCK_%"))
+        orderItems: await db.select({ count: sql<number>`count(*)` })
+          .from(orderItems)
+          .where(like(orderItems.sku, "MOCK_%"))
           .then(r => r[0]?.count || 0),
-        purchaseOrders: await db.select({ count: sql<number>`count(*)` })
-          .from(purchaseOrders)
-          .where(like(purchaseOrders.poNumber, "MOCK_%"))
+        inventory: await db.select({ count: sql<number>`count(*)` })
+          .from(inventory)
+          .where(like(inventory.sku, "MOCK_%"))
           .then(r => r[0]?.count || 0),
+          
+        // WMS Operations
         pickTasks: await db.select({ count: sql<number>`count(*)` })
           .from(pickTasks)
           .where(like(pickTasks.toteId, "MOCK_%"))
@@ -73,9 +85,74 @@ export function registerSeedRoutes(app: Express) {
           .from(packTasks)
           .where(like(packTasks.toteId, "MOCK_%"))
           .then(r => r[0]?.count || 0),
+        manifests: await db.select({ count: sql<number>`count(*)` })
+          .from(manifests)
+          .where(like(manifests.manifestNumber, "MOCK_%"))
+          .then(r => r[0]?.count || 0),
+        manifestItems: await db.select({ count: sql<number>`count(*)` })
+          .from(manifestItems)
+          .then(r => r[0]?.count || 0),
         routes: await db.select({ count: sql<number>`count(*)` })
           .from(routes)
           .where(like(routes.routeNumber, "MOCK_%"))
+          .then(r => r[0]?.count || 0),
+        routeStops: await db.select({ count: sql<number>`count(*)` })
+          .from(routeStops)
+          .then(r => r[0]?.count || 0),
+          
+        // Inbound
+        purchaseOrders: await db.select({ count: sql<number>`count(*)` })
+          .from(purchaseOrders)
+          .where(like(purchaseOrders.poNumber, "MOCK_%"))
+          .then(r => r[0]?.count || 0),
+        goodsReceiptNotes: await db.select({ count: sql<number>`count(*)` })
+          .from(goodsReceiptNotes)
+          .where(like(goodsReceiptNotes.grnNumber, "MOCK_%"))
+          .then(r => r[0]?.count || 0),
+        putawayTasks: await db.select({ count: sql<number>`count(*)` })
+          .from(putawayTasks)
+          .where(like(putawayTasks.grnNumber, "MOCK_%"))
+          .then(r => r[0]?.count || 0),
+          
+        // Inventory Control
+        inventoryAdjustments: await db.select({ count: sql<number>`count(*)` })
+          .from(inventoryAdjustments)
+          .where(like(inventoryAdjustments.adjustmentNumber, "MOCK_%"))
+          .then(r => r[0]?.count || 0),
+        cycleCountTasks: await db.select({ count: sql<number>`count(*)` })
+          .from(cycleCountTasks)
+          .where(like(cycleCountTasks.cycleCountNumber, "MOCK_%"))
+          .then(r => r[0]?.count || 0),
+        productExpiry: await db.select({ count: sql<number>`count(*)` })
+          .from(productExpiry)
+          .then(r => r[0]?.count || 0),
+          
+        // System & Events
+        addressVerifications: await db.select({ count: sql<number>`count(*)` })
+          .from(addressVerifications)
+          .where(like(addressVerifications.verificationMethod, "MOCK_%"))
+          .then(r => r[0]?.count || 0),
+        events: await db.select({ count: sql<number>`count(*)` })
+          .from(events)
+          .where(eq(events.sourceSystem, "MOCK_SaylogixOS"))
+          .then(r => r[0]?.count || 0),
+        webhookLogs: await db.select({ count: sql<number>`count(*)` })
+          .from(webhookLogs)
+          .where(like(webhookLogs.webhookId, "WH%"))
+          .then(r => r[0]?.count || 0),
+        nasLookups: await db.select({ count: sql<number>`count(*)` })
+          .from(nasLookups)
+          .where(like(nasLookups.nasCode, "MOCK%"))
+          .then(r => r[0]?.count || 0),
+          
+        // Configurations
+        integrations: await db.select({ count: sql<number>`count(*)` })
+          .from(integrations)
+          .where(like(integrations.name, "MOCK_%"))
+          .then(r => r[0]?.count || 0),
+        warehouseZones: await db.select({ count: sql<number>`count(*)` })
+          .from(warehouseZones)
+          .where(like(warehouseZones.name, "MOCK_%"))
           .then(r => r[0]?.count || 0)
       };
 

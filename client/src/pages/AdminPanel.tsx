@@ -92,30 +92,109 @@ export default function AdminPanel() {
               </div>
               
               {status.hasMockData && (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-                  <div className="bg-muted p-3 rounded-lg">
-                    <div className="text-2xl font-bold">{status.breakdown.orders}</div>
-                    <div className="text-sm text-muted-foreground">Mock Orders</div>
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium text-muted-foreground">Core Business</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="bg-muted p-3 rounded-lg">
+                      <div className="text-2xl font-bold">{status.breakdown.orders || 0}</div>
+                      <div className="text-sm text-muted-foreground">Mock Orders</div>
+                    </div>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <div className="text-2xl font-bold">{status.breakdown.orderItems || 0}</div>
+                      <div className="text-sm text-muted-foreground">Order Items</div>
+                    </div>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <div className="text-2xl font-bold">{status.breakdown.inventory || 0}</div>
+                      <div className="text-sm text-muted-foreground">Inventory</div>
+                    </div>
                   </div>
-                  <div className="bg-muted p-3 rounded-lg">
-                    <div className="text-2xl font-bold">{status.breakdown.manifests}</div>
-                    <div className="text-sm text-muted-foreground">Mock Manifests</div>
+                  
+                  <h3 className="text-sm font-medium text-muted-foreground mt-4">WMS Operations</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="bg-muted p-3 rounded-lg">
+                      <div className="text-2xl font-bold">{status.breakdown.pickTasks || 0}</div>
+                      <div className="text-sm text-muted-foreground">Pick Tasks</div>
+                    </div>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <div className="text-2xl font-bold">{status.breakdown.packTasks || 0}</div>
+                      <div className="text-sm text-muted-foreground">Pack Tasks</div>
+                    </div>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <div className="text-2xl font-bold">{status.breakdown.manifests || 0}</div>
+                      <div className="text-sm text-muted-foreground">Manifests</div>
+                    </div>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <div className="text-2xl font-bold">{status.breakdown.manifestItems || 0}</div>
+                      <div className="text-sm text-muted-foreground">Manifest Items</div>
+                    </div>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <div className="text-2xl font-bold">{status.breakdown.routes || 0}</div>
+                      <div className="text-sm text-muted-foreground">Routes</div>
+                    </div>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <div className="text-2xl font-bold">{status.breakdown.routeStops || 0}</div>
+                      <div className="text-sm text-muted-foreground">Route Stops</div>
+                    </div>
                   </div>
-                  <div className="bg-muted p-3 rounded-lg">
-                    <div className="text-2xl font-bold">{status.breakdown.purchaseOrders}</div>
-                    <div className="text-sm text-muted-foreground">Mock POs</div>
+                  
+                  <h3 className="text-sm font-medium text-muted-foreground mt-4">Inbound Management</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="bg-muted p-3 rounded-lg">
+                      <div className="text-2xl font-bold">{status.breakdown.purchaseOrders || 0}</div>
+                      <div className="text-sm text-muted-foreground">Purchase Orders</div>
+                    </div>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <div className="text-2xl font-bold">{status.breakdown.goodsReceiptNotes || 0}</div>
+                      <div className="text-sm text-muted-foreground">GRNs</div>
+                    </div>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <div className="text-2xl font-bold">{status.breakdown.putawayTasks || 0}</div>
+                      <div className="text-sm text-muted-foreground">Putaway Tasks</div>
+                    </div>
                   </div>
-                  <div className="bg-muted p-3 rounded-lg">
-                    <div className="text-2xl font-bold">{status.breakdown.pickTasks}</div>
-                    <div className="text-sm text-muted-foreground">Pick Tasks</div>
+                  
+                  <h3 className="text-sm font-medium text-muted-foreground mt-4">Inventory Control</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="bg-muted p-3 rounded-lg">
+                      <div className="text-2xl font-bold">{status.breakdown.inventoryAdjustments || 0}</div>
+                      <div className="text-sm text-muted-foreground">Adjustments</div>
+                    </div>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <div className="text-2xl font-bold">{status.breakdown.cycleCountTasks || 0}</div>
+                      <div className="text-sm text-muted-foreground">Cycle Counts</div>
+                    </div>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <div className="text-2xl font-bold">{status.breakdown.productExpiry || 0}</div>
+                      <div className="text-sm text-muted-foreground">Expiry Records</div>
+                    </div>
                   </div>
-                  <div className="bg-muted p-3 rounded-lg">
-                    <div className="text-2xl font-bold">{status.breakdown.packTasks}</div>
-                    <div className="text-sm text-muted-foreground">Pack Tasks</div>
-                  </div>
-                  <div className="bg-muted p-3 rounded-lg">
-                    <div className="text-2xl font-bold">{status.breakdown.routes}</div>
-                    <div className="text-sm text-muted-foreground">Routes</div>
+                  
+                  <h3 className="text-sm font-medium text-muted-foreground mt-4">System & Configuration</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="bg-muted p-3 rounded-lg">
+                      <div className="text-2xl font-bold">{status.breakdown.addressVerifications || 0}</div>
+                      <div className="text-sm text-muted-foreground">Address Verifications</div>
+                    </div>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <div className="text-2xl font-bold">{status.breakdown.events || 0}</div>
+                      <div className="text-sm text-muted-foreground">System Events</div>
+                    </div>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <div className="text-2xl font-bold">{status.breakdown.webhookLogs || 0}</div>
+                      <div className="text-sm text-muted-foreground">Webhook Logs</div>
+                    </div>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <div className="text-2xl font-bold">{status.breakdown.nasLookups || 0}</div>
+                      <div className="text-sm text-muted-foreground">NAS Lookups</div>
+                    </div>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <div className="text-2xl font-bold">{status.breakdown.integrations || 0}</div>
+                      <div className="text-sm text-muted-foreground">Integrations</div>
+                    </div>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <div className="text-2xl font-bold">{status.breakdown.warehouseZones || 0}</div>
+                      <div className="text-sm text-muted-foreground">Warehouse Zones</div>
+                    </div>
                   </div>
                 </div>
               )}

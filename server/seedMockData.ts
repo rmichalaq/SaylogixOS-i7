@@ -644,9 +644,11 @@ export async function seedMockData() {
       createdRecords.putawayTasks.push(putawayTask);
 
       // 4.6 Putaway Items
-      const grnItemsData = await db.select().from(grnItems).where(eq(grnItems.grnId, grn.id));
+      const grnItemsQuery = await db.select()
+        .from(grnItems)
+        .where(eq(grnItems.grnId, grn.id));
       
-      for (const grnItem of grnItemsData) {
+      for (const grnItem of grnItemsQuery) {
         await db.insert(putawayItems).values({
           putawayTaskId: putawayTask.id,
           sku: grnItem.sku,
